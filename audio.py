@@ -20,15 +20,29 @@ def init():
     # set environment variable for sox rec
     os.environ['AUDIODRIVER'] = "alsa"
 
-    # set audio output level to 90%
-    os.system("amixer -q sset PCM 90%")
-    #os.system("amixer -q sset PCM 100%")
+    if is_headphones_connected():
+        # set audio output level to 30% when headphones are connected
+        os.system("amixer -q sset PCM 30%")
+    else:
+        # set audio output level to 90% when headphones are not connected
+        os.system("amixer -q sset PCM 90%")
+
     # set mic record level to 95% (92 in alsamixer)
     os.system("amixer -q sset Boost 95%")
 
     # switch on amp by default
     global amp_sd
     amp_sd.value = True
+
+
+def is_headphones_connected():
+    # Adjust the command to match your system's control name
+    status = os.popen("amixer cget name='Headphone Jack' | grep ': values='").read()
+    if 'values=on' in status or 'values=1' in status:
+        return True
+    else:
+        return False
+
 
 def wait_for_reader():
     # wait for rfid reader reading pause to avoid undervoltage when amp and reader start simultaneously
@@ -37,14 +51,15 @@ def wait_for_reader():
             break
         time.sleep(0.01)
 
+
 def play_full(folder, audiofile):
-    #blocking play, mostly for TTS
+    # blocking play, mostly for TTS
     wait_for_reader()
 
-    file_path = path+folder+"/"+"{:03d}".format(audiofile)+".mp3"
+    file_path = path + folder + "/" + "{:03d}".format(audiofile) + ".mp3"
     waitingtime = float(subprocess.run(
         ['soxi', '-D', file_path], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8'))
-    subprocess.Popen("play "+file_path+" 2>/dev/null",
+    subprocess.Popen("play " + file_path + " 2>/dev/null",
                      shell=True, stdout=None, stderr=None)
     time.sleep(waitingtime)
 
@@ -55,16 +70,17 @@ def play_file(folder, audiofile):
     wait_for_reader()
 
     subprocess.Popen(f"play {path}/{folder}/{audiofile}  2>/dev/null", shell=True, stdout=None, stderr=None)
-    print("playing file "+str(audiofile))
+    print("playing file " + str(audiofile))
 
 
 def play_story(figure_id):
-    #non-blocking
+    # non-blocking
     wait_for_reader()
 
     print("play story of " + str(figure_id))
     # increase volume by -2db for stories as their recording volume is lower
-    subprocess.Popen(f"play -v2 {path}figures/{figure_id}/{figure_id}.mp3  2>/dev/null", shell=True, stdout=None, stderr=None)
+    subprocess.Popen(f"play -v2 {path}figures/{figure_id}/{figure_id}.mp3  2>/dev/null", shell=True, stdout=None,
+                     stderr=None)
 
 
 def kill_sounds():
@@ -90,8 +106,8 @@ def record_story(figure):
 
     # subprocess.Popen("AUDIODEV=hw:1 rec "+path+"figures/"+figure+"/"+figure+".mp3"+" ", shell=True, stdout=None, stderr=None)
 
-    subprocess.Popen("AUDIODEV=dmic_sv rec -c 1 "+path+"figures/" +
-                     figure+"/"+figure+".mp3", shell=True, stdout=None, stderr=None)
+    subprocess.Popen("AUDIODEV=dmic_sv rec -c 1 " + path + "figures/" +
+                     figure + "/" + figure + ".mp3", shell=True, stdout=None, stderr=None)
 
     # trim of the first 0.3 seconds - needed with /dev/zero??
     # subprocess.Popen("sox "+path+"figures/"+figure+"/"+figure+".mp3"+" "+path+"figures/"+figure+"/"+figure+".mp3"+" trim 0.3", shell=True, stdout=None, stderr=None)
@@ -112,13 +128,13 @@ def stop_recording(figure_id):
     # switching on amp
     amp_sd.value = True
 
-    figure_dir = path+"figures/"+figure_id
+    figure_dir = path + "figures/" + figure_id
 
     # if file (koenigin.mp3 i.e.) exists (could not have been saved due to error in rec)
-    if os.path.isfile(figure_dir+"/"+figure_id+".mp3"):
+    if os.path.isfile(figure_dir + "/" + figure_id + ".mp3"):
         # if file is smaller than 50kB, delete it
-        if os.path.getsize(figure_dir+"/"+figure_id+".mp3") < 50000:
-            os.remove(figure_dir+"/"+figure_id+".mp3")
+        if os.path.getsize(figure_dir + "/" + figure_id + ".mp3") < 50000:
+            os.remove(figure_dir + "/" + figure_id + ".mp3")
 
             files_in_dir = os.listdir(figure_dir)
 
@@ -131,8 +147,8 @@ def stop_recording(figure_id):
             else:
                 # rename the latest file back to koenigin.mp3 i.e.
                 sorted_files = sorted(files_in_dir)
-                os.rename(figure_dir+"/" +
-                          sorted_files[0], figure_dir+"/"+figure_id+".mp3")
+                os.rename(figure_dir + "/" +
+                          sorted_files[0], figure_dir + "/" + figure_id + ".mp3")
 
             return True
 
@@ -149,15 +165,15 @@ def stop_recording(figure_id):
         else:
             # rename the latest file back to koenigin.mp3 i.e.
             sorted_files = sorted(files_in_dir)
-            os.rename(figure_dir+"/" +
-                      sorted_files[0], figure_dir+"/"+figure_id+".mp3")
+            os.rename(figure_dir + "/" +
+                      sorted_files[0], figure_dir + "/" + figure_id + ".mp3")
 
         return True
 
 
 def espeaker(words):
     wait_for_reader()
-    
-    #-v language, -p pitch, -g word gap, -s speed, -a amplitude (volume)
+
+    # -v language, -p pitch, -g word gap, -s speed, -a amplitude (volume)
     os.system(f"espeak -v de+f2 -p 30 -g 12 -s 170 -a 80 --stdout \"{words}\" | aplay -D 'default'")
     # espeak -v de+f2 -p 30 -g 12 -s 150 --stdout "apfelbaum" | aplay -D 'default'
