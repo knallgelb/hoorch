@@ -1,15 +1,14 @@
 [Unit]
 Description=HOORCH Main Program
-After=basic.target
-After=sound.target
+After=basic.target sound.target
 DefaultDependencies=false
 
 [Service]
-User=root
+User=pi
 Type=simple
 Restart=on-failure
 WorkingDirectory=/home/pi/hoorch/
-ExecStart=/usr/bin/python3 /home/pi/hoorch/hoorch.py
+ExecStart=/home/pi/venv/bin/python3 /home/pi/hoorch/hoorch.py
 
 [Install]
 WantedBy=basic.target
