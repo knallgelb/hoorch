@@ -15,6 +15,7 @@ sudo apt install -y libsox-fmt-mp3
 sudo apt install -y espeak
 sudo apt install -y libsdl2-mixer-2.0-0
 sudo apt install -y git
+sudo apt install -y vim
 
 python3 -m venv venv
 source venv/bin/activate
