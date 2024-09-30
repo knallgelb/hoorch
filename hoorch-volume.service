@@ -7,7 +7,7 @@ DefaultDependencies=false
 [Service]
 User=pi
 Type=simple
-ExecStart=/usr/bin/python3 /home/pi/hoorch/service_volume_control.py
+ExecStart=/home/pi/venv/bin/python3 /home/pi/hoorch/service_volume_control.py
 
 [Install]
 WantedBy=multi-user.target

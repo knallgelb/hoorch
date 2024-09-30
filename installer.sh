@@ -127,15 +127,15 @@ fi
 echo "copying HOORCH files"
 
 #copy service-files to /etc/systemd/system
-cp *.service /etc/systemd/system
+sudo cp *.service /etc/systemd/system
 
 #copy gpio shutoff script for OnOff Shim and make it executeable
-cp gpio-shutoff.sh /lib/systemd/system-shutdown/
-chmod +x /lib/systemd/system-shutdown/gpio-shutoff.sh
+sudo cp gpio-shutoff.sh /lib/systemd/system-shutdown/
+sudo chmod +x /lib/systemd/system-shutdown/gpio-shutoff.sh
 
 #enable and start the services
-#systemctl enable hoorch*.service
-#systemctl start hoorch*.service 
+sudo systemctl enable hoorch*.service
+sudo systemctl start hoorch*.service
 
 #will be started manually by user, see installation manual
 
