@@ -86,11 +86,12 @@ systemctl restart networking
 
 #install comitup - wifi:
 #1 install package .deb
-wget https://davesteele.github.io/comitup/latest/davesteele-comitup-apt-source_latest.deb
-dpkg -i --force-all davesteele-comitup-apt-source_latest.deb
-rm davesteele-comitup-apt-source_latest.deb
+#wget https://davesteele.github.io/comitup/latest/davesteele-comitup-apt-source_latest.deb
+#dpkg -i --force-all davesteele-comitup-apt-source_latest.deb
+#rm davesteele-comitup-apt-source_latest.deb
 apt update
-apt install comitup comitup-watch -y
+# apt install comitup comitup-watch -y
+apt install comitup -y
 
 #2: Allow NetworkManager to manage the wifi interfaces by removing references to them from /etc/network/interfaces.
 mv /etc/network/interfaces /etc/network/interfaces.bak
