@@ -4,7 +4,7 @@ After=basic.target sound.target
 DefaultDependencies=false
 
 [Service]
-User=pi
+User=root
 Type=simple
 Environment="PATH=/home/pi/venv/bin:/usr/bin"
 Environment="VIRTUAL_ENV=/home/pi/venv"
