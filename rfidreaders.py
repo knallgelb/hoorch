@@ -4,12 +4,12 @@
 import time
 import threading
 import os
-#import unicodedata
+# import unicodedata
 import board
 import busio
 from adafruit_pn532.spi import PN532_SPI
 from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
-#import digitalio
+# import digitalio
 from digitalio import DigitalInOut
 import ndef
 import audio
@@ -59,7 +59,7 @@ def init():
         # ic, ver, rev, support = reader.firmware_version
         # print('Found Reader '+str(n)+' with firmware version: {0}.{1}'.format(ver, rev, support))
         reader.SAM_configuration()
-        print('Initialized and configured RFID/NFC reader '+str(n+1))
+        print('Initialized and configured RFID/NFC reader ' + str(n + 1))
         tags.append(None)
         time.sleep(0.03)
 
@@ -69,7 +69,7 @@ def init():
     if os.path.exists(path):
         with open(path, mode="r", encoding="utf-8") as file:
             figures_id_name = file.readlines()
-        
+
         section = 0
 
         for uid_name in figures_id_name:
@@ -82,16 +82,15 @@ def init():
 
                 if section == 2:
                     gamer_figures.append(
-                        uid_name[uid_name.find(";")+1:uid_name.find("\n")])
+                        uid_name[uid_name.find(";") + 1:uid_name.find("\n")])
                 elif section == 3:
                     animal_figures.append(
-                        uid_name[uid_name.find(";")+1:uid_name.find("\n")-1])
+                        uid_name[uid_name.find(";") + 1:uid_name.find("\n") - 1])
 
     continuous_read()
 
 
 def continuous_read():
-    
     global currently_reading
 
     for index, r in enumerate(readers):
@@ -101,13 +100,13 @@ def continuous_read():
         currently_reading = True
 
         tag_uid = r.read_passive_target(timeout=0.2)
-        
+
         if tag_uid:
             # convert byte_array tag_uid to string id_readable (i.e. 4-7-26-160)
             id_readable = ""
             for counter, number in enumerate(tag_uid):
                 if counter < 4:
-                    id_readable += str(number)+"-"
+                    id_readable += str(number) + "-"
                 else:
                     id_readable = id_readable[:-1]
                     break
@@ -123,7 +122,7 @@ def continuous_read():
 
             # id_readable is not in figures_db
             except KeyError:
-                
+
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
                 else:
@@ -131,32 +130,32 @@ def continuous_read():
 
                 # power down to safe energy, breaks readers?
                 r.power_down()
-                
+
                 if tag_name == "#error#":
                     continue
 
                 currently_reading = False
 
-                #if tag_name is empty, use id_readable
+                # if tag_name is empty, use id_readable
                 if not tag_name:
-                    #print("tag is empty, use id_readable")
+                    # print("tag is empty, use id_readable")
                     tag_name = id_readable
 
                 # if a figure (i.e. Loewe0 or koenigin) from another game (i.e. as a replacement of a lost one) that is already defined in this game is used
                 # add another key value pair to the figures_db database
                 elif tag_name in figures_db:
-                    figures_db[id_readable] = tag_name       
+                    figures_db[id_readable] = tag_name
 
                 else:
                     # else set the unknown figure as a gamer figure with read tag_name
-            
+
                     if tag_name not in gamer_figures:
                         gamer_figures.append(tag_name)
                         print(
                             "added new unknown gamer figure to the temporary gamer_figure list")
                     else:
                         pass
-                        #print("unknown gamer figure already in temporary gamer_figure list")
+                        # print("unknown gamer figure already in temporary gamer_figure list")
 
         else:
             tag_name = None
@@ -167,59 +166,61 @@ def continuous_read():
             timer[index] = 0  # reset timer to 0
 
         if tag_name is not None:
-            timer[index] = time.time()+1
+            timer[index] = time.time() + 1
             tags[index] = tag_name
-        
-        #sleep for 0.2 seconds between readers to avoid heavy power load
+
+        # sleep for 0.2 seconds between readers to avoid heavy power load
         time.sleep(0.2)
 
     print(tags)
 
     if read_continuously:
-        #only read when not playing or recording audio - shouldnt be done, need it for ending recording
-        #while ('play' or 'rec') in subprocess.run(['ps', 'ax'], stdout=subprocess.PIPE).stdout.decode('utf-8'):
-            #time.sleep(0.2)
+        # only read when not playing or recording audio - shouldnt be done, need it for ending recording
+        # while ('play' or 'rec') in subprocess.run(['ps', 'ax'], stdout=subprocess.PIPE).stdout.decode('utf-8'):
+        # time.sleep(0.2)
 
         threading.Timer(0.02, continuous_read).start()
-        
+
+
 def read_from_mifare(reader, tag_uid):
     read_data = bytearray(0)
-    
+
     try:
-        #read 16 bytes from blocks 4 and 5
+        # read 16 bytes from blocks 4 and 5
         for i in range(4, 6):
-            #print("Authenticating block "+str(i))
-                authenticated = reader.mifare_classic_authenticate_block(tag_uid, i, MIFARE_CMD_AUTH_B, auth_key)
-                if not authenticated:
-                    print("Authentication failed!")
-                # Read blocks
-                read_data.extend(reader.mifare_classic_read_block(i))
-        
+            # print("Authenticating block "+str(i))
+            authenticated = reader.mifare_classic_authenticate_block(tag_uid, i, MIFARE_CMD_AUTH_B, auth_key)
+            if not authenticated:
+                print("Authentication failed!")
+            # Read blocks
+            read_data.extend(reader.mifare_classic_read_block(i))
+
         to_decode = read_data[2:read_data.find(b'\xfe')]
         return list(ndef.message_decoder(to_decode))[0].text
-    
+
     except TypeError:
         print("Error while reading RFID-tag content. Tag was probably removed before reading was completed.")
         # Die Figur konnte nicht erkannt werden. Lass sie länger auf dem Feld stehen.
         audio.play_full("TTS", 199)
 
         return "#error#"
-    
+
     except ndef.record.DecodeError as e:
         print("ndeflib Error while decoding")
         print(e)
 
         return "error#"
 
+
 def read_from_ntag2(reader):
     read_data = bytearray(0)
-    
-    #read 4 bytes from blocks 4-11
+
+    # read 4 bytes from blocks 4-11
     try:
         for i in range(4, 12):
             read_data.extend(reader.ntag2xx_read_block(i))
         to_decode = read_data[2:read_data.find(b'\xfe')]
-    
+
         return list(ndef.message_decoder(to_decode))[0].text
 
     # if tag was removed before it was properly read
@@ -227,16 +228,15 @@ def read_from_ntag2(reader):
         print("Error while reading RFID-tag content. Tag was probably removed before reading was completed.")
         # Die Figur konnte nicht erkannt werden. Lass sie länger auf dem Feld stehen.
         audio.play_full("TTS", 199)
-        
+
         return "#error#"
-    
+
     except ndef.record.DecodeError as e:
         print("ndeflib Error while decoding")
         print(e)
-        
+
         return "error#"
 
-
-#except KeyboardInterrupt:
+# except KeyboardInterrupt:
 #   for r in readers:
 #    r.power_down()
