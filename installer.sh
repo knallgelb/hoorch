@@ -18,6 +18,8 @@ sudo apt install -y git
 sudo apt install -y vim
 sudo apt install -y python3-venv
 
+sudo usermod -a -G gpio,i2c,spi,audio pi
+
 # Set up the virtual environment
 echo "Setting up Python virtual environment"
 python3 -m venv venv --system-site-packages
