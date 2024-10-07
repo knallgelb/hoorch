@@ -6,6 +6,8 @@ DefaultDependencies=false
 [Service]
 User=pi
 Type=simple
+Environment="PATH=/home/pi/venv/bin:/usr/bin"
+Environment="VIRTUAL_ENV=/home/pi/venv"
 Restart=on-failure
 WorkingDirectory=/home/pi/hoorch/
 ExecStart=/home/pi/venv/bin/python3 /home/pi/hoorch/hoorch.py
