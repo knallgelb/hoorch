@@ -20,7 +20,7 @@ sudo apt install -y python3-venv
 
 # Set up the virtual environment
 echo "Setting up Python virtual environment"
-python3 -m venv venv
+python3 -m venv venv --system-site-packages
 . venv/bin/activate
 
 # Install Python dependencies inside the virtual environment
