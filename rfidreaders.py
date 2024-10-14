@@ -5,6 +5,7 @@ import time
 import threading
 import os
 import logging
+import csv
 # import unicodedata
 import board
 import busio
@@ -57,9 +58,10 @@ readers = []
 tags = []
 timer = []
 
-figures_db = {}     # Figure database is a dictionary with tag ID and tag name, based on 'figure_db.txt'
+figures_db = {}     # Figure database is a dictionary with tag ID and tag name
 gamer_figures = []  # e.g., knight, queen,...
-animal_figures = [] # e.g., lion2, elephant1,...
+animal_figures = [] # e.g., lion, elephant,...
+animal_numbers = [] # e.g., 0, 1, 2,...
 
 endofmessage = "#"  # chr(35)
 
@@ -87,27 +89,39 @@ def init():
             logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
         time.sleep(0.03)
 
-    # Initialize figure database
+    # Initialize figure database using csv module
     path = "./figure_db.txt"
 
     if os.path.exists(path):
         with open(path, mode="r", encoding="utf-8") as file:
-            figures_id_name = file.readlines()
+            csv_reader = csv.reader(file, delimiter=';')
+            section = 0
 
-        section = 0
+            for row in csv_reader:
+                if not row or row[0].startswith(';'):
+                    section += 1  # Empty line or line starting with ';' indicates section change
+                    continue
 
-        for uid_name in figures_id_name:
-            # Empty line means section change
-            if uid_name.startswith(";"):
-                section += 1
-            else:
-                (key, val) = uid_name.strip().split(";")
-                figures_db[key] = val
+                # Assign column names
+                tag_id = row[0]
+                tag_name = row[1]
+
+                figures_db[tag_id] = tag_name
 
                 if section == 2:
-                    gamer_figures.append(val)
+                    gamer_figures.append(tag_name)
                 elif section == 3:
-                    animal_figures.append(val)
+                    # Separate number from animal name
+                    import re
+                    match = re.match(r'([A-Za-z]+)(\d+)', tag_name)
+                    if match:
+                        animal_name = match.group(1)
+                        animal_number = match.group(2)
+                        animal_figures.append(animal_name)
+                        animal_numbers.append(animal_number)
+                    else:
+                        animal_figures.append(tag_name)
+                        animal_numbers.append(None)
 
     continuous_read()
 
