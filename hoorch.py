@@ -20,9 +20,36 @@ import game_aufnehmen
 import admin
 import tagwriter
 
+import logging
+
+# Erstelle das Verzeichnis 'logs', falls es nicht existiert
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Logger erstellen
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Sie können hier die Log-Level einstellen
+
+# Konsole-Handler erstellen und Level setzen
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Datei-Handler erstellen und Level setzen
+file_handler = logging.FileHandler('logs/app.log')
+file_handler.setLevel(logging.DEBUG)
+
+# Formatter erstellen und zu den Handlern hinzufügen
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# Handler zum Logger hinzufügen
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
 
 def init():
-    print("initializiation of hardware")
+    logger.info("Initialisierung der Hardware")
 
     # initialize audio
     audio.init()
@@ -32,10 +59,7 @@ def init():
     # initialize leds
     leds.init()
 
-    # start random blinker
-    #leds.blink = True
-
-    # initialize readers
+    # RFID-Reader initialisieren
     rfidreaders.init()
     
     # initialize figure_db if no tags defined for this hoorch set
@@ -96,12 +120,11 @@ def initial_hardware_test():
     # switch off speakers to avoid clicking
     audio.amp_sd.value = False
 
-    print("aufnahme starten")
+    logger.info("Aufnahme starten")
     subprocess.Popen("AUDIODEV=dmic_sv rec -c 1 ./data/figures/test/test.aif",
                      shell=True, stdout=None, stderr=None)
     time.sleep(6)
-    #leds.rotate_one_round(6)
-    print("aufnahme beendet")
+    logger.info("Aufnahme beendet")
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
 
     leds.reset()
@@ -122,125 +145,117 @@ def initial_hardware_test():
 
 
 def main():
-    print("start main loop")
+    logger.info("Starte Hauptschleife")
     shutdown_time = 300  # seconds until shutdown if no interaction happened
-    shutdown_counter = time.time()+shutdown_time
+    shutdown_counter = time.time() + shutdown_time
 
     greet_time = time.time()
 
     while True:
-    #while shutdown_counter > time.time():
-
         leds.blink = True
 
         if greet_time < time.time():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
-            greet_time = time.time()+30
+            greet_time = time.time() + 30
 
         # Erklärung
         if "FRAGEZEICHEN" in rfidreaders.tags:
-            print("Hoorch Erklärung")
+            logger.info("Hoorch Erklärung")
             leds.blink = False
             audio.play_full("TTS", 65)  # Erklärung
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         # Games
         if "Aufnehmen" in rfidreaders.tags:
-            print("Geschichten aufnehmen")
+            logger.info("Geschichten aufnehmen")
             leds.blink = False
             game_geschichten_aufnehmen.start()
-            audio.play_full("TTS", 54)  # Das Spiel ist zu
-            shutdown_counter = time.time()+shutdown_time
+            audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
+            shutdown_counter = time.time() + shutdown_time
 
         if "Abspielen" in rfidreaders.tags:
-            print("Geschichte abspielen")
+            logger.info("Geschichte abspielen")
             leds.blink = False
             game_geschichten_abspielen.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         if "Tierlaute" in rfidreaders.tags:
-            print("Tierlaute erkennen")
+            logger.info("Tierlaute erkennen")
             leds.blink = False
             game_tierlaute.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         if "TierOrchester" in rfidreaders.tags:
-            print("Tier-Orchester")
+            logger.info("Tier-Orchester")
             leds.blink = False
             game_tier_orchester.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         if "Kakophonie" in rfidreaders.tags:
-            print("Kakophonie")
+            logger.info("Kakophonie")
             leds.blink = False
             game_kakophonie.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         if "Einmaleins" in rfidreaders.tags:
-            print("Einmaleins")
+            logger.info("Einmaleins")
             leds.blink = False
             game_einmaleins.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         if "Animals" in rfidreaders.tags:
-            print("Animals")
+            logger.info("Animals")
             leds.blink = False
             game_animals_english.start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            shutdown_counter = time.time()+shutdown_time
-       
-        #list of available hoerspiele without file extension - i.e. ['mutigTR', 'mutigDE', 'mutigHR']
+            shutdown_counter = time.time() + shutdown_time
+
+        # Hörspiele
         hoerspiele_list = [os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")]
         detected_hoerspiel_card = [i for i in hoerspiele_list if i in rfidreaders.tags]
-          
+
         if detected_hoerspiel_card:
-            print("Hoerspiele")
+            logger.info("Hörspiele")
             leds.blink = False
             game_hoerspiele.start("hoerspiele/", detected_hoerspiel_card[0])
-            shutdown_counter = time.time()+shutdown_time
-       
+            shutdown_counter = time.time() + shutdown_time
+
         figure_dir = "./data/figures/"
-        #get only folders, not files
         figure_dirs = [name for name in os.listdir(figure_dir) if os.path.isdir(os.path.join(figure_dir, name))]
-        #list of available figures with a recording
-        figure_with_recording = [k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir+k)]
+        figure_with_recording = [k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)]
         detected_figure_with_recording = [j for j in figure_with_recording if j in rfidreaders.tags]
 
-        #all defined figure minus the ones with a recording
         defined_figures = rfidreaders.gamer_figures
         figure_without_recording = [i for i in defined_figures if i not in figure_with_recording]
         detected_figure_without_recording = [m for m in figure_without_recording if m in rfidreaders.tags]
 
-        #prioritize figures with recordings over the ones without
+        # Priorität für Figuren mit Aufnahmen
         if detected_figure_with_recording:
-            print("Geschichte abspielen - from main menu")
+            logger.info("Geschichte abspielen - aus Hauptmenü")
             leds.blink = False
-            #pick first figure detected
             game_hoerspiele.start(f"figures/{detected_figure_with_recording[0]}", detected_figure_with_recording[0])
-            shutdown_counter = time.time()+shutdown_time
-        
+            shutdown_counter = time.time() + shutdown_time
 
         if detected_figure_without_recording:
-            print("Geschichte aufnehmen - from main menu")
+            logger.info("Geschichte aufnehmen - aus Hauptmenü")
             leds.blink = False
             game_aufnehmen.start(detected_figure_without_recording[0])
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
-        # if "JA" and "NEIN" chips detected enter admin menu
+        # Admin-Menü bei Erkennung von "JA" und "NEIN"
         if "JA" in rfidreaders.tags and "NEIN" in rfidreaders.tags:
             admin.main()
-            shutdown_counter = time.time()+shutdown_time
+            shutdown_counter = time.time() + shutdown_time
 
         time.sleep(0.3)
 
-    # shutdown
-    print("shutdown")
-    # Du hast mich lange nicht verwendet. Ich schalte mich zum Stromsparen jetzt aus.
+    # Shutdown
+    logger.info("Shutdown")
     audio.play_full("TTS", 196)
     leds.blink = False
     leds.led_value = [1, 1, 1, 1, 1, 1]
@@ -250,4 +265,3 @@ def main():
 if __name__ == "__main__":
     init()
     main()
-    
