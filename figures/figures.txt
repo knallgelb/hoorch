@@ -1,0 +1,6 @@
+roboter
+koenig
+koenigin
+frau
+ritter
+magierin
