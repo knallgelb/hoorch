@@ -6,6 +6,7 @@ import os
 import time
 import subprocess
 import audio
+import file_lib
 import rfidreaders
 import leds
 import game_tierlaute
@@ -231,7 +232,7 @@ def main():
         figure_with_recording = [k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)]
         detected_figure_with_recording = [j for j in figure_with_recording if j in rfidreaders.tags]
 
-        defined_figures = rfidreaders.gamer_figures
+        defined_figures = file_lib.gamer_figures_db
         figure_without_recording = [i for i in defined_figures if i not in figure_with_recording]
         detected_figure_without_recording = [m for m in figure_without_recording if m in rfidreaders.tags]
 
