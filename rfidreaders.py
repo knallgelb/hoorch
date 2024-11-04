@@ -221,4 +221,5 @@ def read_from_ntag2(reader):
 # Start the script
 if __name__ == "__main__":
     file_lib.read_database_files()
+    read_continuously = True
     init()
