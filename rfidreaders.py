@@ -5,7 +5,6 @@ import time
 import threading
 import os
 import logging
-import csv
 # import unicodedata
 import board
 import busio
@@ -15,6 +14,9 @@ from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 from digitalio import DigitalInOut
 import ndef
 import audio
+from pathlib import Path
+
+import file_lib
 
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -58,10 +60,6 @@ readers = []
 tags = []
 timer = []
 
-figures_db = {}     # Figure database is a dictionary with tag ID and tag name
-gamer_figures = []  # e.g., knight, queen,...
-animal_figures = [] # e.g., lion, elephant,...
-animal_numbers = [] # e.g., 0, 1, 2,...
 
 endofmessage = "#"  # chr(35)
 
@@ -88,40 +86,6 @@ def init():
         except Exception as e:
             logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
         time.sleep(0.03)
-
-    # Initialize figure database using csv module
-    path = "./figure_db.txt"
-
-    if os.path.exists(path):
-        with open(path, mode="r", encoding="utf-8") as file:
-            csv_reader = csv.reader(file, delimiter=';')
-            section = 0
-
-            for row in csv_reader:
-                if not row or row[0].startswith(';'):
-                    section += 1  # Empty line or line starting with ';' indicates section change
-                    continue
-
-                # Assign column names
-                tag_id = row[0]
-                tag_name = row[1]
-
-                figures_db[tag_id] = tag_name
-
-                if section == 2:
-                    gamer_figures.append(tag_name)
-                elif section == 3:
-                    # Separate number from animal name
-                    import re
-                    match = re.match(r'([A-Za-z]+)(\d+)', tag_name)
-                    if match:
-                        animal_name = match.group(1)
-                        animal_number = match.group(2)
-                        animal_figures.append(animal_name)
-                        animal_numbers.append(animal_number)
-                    else:
-                        animal_figures.append(tag_name)
-                        animal_numbers.append(None)
 
     continuous_read()
 
@@ -150,7 +114,7 @@ def continuous_read():
                 mifare = True
 
             # Check if tag ID is in the figure database
-            tag_name = figures_db.get(id_readable)
+            tag_name = file_lib.figures_db.get(id_readable)
 
             if not tag_name:
                 if mifare:
@@ -166,18 +130,18 @@ def continuous_read():
 
                 currently_reading = False
 
-                # If tag_name is empty, use id_readable
-                if not tag_name:
-                    tag_name = id_readable
-
-                # If a figure from another game is used, add it to the figures_db
-                elif tag_name in figures_db.values():
-                    figures_db[id_readable] = tag_name
-                else:
-                    # Else, treat it as a gamer figure
-                    if tag_name not in gamer_figures:
-                        gamer_figures.append(tag_name)
-                        logger.info("Added new unknown gamer figure to the temporary gamer_figure list")
+                # # If tag_name is empty, use id_readable
+                # if not tag_name:
+                #     tag_name = id_readable
+                #
+                # # If a figure from another game is used, add it to the figures_db
+                # elif tag_name in file_lib.figures_db.values():
+                #     figures_db[id_readable] = tag_name
+                # else:
+                #     # Else, treat it as a gamer figure
+                #     if tag_name not in gamer_figures:
+                #         gamer_figures.append(tag_name)
+                #         logger.info("Added new unknown gamer figure to the temporary gamer_figure list")
             else:
                 logger.debug("Tag ID %s found in figures_db with name %s", id_readable, tag_name)
         else:
@@ -256,4 +220,5 @@ def read_from_ntag2(reader):
 
 # Start the script
 if __name__ == "__main__":
+    file_lib.read_database_files()
     init()
