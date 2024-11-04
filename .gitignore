@@ -1,8 +1,14 @@
 # txt files containig the ids and names of game figures
 figure_db*
+figures/actions_db.txt
+figures/animals_db.txt
+figures/figures_db.txt
+figures/games_db.txt
+figures/numeric_db.txt
 
 # recorded stories
 data/figures/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+.idea
