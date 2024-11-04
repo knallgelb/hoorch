@@ -19,6 +19,7 @@ import game_hoerspiele
 import game_aufnehmen
 import admin
 import tagwriter
+from pathlib import Path
 
 import logging
 
@@ -63,7 +64,7 @@ def init():
     rfidreaders.init()
     
     # initialize figure_db if no tags defined for this hoorch set
-    if not os.path.exists("./figure_db.txt"):
+    if not Path("figures/figures_db.txt").exists():
         # tell the ip adress
         output = None
         while True:
@@ -89,7 +90,7 @@ def init():
         time.sleep(1)
         tagwriter.write_set()
         rfidreaders.read_continuously = True
-        rfidreaders.continuous_read()
+        # rfidreaders.continuous_read()
 
 
 def initial_hardware_test():
@@ -132,7 +133,7 @@ def initial_hardware_test():
     # switch on speakers
     audio.amp_sd.value = True
 
-    if os.path.exists("./data/figures/test/test.aif"):
+    if Path("./data/figures/test/test.aif").exists():
         audio.espeaker("Ich spiele dir jetzt die Geschichte vor")
         leds.switch_all_on_with_color()
         audio.play_file("figures/test", "test.aif")
