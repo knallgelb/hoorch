@@ -7,6 +7,7 @@ import subprocess
 import rfidreaders
 import leds
 import audio
+import file_lib
 
 def start(figure_id):
     leds.reset()  # reset leds

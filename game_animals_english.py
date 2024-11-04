@@ -8,9 +8,10 @@ import copy
 import audio
 import rfidreaders
 import leds
+import file_lib
 
-defined_figures = rfidreaders.gamer_figures
-defined_animals = rfidreaders.animal_figures
+defined_figures = file_lib.gamer_figures_db
+defined_animals = file_lib.animal_figures_db
 
 
 def start():

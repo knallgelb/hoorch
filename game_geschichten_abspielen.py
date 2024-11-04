@@ -8,9 +8,10 @@ import time
 import audio
 import rfidreaders
 import leds
+import file_lib
 
 
-defined_figures = rfidreaders.gamer_figures
+defined_figures = file_lib.gamer_figures_db
 
 
 def start():

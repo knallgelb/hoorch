@@ -8,6 +8,7 @@ import rfidreaders
 import leds
 import logging
 import os
+import file_lib
 
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -36,7 +37,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-defined_animals = rfidreaders.animal_figures
+defined_animals = file_lib.animal_figures_db
 
 
 def start():
