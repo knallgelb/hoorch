@@ -9,6 +9,17 @@ import board
 from rfidreaders import currently_reading
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Read volume settings
+HEADPHONES_VOLUME = os.getenv('HEADPHONES_VOLUME', '5')
+SPEAKER_VOLUME = os.getenv('SPEAKER_VOLUME', '10')
+MIC_VOLUME = os.getenv('MIC_VOLUME', '95')
+STORY_VOLUME = os.getenv('STORY_VOLUME', '2')
+STORY_VOLUME_FLOAT = float(STORY_VOLUME)
 
 # Create 'logs' directory if it doesn't exist
 logs_dir = Path('logs')
@@ -42,30 +53,28 @@ data_path = Path('./data')
 amp_sd = digitalio.DigitalInOut(board.D6)
 amp_sd.direction = digitalio.Direction.OUTPUT
 
-
 def init():
     # Set environment variable for sox recording
     os.environ['AUDIODRIVER'] = "alsa"
     logger.info("Audio driver set to 'alsa' for sox recording.")
 
     if is_headphones_connected():
-        # Set audio output level to 30% when headphones are connected
-        os.system("amixer -q sset PCM 30%")
-        logger.info("Headphones connected. Audio output level set to 30%.")
+        # Set audio output level when headphones are connected
+        os.system(f"amixer -q sset PCM {HEADPHONES_VOLUME}%")
+        logger.info(f"Headphones connected. Audio output level set to {HEADPHONES_VOLUME}%.")
     else:
-        # Set audio output level to 90% when headphones are not connected
-        os.system("amixer -q sset PCM 90%")
-        logger.info("Headphones not connected. Audio output level set to 90%.")
+        # Set audio output level when headphones are not connected
+        os.system(f"amixer -q sset PCM {SPEAKER_VOLUME}%")
+        logger.info(f"Headphones not connected. Audio output level set to {SPEAKER_VOLUME}%.")
 
-    # Set microphone record level to 95%
-    os.system("amixer -q sset PCM 95%")
-    logger.info("Microphone record level set to 95%.")
+    # Set microphone record level
+    os.system(f"amixer -q sset PCM {MIC_VOLUME}%")
+    logger.info(f"Microphone record level set to {MIC_VOLUME}%.")
 
     # Switch on amp by default
     global amp_sd
     amp_sd.value = True
     logger.info("Amplifier switched on by default.")
-
 
 def is_headphones_connected():
     # Adjust the command to match your system's control name
@@ -74,7 +83,6 @@ def is_headphones_connected():
     logger.debug(f"Headphones connected: {connected}")
     return connected
 
-
 def wait_for_reader():
     # Wait for RFID reader reading pause to avoid undervoltage when amp and reader start simultaneously
     while True:
@@ -82,7 +90,6 @@ def wait_for_reader():
             break
         time.sleep(0.01)
     logger.debug("Waited for RFID reader to be ready.")
-
 
 def play_full(folder, audiofile):
     # Blocking play, mostly for TTS
@@ -100,7 +107,6 @@ def play_full(folder, audiofile):
     except Exception as e:
         logger.error(f"Error playing audio file {file_path}: {e}")
 
-
 def play_file(folder, audiofile):
     # Non-blocking play for sounds in /data and subfolders
     wait_for_reader()
@@ -109,28 +115,24 @@ def play_file(folder, audiofile):
     logger.info(f"Playing audio file: {file_path}")
     subprocess.Popen(f"play {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
 
-
 def play_story(figure_id):
     # Non-blocking play
     wait_for_reader()
 
     file_path = data_path / 'figures' / figure_id / f"{figure_id}.mp3"
     logger.info(f"Playing story for figure: {figure_id}")
-    # Increase volume by -2db for stories as their recording volume is lower
-    subprocess.Popen(f"play -v2 {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
-
+    # Increase volume by STORY_VOLUME_FLOAT for stories
+    subprocess.Popen(f"play -v{STORY_VOLUME_FLOAT} {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
 
 def kill_sounds():
     logger.info("Stopping all sounds.")
     subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
-
 
 def file_is_playing(audiofile):
     output = subprocess.run(['ps', 'ax'], stdout=subprocess.PIPE).stdout.decode('utf-8')
     is_playing = audiofile in output
     logger.debug(f"File {audiofile} is playing: {is_playing}")
     return is_playing
-
 
 def record_story(figure):
     # Switch off amp
@@ -144,7 +146,6 @@ def record_story(figure):
 
     subprocess.Popen(f"AUDIODEV=dmic_sv rec -c 1 {file_path}", shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
-
 
 def stop_recording(figure_id):
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
@@ -196,7 +197,6 @@ def stop_recording(figure_id):
             logger.info(f"Renamed latest file {latest_file} to {mp3_file}")
 
         return True
-
 
 def espeaker(words):
     wait_for_reader()
