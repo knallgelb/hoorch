@@ -24,14 +24,14 @@ if not os.path.exists('logs'):
 
 # Configure logging
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Create handlers
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.DEBUG)
 
 file_handler = logging.FileHandler('logs/rfid.log')
-file_handler.setLevel(logging.INFO)
+file_handler.setLevel(logging.DEBUG)
 
 # Create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
@@ -60,7 +60,6 @@ readers = []
 tags = []
 timer = []
 
-
 endofmessage = "#"  # chr(35)
 
 read_continuously = True
@@ -70,7 +69,7 @@ auth_key = b'\xFF\xFF\xFF\xFF\xFF\xFF'
 
 
 def init():
-    logger.info("Initializing the RFID readers and loading 'figure_db.txt'")
+    logger.info("Initializing the RFID readers")
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
     reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin, reader6_pin]
@@ -78,6 +77,9 @@ def init():
     for idx, reader_pin in enumerate(reader_pins):
         try:
             reader = PN532_SPI(spi, reader_pin, debug=False)
+            #            reader = PN532_SPI(spi, reader_pin, debug=True)
+            ic, ver, rev, support = reader.firmware_version
+            logger.info("Found PN532 with firmware version: {0}.{1}".format(ver, rev))
             reader.SAM_configuration()
             readers.append(reader)
             tags.append(None)
@@ -87,11 +89,15 @@ def init():
             logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
         time.sleep(0.03)
 
+    logger.debug(tags)
+
     continuous_read()
 
 
 def continuous_read():
     global currently_reading
+    logger.info("Tags: %s", tags)
+    logger.info("... continuous read function")
 
     for index, r in enumerate(readers):
 
@@ -106,6 +112,8 @@ def continuous_read():
             continue
 
         if tag_uid:
+            logger.debug("Found card with UID: %s", "-".join([str(i) for i in tag_uid]))
+
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
 
@@ -114,7 +122,7 @@ def continuous_read():
                 mifare = True
 
             # Check if tag ID is in the figure database
-            tag_name = file_lib.figures_db.get(id_readable)
+            tag_name = file_lib.get_figure_from_database(id_readable)
 
             if not tag_name:
                 if mifare:
@@ -122,26 +130,13 @@ def continuous_read():
                 else:
                     tag_name = read_from_ntag2(r)
 
-                # Optionally power down the reader to save energy
-                # r.power_down()
-
                 if tag_name == "#error#":
                     continue
 
                 currently_reading = False
 
-                # # If tag_name is empty, use id_readable
-                # if not tag_name:
-                #     tag_name = id_readable
-                #
-                # # If a figure from another game is used, add it to the figures_db
-                # elif tag_name in file_lib.figures_db.values():
-                #     figures_db[id_readable] = tag_name
-                # else:
-                #     # Else, treat it as a gamer figure
-                #     if tag_name not in gamer_figures:
-                #         gamer_figures.append(tag_name)
-                #         logger.info("Added new unknown gamer figure to the temporary gamer_figure list")
+                if not tag_name:
+                    logger.info("Added new unknown gamer figure to the temporary gamer_figure list")
             else:
                 logger.debug("Tag ID %s found in figures_db with name %s", id_readable, tag_name)
         else:
@@ -168,13 +163,14 @@ def continuous_read():
 
 def read_from_mifare(reader, tag_uid):
     read_data = bytearray(0)
+    logger.debug("tag_uid: %s", tag_uid)
 
     try:
         # Read 16 bytes from blocks 4 and 5
         for i in range(4, 6):
-            authenticated = reader.mifare_classic_authenticate_block(tag_uid, i, MIFARE_CMD_AUTH_B, auth_key)
-            if not authenticated:
-                logger.warning("Authentication failed for block %d!", i)
+            # authenticated = reader.mifare_classic_authenticate_block(tag_uid, i, MIFARE_CMD_AUTH_B, auth_key)
+            # if not authenticated:
+            #   logger.warning("Authentication failed for block %d!", i)
             # Read blocks
             read_data.extend(reader.mifare_classic_read_block(i))
 
@@ -184,7 +180,8 @@ def read_from_mifare(reader, tag_uid):
         return text
 
     except TypeError:
-        logger.error("Error while reading RFID tag content. Tag was probably removed before reading was completed.")
+        logger.error(
+            "MIFARE CLASSIC Error while reading RFID tag content. Tag was probably removed before reading was completed.")
         # The figure could not be recognized. Leave it longer on the field.
         audio.play_full("TTS", 199)
         return "#error#"
@@ -199,7 +196,8 @@ def read_from_ntag2(reader):
 
     # Read 4 bytes from blocks 4-11
     try:
-        for i in range(4, 12):
+        # for i in range(4, 12):
+        for i in range(0, 12):
             read_data.extend(reader.ntag2xx_read_block(i))
         to_decode = read_data[2:read_data.find(b'\xfe')]
 
@@ -208,7 +206,8 @@ def read_from_ntag2(reader):
         return text
 
     except TypeError:
-        logger.error("Error while reading RFID tag content. Tag was probably removed before reading was completed.")
+        logger.error(
+            "NTAG2 Error while reading RFID tag content. Tag was probably removed before reading was completed.")
         # The figure could not be recognized. Leave it longer on the field.
         audio.play_full("TTS", 199)
         return "#error#"
