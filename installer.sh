@@ -41,6 +41,19 @@ wget https://github.com/opencardev/snd-i2s_rpi/releases/download/v0.0.2/snd-i2s-
 sudo dpkg -i snd-i2s-rpi-dkms_0.0.2_all.deb
 sudo modprobe snd-i2s_rpi rpi_platform_generation=0
 
+# Zu prüfende Datei
+MODULES_FILE="/etc/modules"
+MODULE_NAME="snd-i2s_rpi"
+
+# Prüfen, ob die Zeile bereits existiert
+if ! grep -q "^${MODULE_NAME}$" "$MODULES_FILE"; then
+    echo "Füge ${MODULE_NAME} zur ${MODULES_FILE} hinzu..."
+    echo "$MODULE_NAME" | sudo tee -a "$MODULES_FILE" > /dev/null
+    echo "Zeile hinzugefügt!"
+else
+    echo "${MODULE_NAME} ist bereits in ${MODULES_FILE} vorhanden."
+fi
+
 # i2s amplifier configuration
 sudo tee /etc/asound.conf > /dev/null << EOF
 pcm.speakerbonnet {
