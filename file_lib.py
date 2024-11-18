@@ -50,7 +50,7 @@ def read_database_file(path_object: Path,
 
             for row in csv_reader:
                 field_value = row["NAME"]
-                kwargs = {'rfid_tag': row["RFID_TAG"], which_field: field_value}
+                kwargs = {'rfid_tag': row["RFID_TAG"], which_field: field_value, "rfid_type": rfid_type}
 
                 rfid_tag = row["RFID_TAG"]
 
@@ -83,11 +83,11 @@ def read_database_files():
     path_games = Path("figures") / "games_db.txt"
     path_numbers = Path("figures") / "numeric_db.txt"
 
-    actions_db = read_database_file(path_actions, actions_db, all_tags)
-    figures_db = read_database_file(path_figures, figures_db, all_tags)
-    gamer_figures_db = read_database_file(path_games, gamer_figures_db, all_tags)
-    animal_figures_db = read_database_file(path_animals, animal_figures_db, all_tags)
-    animal_numbers_db = read_database_file(path_numbers, animal_numbers_db, all_tags, which_field='number')
+    actions_db = read_database_file(path_actions, actions_db, all_tags, rfid_type="action")
+    figures_db = read_database_file(path_figures, figures_db, all_tags, rfid_type="figure")
+    gamer_figures_db = read_database_file(path_games, gamer_figures_db, all_tags, rfid_type="game")
+    animal_figures_db = read_database_file(path_animals, animal_figures_db, all_tags, rfid_type="animal")
+    animal_numbers_db = read_database_file(path_numbers, animal_numbers_db, all_tags, which_field='number', rfid_type="number")
 
 
 if __name__ == "__main__":
