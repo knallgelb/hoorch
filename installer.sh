@@ -39,7 +39,7 @@ sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
 sudo apt install dkms raspberrypi-kernel-headers -y
 wget https://github.com/opencardev/snd-i2s_rpi/releases/download/v0.0.2/snd-i2s-rpi-dkms_0.0.2_all.deb
 sudo dpkg -i snd-i2s-rpi-dkms_0.0.2_all.deb
-sudo modprobe snd-i2s_rpi rpi_platform_generation=0
+sudo modprobe snd-i2s_rpi
 
 # Zu prüfende Datei
 MODULES_FILE="/etc/modules"
