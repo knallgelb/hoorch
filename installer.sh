@@ -88,11 +88,6 @@ sudo apt update
 sudo apt install comitup -y
 
 # Disable unnecessary services
-sudo systemctl mask dnsmasq.service
-sudo systemctl mask systemd-resolved.service
-sudo systemctl mask dhcpd.service
-sudo systemctl mask dhcpcd.service
-sudo systemctl mask wpa-supplicant.service
 sudo systemctl enable NetworkManager.service
 
 # Update comitup configuration
