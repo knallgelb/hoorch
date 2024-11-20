@@ -36,72 +36,20 @@ pip install --upgrade adafruit-python-shell
 sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
 
 # i2s microphone
-sudo apt install dkms raspberrypi-kernel-headers -y
-wget https://github.com/opencardev/snd-i2s_rpi/releases/download/v0.0.2/snd-i2s-rpi-dkms_0.0.2_all.deb
-sudo dpkg -i snd-i2s-rpi-dkms_0.0.2_all.deb
-sudo modprobe snd-i2s_rpi
+CONFIG_FILE="/boot/firmware/config.txt"
+OVERLAY="dtoverlay=googlevoicehat-soundcard"
 
-# Zu prüfende Datei
-MODULES_FILE="/etc/modules"
-MODULE_NAME="snd-i2s_rpi"
-
-# Prüfen, ob die Zeile bereits existiert
-if ! grep -q "^${MODULE_NAME}$" "$MODULES_FILE"; then
-    echo "Füge ${MODULE_NAME} zur ${MODULES_FILE} hinzu..."
-    echo "$MODULE_NAME" | sudo tee -a "$MODULES_FILE" > /dev/null
+# Prüfen, ob die Zeile bereits vorhanden ist
+if ! grep -q "^${OVERLAY}$" "$CONFIG_FILE"; then
+    echo "Add ${OVERLAY} to ${CONFIG_FILE}"
+    echo "$OVERLAY" | sudo tee -a "$CONFIG_FILE" > /dev/null
     echo "Zeile hinzugefügt!"
 else
-    echo "${MODULE_NAME} ist bereits in ${MODULES_FILE} vorhanden."
+    echo "${OVERLAY} ist bereits in ${CONFIG_FILE} vorhanden."
 fi
-
-# i2s amplifier configuration
-sudo tee /etc/asound.conf > /dev/null << EOF
-pcm.speakerbonnet {
-   type hw card 0
-}
-
-pcm.dmixer {
-   type dmix
-   ipc_key 1024
-   ipc_perm 0666
-   slave {
-     pcm "speakerbonnet"
-     period_time 0
-     period_size 1024
-     buffer_size 8192
-     rate 44100
-     channels 2
-   }
-}
-
-ctl.dmixer {
-   type hw card 0
-}
-
-pcm.softvol {
-   type softvol
-   slave.pcm "dmixer"
-   control.name "PCM"
-   control.card 0
-}
-
-ctl.softvol {
-   type hw card 0
-}
-
-pcm.!default {
-   type plug
-   slave.pcm "softvol"
-}
-EOF
 
 # Setup MAX98357
-sudo sed -i 's/^\(dtparam=audio=on\)/#\1/' "/boot/firmware/config.txt"
-
-# Add overlays if not already present
-if ! grep -Fxq "dtoverlay=hifiberry-dac" /boot/firmware/config.txt; then
-  echo "dtoverlay=hifiberry-dac" | sudo tee -a /boot/firmware/config.txt
-fi
+sudo sed -i 's/^\(dtparam=audio=on\)/dtparam=audio=off/' "/boot/firmware/config.txt"
 
 if ! grep -Fxq "dtoverlay=i2s-mmap" /boot/firmware/config.txt; then
   echo "dtoverlay=i2s-mmap" | sudo tee -a /boot/firmware/config.txt
