@@ -86,8 +86,6 @@ sudo systemctl disable dphys-swapfile.service
 # Install comitup - wifi setup
 sudo apt update
 sudo apt install comitup -y
-sudo mv /etc/network/interfaces /etc/network/interfaces.bak
-sudo mv /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.confbak
 
 # Disable unnecessary services
 sudo systemctl mask dnsmasq.service
