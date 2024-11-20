@@ -51,10 +51,6 @@ fi
 # Setup MAX98357
 sudo sed -i 's/^\(dtparam=audio=on\)/dtparam=audio=off/' "/boot/firmware/config.txt"
 
-if ! grep -Fxq "dtoverlay=i2s-mmap" /boot/firmware/config.txt; then
-  echo "dtoverlay=i2s-mmap" | sudo tee -a /boot/firmware/config.txt
-fi
-
 # Disable Bluetooth to save power
 if ! grep -Fxq "dtoverlay=pi3-disable-bt" /boot/firmware/config.txt; then
   echo "dtoverlay=pi3-disable-bt" | sudo tee -a /boot/firmware/config.txt
