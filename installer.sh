@@ -43,9 +43,9 @@ OVERLAY="dtoverlay=googlevoicehat-soundcard"
 if ! grep -q "^${OVERLAY}$" "$CONFIG_FILE"; then
     echo "Add ${OVERLAY} to ${CONFIG_FILE}"
     echo "$OVERLAY" | sudo tee -a "$CONFIG_FILE" > /dev/null
-    echo "Zeile hinzugefügt!"
+    echo "added ${OVERLAY} to ${CONFIG_FILE}!"
 else
-    echo "${OVERLAY} ist bereits in ${CONFIG_FILE} vorhanden."
+    echo "${OVERLAY} already ${CONFIG_FILE} exists."
 fi
 
 # Setup MAX98357
