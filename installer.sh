@@ -83,12 +83,6 @@ sudo apt install log2ram
 # Disable swapping
 sudo systemctl disable dphys-swapfile.service
 
-# Update log2ram configuration
-sudo sed -i 's/SIZE=40M/SIZE=100M/g' /etc/log2ram.conf
-
-# Restart networking service
-sudo systemctl restart networking
-
 # Install comitup - wifi setup
 sudo apt update
 sudo apt install comitup -y
