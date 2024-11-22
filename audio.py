@@ -72,9 +72,9 @@ def init():
     logger.info(f"Microphone record level set to {MIC_VOLUME}%.")
 
     # Switch on amp by default
-    global amp_sd
-    amp_sd.value = True
-    logger.info("Amplifier switched on by default.")
+    # global amp_sd
+    # amp_sd.value = True
+    # logger.info("Amplifier switched on by default.")
 
 def is_headphones_connected():
     # Adjust the command to match your system's control name
@@ -136,8 +136,8 @@ def file_is_playing(audiofile):
 
 def record_story(figure):
     # Switch off amp
-    global amp_sd
-    amp_sd.value = False
+    # global amp_sd
+    # amp_sd.value = False
     logger.info(f"Recording story for figure: {figure}. Amplifier switched off.")
 
     figure_dir = data_path / 'figures' / figure
@@ -151,11 +151,11 @@ def stop_recording(figure_id):
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
     logger.info("Stopped recording.")
 
-    global amp_sd
+    # global amp_sd
 
     # Switch on amp
-    amp_sd.value = True
-    logger.info("Amplifier switched on.")
+    # amp_sd.value = True
+    # logger.info("Amplifier switched on.")
 
     figure_dir = data_path / 'figures' / figure_id
     mp3_file = figure_dir / f"{figure_id}.mp3"
