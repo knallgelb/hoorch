@@ -69,6 +69,7 @@ auth_key = b'\xFF\xFF\xFF\xFF\xFF\xFF'
 
 
 def init():
+    file_lib.read_database_files()
     logger.info("Initializing the RFID readers")
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
@@ -125,6 +126,7 @@ def continuous_read():
             tag_name = file_lib.get_figure_from_database(id_readable)
 
             if not tag_name:
+                logger.info("RFIDREADERS if not tag_name line called")
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
                 else:
@@ -161,38 +163,19 @@ def continuous_read():
         threading.Timer(0.02, continuous_read).start()
 
 
-def read_from_mifare(reader, tag_uid):
+def read_from_mifare(reader, tag_uid: str):
     read_data = bytearray(0)
-    logger.debug("tag_uid: %s", tag_uid)
 
-    try:
-        # Read 16 bytes from blocks 4 and 5
-        for i in range(4, 6):
-            # authenticated = reader.mifare_classic_authenticate_block(tag_uid, i, MIFARE_CMD_AUTH_B, auth_key)
-            # if not authenticated:
-            #   logger.warning("Authentication failed for block %d!", i)
-            # Read blocks
-            read_data.extend(reader.mifare_classic_read_block(i))
+    logger.info("tag_uid: %s", tag_uid)
+    tag_uid_readable = "-".join(tag_uid.split("-")[0:4])
 
-        to_decode = read_data[2:read_data.find(b'\xfe')]
-        text = list(ndef.message_decoder(to_decode))[0].text
-        logger.info("Read MIFARE tag with text: %s", text)
-        return text
-
-    except TypeError:
-        logger.error(
-            "MIFARE CLASSIC Error while reading RFID tag content. Tag was probably removed before reading was completed.")
-        # The figure could not be recognized. Leave it longer on the field.
-        audio.play_full("TTS", 199)
-        return "#error#"
-
-    except ndef.record.DecodeError as e:
-        logger.error("Error while decoding with ndeflib: %s", e)
-        return "#error#"
+    return file_lib.get_figure_from_database(tag_uid_readable)
 
 
 def read_from_ntag2(reader):
     read_data = bytearray(0)
+
+    logger.info("called read_from_ntag2 function")
 
     # Read 4 bytes from blocks 4-11
     try:

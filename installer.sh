@@ -36,76 +36,20 @@ pip install --upgrade adafruit-python-shell
 sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
 
 # i2s microphone
-sudo apt install dkms raspberrypi-kernel-headers -y
-wget https://github.com/opencardev/snd-i2s_rpi/releases/download/v0.0.2/snd-i2s-rpi-dkms_0.0.2_all.deb
-sudo dpkg -i snd-i2s-rpi-dkms_0.0.2_all.deb
-sudo modprobe snd-i2s_rpi
+CONFIG_FILE="/boot/firmware/config.txt"
+OVERLAY="dtoverlay=googlevoicehat-soundcard"
 
-# Zu prüfende Datei
-MODULES_FILE="/etc/modules"
-MODULE_NAME="snd-i2s_rpi"
-
-# Prüfen, ob die Zeile bereits existiert
-if ! grep -q "^${MODULE_NAME}$" "$MODULES_FILE"; then
-    echo "Füge ${MODULE_NAME} zur ${MODULES_FILE} hinzu..."
-    echo "$MODULE_NAME" | sudo tee -a "$MODULES_FILE" > /dev/null
-    echo "Zeile hinzugefügt!"
+# Prüfen, ob die Zeile bereits vorhanden ist
+if ! grep -q "^${OVERLAY}$" "$CONFIG_FILE"; then
+    echo "Add ${OVERLAY} to ${CONFIG_FILE}"
+    echo "$OVERLAY" | sudo tee -a "$CONFIG_FILE" > /dev/null
+    echo "added ${OVERLAY} to ${CONFIG_FILE}!"
 else
-    echo "${MODULE_NAME} ist bereits in ${MODULES_FILE} vorhanden."
+    echo "${OVERLAY} already ${CONFIG_FILE} exists."
 fi
-
-# i2s amplifier configuration
-sudo tee /etc/asound.conf > /dev/null << EOF
-pcm.speakerbonnet {
-   type hw card 0
-}
-
-pcm.dmixer {
-   type dmix
-   ipc_key 1024
-   ipc_perm 0666
-   slave {
-     pcm "speakerbonnet"
-     period_time 0
-     period_size 1024
-     buffer_size 8192
-     rate 44100
-     channels 2
-   }
-}
-
-ctl.dmixer {
-   type hw card 0
-}
-
-pcm.softvol {
-   type softvol
-   slave.pcm "dmixer"
-   control.name "PCM"
-   control.card 0
-}
-
-ctl.softvol {
-   type hw card 0
-}
-
-pcm.!default {
-   type plug
-   slave.pcm "softvol"
-}
-EOF
 
 # Setup MAX98357
-sudo sed -i 's/^\(dtparam=audio=on\)/#\1/' "/boot/firmware/config.txt"
-
-# Add overlays if not already present
-if ! grep -Fxq "dtoverlay=hifiberry-dac" /boot/firmware/config.txt; then
-  echo "dtoverlay=hifiberry-dac" | sudo tee -a /boot/firmware/config.txt
-fi
-
-if ! grep -Fxq "dtoverlay=i2s-mmap" /boot/firmware/config.txt; then
-  echo "dtoverlay=i2s-mmap" | sudo tee -a /boot/firmware/config.txt
-fi
+sudo sed -i 's/^\(dtparam=audio=on\)/dtparam=audio=off/' "/boot/firmware/config.txt"
 
 # Disable Bluetooth to save power
 if ! grep -Fxq "dtoverlay=pi3-disable-bt" /boot/firmware/config.txt; then
@@ -139,24 +83,11 @@ sudo apt install log2ram
 # Disable swapping
 sudo systemctl disable dphys-swapfile.service
 
-# Update log2ram configuration
-sudo sed -i 's/SIZE=40M/SIZE=100M/g' /etc/log2ram.conf
-
-# Restart networking service
-sudo systemctl restart networking
-
 # Install comitup - wifi setup
 sudo apt update
 sudo apt install comitup -y
-sudo mv /etc/network/interfaces /etc/network/interfaces.bak
-sudo mv /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.confbak
 
 # Disable unnecessary services
-sudo systemctl mask dnsmasq.service
-sudo systemctl mask systemd-resolved.service
-sudo systemctl mask dhcpd.service
-sudo systemctl mask dhcpcd.service
-sudo systemctl mask wpa-supplicant.service
 sudo systemctl enable NetworkManager.service
 
 # Update comitup configuration

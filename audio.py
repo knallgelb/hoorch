@@ -7,9 +7,9 @@ import os
 import digitalio
 import board
 from rfidreaders import currently_reading
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables from .env file
 load_dotenv()
@@ -144,7 +144,7 @@ def record_story(figure):
     figure_dir.mkdir(parents=True, exist_ok=True)
     file_path = figure_dir / f"{figure}.mp3"
 
-    subprocess.Popen(f"AUDIODEV=dmic_sv rec -c 1 {file_path}", shell=True, stdout=None, stderr=None)
+    subprocess.Popen(f"AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}", shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
 
 def stop_recording(figure_id):
