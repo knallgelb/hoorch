@@ -50,8 +50,8 @@ data_path = Path('./data')
 
 # SD pin of I2S amp, GPIO6
 # Default: switched on (3.3V), only switch off (0V) for recording (to avoid clicking)
-amp_sd = digitalio.DigitalInOut(board.D6)
-amp_sd.direction = digitalio.Direction.OUTPUT
+# amp_sd = digitalio.DigitalInOut(board.D6)
+# amp_sd.direction = digitalio.Direction.OUTPUT
 
 def init():
     # Set environment variable for sox recording
