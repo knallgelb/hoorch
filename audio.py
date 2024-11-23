@@ -15,10 +15,9 @@ import logging
 load_dotenv()
 
 # Read volume settings
-HEADPHONES_VOLUME = os.getenv('HEADPHONES_VOLUME', '5')
-SPEAKER_VOLUME = os.getenv('SPEAKER_VOLUME', '10')
-MIC_VOLUME = os.getenv('MIC_VOLUME', '95')
-STORY_VOLUME = os.getenv('STORY_VOLUME', '2')
+HEADPHONES_VOLUME = int(os.getenv('HEADPHONES_VOLUME', '5'))
+MIC_VOLUME = int(os.getenv('MIC_VOLUME', '95'))
+STORY_VOLUME = int(os.getenv('STORY_VOLUME', '2'))
 STORY_VOLUME_FLOAT = float(STORY_VOLUME)
 
 # Create 'logs' directory if it doesn't exist
@@ -55,33 +54,7 @@ data_path = Path('./data')
 
 def init():
     # Set environment variable for sox recording
-    os.environ['AUDIODRIVER'] = "alsa"
     logger.info("Audio driver set to 'alsa' for sox recording.")
-
-    if is_headphones_connected():
-        # Set audio output level when headphones are connected
-        os.system(f"amixer -q sset PCM {HEADPHONES_VOLUME}%")
-        logger.info(f"Headphones connected. Audio output level set to {HEADPHONES_VOLUME}%.")
-    else:
-        # Set audio output level when headphones are not connected
-        os.system(f"amixer -q sset PCM {SPEAKER_VOLUME}%")
-        logger.info(f"Headphones not connected. Audio output level set to {SPEAKER_VOLUME}%.")
-
-    # Set microphone record level
-    os.system(f"amixer -q sset PCM {MIC_VOLUME}%")
-    logger.info(f"Microphone record level set to {MIC_VOLUME}%.")
-
-    # Switch on amp by default
-    # global amp_sd
-    # amp_sd.value = True
-    # logger.info("Amplifier switched on by default.")
-
-def is_headphones_connected():
-    # Adjust the command to match your system's control name
-    status = os.popen("amixer cget name='Headphone Jack' | grep ': values='").read()
-    connected = 'values=on' in status or 'values=1' in status
-    logger.debug(f"Headphones connected: {connected}")
-    return connected
 
 def wait_for_reader():
     # Wait for RFID reader reading pause to avoid undervoltage when amp and reader start simultaneously
@@ -94,6 +67,7 @@ def wait_for_reader():
 def play_full(folder, audiofile):
     # Blocking play, mostly for TTS
     wait_for_reader()
+    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '10'))
 
     file_path = data_path / folder / f"{audiofile:03d}.mp3"
     logger.info(f"Playing full audio file: {file_path}")
@@ -101,7 +75,7 @@ def play_full(folder, audiofile):
     try:
         waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
         waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip())
-        subprocess.Popen(f"play {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
+        subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
         logger.debug(f"Waiting time for audio file {file_path}: {waitingtime} seconds")
         time.sleep(waitingtime)
     except Exception as e:
@@ -110,10 +84,13 @@ def play_full(folder, audiofile):
 def play_file(folder, audiofile):
     # Non-blocking play for sounds in /data and subfolders
     wait_for_reader()
+    load_dotenv(override=True)
+    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '10'))
 
     file_path = data_path / folder / audiofile
     logger.info(f"Playing audio file: {file_path}")
-    subprocess.Popen(f"play {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
+    logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
+    subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
 
 def play_story(figure_id):
     # Non-blocking play
