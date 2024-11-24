@@ -40,10 +40,6 @@ suffix = b'\xFE'
 
 key = b'\xFF\xFF\xFF\xFF\xFF\xFF'
 
-# Schalte den Verstärker ein
-audio.amp_sd.value = True
-
-
 # Funktion zum Schreiben eines einzelnen Wortes auf den Tag
 def write_single(word):
     leds.switch_on_with_color(0)
