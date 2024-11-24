@@ -63,7 +63,7 @@ def init():
 
     # RFID-Reader initialisieren
     rfidreaders.init()
-    
+
     # initialize figure_db if no tags defined for this hoorch set
     if not Path("figures/figures_db.txt").exists():
         # tell the ip adress
@@ -75,7 +75,7 @@ def init():
             if output is None or output == '\n':
                 audio.espeaker("WeiFei nicht verbunden")
                 time.sleep(1.00)
-                #if connected to router but internet on router is down, we need to open 
+                # if connected to router but internet on router is down, we need to open
                 # comitup-cli and and delete connection with d and establish a new one
 
             else:
@@ -96,7 +96,7 @@ def init():
 
 def initial_hardware_test():
     # test run to check hardware on first hoorch start - will test leds, readers, speakers, microphone
-    #leds.blink = False
+    # leds.blink = False
 
     audio.espeaker("Jetzt wird die ganze Hardware getestet")
 
@@ -107,7 +107,7 @@ def initial_hardware_test():
     audio.espeaker("Wir testen jetzt die Ar ef eidi Leser.")
     for i in range(6):
         leds.switch_on_with_color(i, (255, 0, 0))
-        audio.espeaker(f"Lege eine Karte auf Leser {i+1}")
+        audio.espeaker(f"Lege eine Karte auf Leser {i + 1}")
         while True:
             if rfidreaders.tags[i] is not None:
                 break
@@ -118,21 +118,16 @@ def initial_hardware_test():
         "Ich teste jetzt das Audio, die Aufnahme beginnt in 3 Sekunden und dauert 6 Sekunden")
     time.sleep(3)
     leds.switch_all_on_with_color()
-    
-    # switch off speakers to avoid clicking
-    audio.amp_sd.value = False
 
     logger.info("Aufnahme starten")
-    subprocess.Popen("AUDIODEV=dmic_sv rec -c 1 ./data/figures/test/test.aif",
-                     shell=True, stdout=None, stderr=None)
+    subprocess.Popen(
+        "AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer ./data/figures/test/test.aif",
+        shell=True, stdout=None, stderr=None)
     time.sleep(6)
     logger.info("Aufnahme beendet")
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
 
     leds.reset()
-
-    # switch on speakers
-    audio.amp_sd.value = True
 
     if Path("./data/figures/test/test.aif").exists():
         audio.espeaker("Ich spiele dir jetzt die Geschichte vor")
