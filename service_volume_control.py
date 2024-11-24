@@ -25,7 +25,7 @@ vol_down_btn.pull = digitalio.Pull.UP
 vol_up = Debouncer(vol_up_btn, interval=0.05)
 vol_down = Debouncer(vol_down_btn, interval=0.05)
 
-dotenv_path = ".env"
+dotenv_path = "/home/pi/hoorch/.env"
 
 
 def volume_up():
