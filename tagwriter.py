@@ -12,6 +12,8 @@ from digitalio import DigitalInOut
 import ndef
 import leds
 import audio
+from pathlib import Path
+import csv
 
 # gpio24
 reader1_pin = DigitalInOut(board.D24)
@@ -39,6 +41,7 @@ prefix = b'\x03'
 suffix = b'\xFE'
 
 key = b'\xFF\xFF\xFF\xFF\xFF\xFF'
+
 
 # Funktion zum Schreiben eines einzelnen Wortes auf den Tag
 def write_single(word):
@@ -77,6 +80,60 @@ def write_single(word):
         audio.espeaker(
             "Du hast keinen Tag auf das Spielfeld platziert. Tag wurde nicht beschrieben."
         )
+
+
+"""
+import tagwriter
+input_file = "actions.txt"
+output_file = "actions_db.txt"
+path = "/home/pi/hoorch/figures"
+
+tagwriter.write_set_from_file(input_file, output_file, path)
+"""
+
+def write_all_sets():
+    filenames = ["actions", "animals", "figures", "games", "numeric"]
+    path_files = "/home/pi/hoorch/figures"
+
+    for filename in filenames:
+        input_filename = f"{filename}.txt"
+        output_filename = f"{filename}_db.txt"
+        path_db_file = Path(path_files) / Path(f"{filename}_db.txt")
+        print(path_db_file)
+        print(path_db_file.exists())
+        if path_db_file.exists():
+            break
+        write_set_from_file(input_file=input_filename, output_file=output_filename, path=path_files)
+
+
+def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
+    audio.espeaker(f"Set {input_file}")
+
+    full_path_input = Path(path) / Path(input_file)
+    full_path_output = Path(path) / Path(output_file)
+
+    figure_list = []
+
+    fieldnames = ["RFID_TAG", "NAME"]
+
+    with full_path_input.open("r") as input_file_handle:
+        for line in input_file_handle:
+            figure_list.append(line.strip())
+
+    with full_path_output.open("w") as output_file_handle:
+        csv_writer = csv.DictWriter(output_file_handle, fieldnames=fieldnames, delimiter=";")
+        csv_writer.writeheader()
+
+        for figure in figure_list:
+            audio.espeaker(f"Nächste Figur: {figure}")
+            while True:
+                tag_uid = reader[0].read_passive_target(timeout=1.0)
+
+                if tag_uid:
+                    tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+                    csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NAME": figure})
+                    time.sleep(1.5)
+                    break
 
 
 def write_set():
