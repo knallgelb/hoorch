@@ -167,9 +167,15 @@ def read_from_mifare(reader, tag_uid: str):
     read_data = bytearray(0)
 
     logger.info("tag_uid: %s", tag_uid)
-    tag_uid_readable = "-".join(tag_uid.split("-")[0:4])
 
-    return file_lib.get_figure_from_database(tag_uid_readable)
+    tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+
+    tag_uid_database = file_lib.get_figure_from_database(tag_uid_readable)
+
+    if tag_uid_database:
+        return tag_uid_database
+
+    return tag_uid_readable
 
 
 def read_from_ntag2(reader):
