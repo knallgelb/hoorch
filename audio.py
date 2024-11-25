@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 import logging
 
 # Load environment variables from .env file
-load_dotenv()
+dotenv_path = "/home/pi/hoorch/.env"
+load_dotenv(dotenv_path, override=True)
 
 # Read volume settings
 HEADPHONES_VOLUME = int(os.getenv('HEADPHONES_VOLUME', '5'))
@@ -177,8 +178,11 @@ def stop_recording(figure_id):
 
 def espeaker(words):
     wait_for_reader()
+    load_dotenv(dotenv_path, override=True)
+    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '10'))
+
     logger.info(f"Speaking words: {words}")
 
     # -v language, -p pitch, -g word gap, -s speed, -a amplitude (volume)
-    os.system(f"espeak -v de+f2 -p 30 -g 12 -s 170 -a 80 --stdout \"{words}\" | aplay -D 'default'")
+    os.system(f"espeak -v de+f2 -p 30 -g 12 -s 170 -a {SPEAKER_VOLUME} --stdout \"{words}\" | aplay -D 'default'")
     logger.debug(f"Executed eSpeak command for words: {words}")
