@@ -1,12 +1,12 @@
-import game_animals_english
-import game_aufnehmen
-import game_einmaleins
-import game_geschichten_aufnehmen
-import game_geschichten_abspielen
-import game_hoerspiele
-import game_kakophonie
-import game_tier_orchester
-import game_tierlaute
+from . import game_animals_english
+from . import game_aufnehmen
+from . import game_einmaleins
+from . import game_geschichten_aufnehmen
+from . import game_geschichten_abspielen
+from . import game_hoerspiele
+from . import game_kakophonie
+from . import game_tier_orchester
+from . import game_tierlaute
 
 games = {
     "Aufnehmen": game_geschichten_aufnehmen,
