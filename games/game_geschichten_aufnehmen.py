@@ -71,7 +71,7 @@ def start():
             if "ENDE" in rfidreaders.tags:
                 return
 
-            recordings_list = os.listdir("./data/figures/")
+            recordings_list = os.listdir("../data/figures/")
             figure_dir = "./data/figures/"+figure_id
 
             # when figure folder and audio file (i.e. roboter.mp3) exist
