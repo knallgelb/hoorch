@@ -90,6 +90,21 @@ def read_database_files():
     animal_numbers_db = read_database_file(path_numbers, animal_numbers_db, all_tags, which_field='number', rfid_type="number")
 
 
+def check_tag_attribute(tags, value, attribute='name'):
+    """
+    Checks if any RFIDTag in the tags list has a specific attribute value.
+
+    :param tags: List of RFIDTag instances.
+    :param value: The value to check for (e.g., "ENDE", "JA", "NEIN").
+    :param attribute: The attribute of RFIDTag to check (default is 'name').
+    :return: True if any tag has the specified attribute value, False otherwise.
+    """
+    return any(
+        tag for tag in tags
+        if tag is not None and getattr(tag, attribute, None) == value
+    )
+
+
 if __name__ == "__main__":
     read_database_files()
     logger.debug("Alle Tags:")
