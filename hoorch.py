@@ -156,7 +156,7 @@ def main():
         # Extract der RFID-GAME-Tags
         game_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag) and tag.rfid_type == 'game']
 
-        if games.games[game_tags[0].name]:
+        if game_tags[0].name and games.games[game_tags[0].name]:
             logger.info(f"Game {game_tags[0].name} starten.")
             leds.blink = False
             games.games[game_tags[0].name].start()
