@@ -75,7 +75,7 @@ def play_full(folder, audiofile):
 
     try:
         waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
-        waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip())
+        waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip()) + 0.2
         subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
         logger.debug(f"Waiting time for audio file {file_path}: {waitingtime} seconds")
         time.sleep(waitingtime)
