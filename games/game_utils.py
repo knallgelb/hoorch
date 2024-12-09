@@ -16,6 +16,12 @@ def announce(msg_id, path='TTS'):
     if check_end_tag():
         raise SystemExit
 
+def announce_file(msg_id, path='TTS'):
+    """Play a message by its ID from the given path and check for ENDE tag."""
+    audio.play_file(path, msg_id)
+    if check_end_tag():
+        raise SystemExit
+
 def wait_for_figure_placement(fields):
     """Ask players to place their figures on specified fields and wait."""
     leds.switch_on_with_color(fields)
