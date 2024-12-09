@@ -83,7 +83,7 @@ def init():
 
         rfidreaders.read_continuously = False
         time.sleep(1)
-        tagwriter.write_set()
+        tagwriter.write_all_sets()
         rfidreaders.read_continuously = True
         # rfidreaders.continuous_read()
 
