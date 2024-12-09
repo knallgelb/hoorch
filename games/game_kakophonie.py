@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
-
+import pdb
 import re
 import pygame
 import audio
 import rfidreaders
 import leds
+import file_lib
+import pdb
+
+from .game_utils import (
+    check_end_tag,
+    announce,
+)
 
 phones = []
 
@@ -13,10 +20,12 @@ phones = []
 def start():
     print("Wir spielen Kakophonie")
 
+    defined_numbers = file_lib.animal_numbers_db
+
     volume = 0
 
     # Wir spielen Kakophonie. Stelle die Zahlen 1 bis 6 auf die Spielfelder!
-    audio.play_full("TTS", 64)
+    announce(64)
     leds.reset()  # reset leds
 
     if not pygame.mixer.get_init():
@@ -38,21 +47,22 @@ def start():
     while True:
         found_digits = []
         for i, tag in enumerate(rfidreaders.tags):
-            if tag is not None:
-                if re.search("^[A-z]*[0-9]$", tag):
-                    found_digits.append(tag[-1])  # get digit
+            if tag is not None and tag.number is not None:
+                found_digits.append(int(rfidreaders.tags[i].number))  # get digit
 
         for i in range(0, 6):
-            if str(i+1) not in found_digits:
+            if i not in found_digits:
                 phones[i].set_volume(0)
             else:
-                phones[i].set_volume(volume)
+                phones[i].set_volume(0.5)
 
-        if "ENDE" in rfidreaders.tags:
-            # pygame.mixer.stop()
-            # pygame.mixer.quit()
-            pygame.mixer.pause()
-            break
-    
+        if check_end_tag():
+            # pdb.set_trace()
+            for x in phones:
+                x.set_volume(1.0)
+                x.stop()
+            pygame.mixer.quit()
+            return
+
     leds.blink = False
     leds.reset()
