@@ -259,4 +259,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         write_single(sys.argv[1])
     else:
-        write_set()
+        write_all_sets()
