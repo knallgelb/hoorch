@@ -9,6 +9,13 @@ import leds
 import logging
 import os
 import file_lib
+from models import RFIDTag
+
+from .game_utils import (
+    check_end_tag,
+    announce,
+    announce_file,
+)
 
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists('logs'):
@@ -37,37 +44,35 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
+
 def start():
     defined_animals = file_lib.animal_figures_db
 
     logger.info(f"Defined animals: {defined_animals}")
     logger.info("The animal orchestra is starting. Place the animal figures on the game fields!")
-    audio.play_full("TTS", 63)
+
+    announce(63)
     leds.reset()  # Reset LEDs
 
     playing_animals = [None, None, None, None, None, None]
     leds.blink = True
     while True:
-        animals = copy.deepcopy(rfidreaders.tags)
+        animals = [tag for tag in copy.deepcopy(rfidreaders.tags) if
+                   isinstance(tag, RFIDTag) and tag.rfid_type == 'animal']
         logger.debug(f"Current animals on fields: {animals}")
 
-        if "ENDE" in animals:
+        if check_end_tag():
             leds.blink = False
             leds.reset()
             audio.kill_sounds()
             logger.info("Game ended by detecting 'ENDE' tag.")
-            break
+            return
 
         for i, animal in enumerate(animals):
+            assert isinstance(animal, RFIDTag)
             if animal is not None:
-                animal = animal[:-1]
-            if animal not in defined_animals:
-                if animal is not None:
-                    logger.warning(f"Undefined animal '{animal}' detected on field {i + 1}")
-                animal = None
-            if animal is not None:
-                if not audio.file_is_playing(animal + ".mp3"):
-                    audio.play_file("animal_sounds", animal + ".mp3")
+                if not audio.file_is_playing(animal.name + ".mp3"):
+                    announce_file(msg_id=animal.name + ".mp3", path="animal_sounds")
                     playing_animals[i] = animal
                     logger.info(f"Playing sound for animal '{animal}' on field {i + 1}")
 
