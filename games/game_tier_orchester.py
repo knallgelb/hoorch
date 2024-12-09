@@ -37,10 +37,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-defined_animals = file_lib.animal_figures_db
-
-
 def start():
+    defined_animals = file_lib.animal_figures_db
+
     logger.info(f"Defined animals: {defined_animals}")
     logger.info("The animal orchestra is starting. Place the animal figures on the game fields!")
     audio.play_full("TTS", 63)
