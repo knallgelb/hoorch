@@ -28,7 +28,7 @@ python3 -m venv venv --system-site-packages
 # Install Python dependencies inside the virtual environment
 echo "Installing Python dependencies"
 pip install --upgrade pip setuptools
-pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer
+pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer babel
 pip install --force-reinstall adafruit-blinka
 pip install --upgrade adafruit-python-shell
 
