@@ -52,3 +52,23 @@ def get_solution_from_tags(i, players):
     tens_digit = int(tens.number) * 10 if tens else 0
     unit_digit = int(units.number) if units else 0
     return tens_digit + unit_digit
+
+
+def play_rounds(players, num_rounds, player_action):
+    """
+    Play a set number of rounds where each player takes an action in each round.
+
+    :param players: List of players (e.g., RFIDTag instances or player identifiers).
+    :param num_rounds: The total number of rounds to play.
+    :param player_action: A function that defines what happens when a player takes their turn.
+                          This function should take a single argument: the player.
+    """
+    for round_num in range(1, num_rounds + 1):
+        audio.espeaker(f"Starte Runde {round_num}...")
+
+        for player in players:
+            if player is not None:
+                audio.espeaker(f"Jetzt ist {player.name} an der Reihe.")
+                player_action(player)
+
+        audio.espeaker(f"Runde {round_num} abgeschlossen.")
