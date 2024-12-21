@@ -22,12 +22,21 @@ class Translator:
             # Extract translations for the current locale
             return data.get(self.locale, {})
 
-    def translate(self, text, **kwargs):
+    def translate(self, key, **kwargs):
         """
         Translate a given text with optional formatting arguments.
-        :param text: Text to translate.
+        :param key: Key to translate (e.g., 'admin.admin_menu').
         :param kwargs: Optional formatting arguments for the text.
         :return: Translated and formatted text.
         """
-        translation = self.translations.get(text, text)  # Fallback to the original text if not found
-        return translation.format(**kwargs)
+        keys = key.split('.')  # Split the key into parts for nested lookup
+        translation = self.translations
+        for k in keys:
+            translation = translation.get(k, {})
+            if not translation:
+                return key  # Fallback to the original key if not found
+
+        if isinstance(translation, str):
+            return translation.format(**kwargs)
+        return key  # Fallback to the original key if translation is not a string
+
