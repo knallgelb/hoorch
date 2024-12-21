@@ -8,50 +8,44 @@ import re
 import dbus
 import rfidreaders
 import audio
+from i18n import Translator
 
 
 def main():
-
+    translator = Translator(locale='de')  # Initialisiere Übersetzer mit deutschem Locale
     breaker = False
 
     # 2 minutes until exit if no user interaction occurs
     admin_exit_counter = time.time() + 120
 
-    audio.espeaker("Sie befinden sich im Admin-Menü.")
+    audio.espeaker(translator.translate("admin.admin_menu"))
 
     subprocess.run(['git', 'remote', 'update'], stdout=subprocess.PIPE, check=False)
-    #suche nach behind - subprocess outputs something like this if not up to date: "Your branch is behind 'origin/master' by 1 commit..."
     git_status = subprocess.run(['git', 'status', '-uno'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
     if "behind" in git_status:
-        audio.espeaker("Es ist ein Update verfügbar")
+        audio.espeaker(translator.translate("admin.update_available"))
 
-    audio.espeaker(
-        "Verwenden Sie die Zahlenkarten um Einstellungen vorzunehmen.")
-    audio.espeaker("1 - Software aktualisieren.")
-    audio.espeaker("2 - WeiFei-Konfiguration.")
-    audio.espeaker("3 - Spielfiguren-Set löschen.")
-    audio.espeaker("4 - Alle Geschichten archivieren")
-    audio.espeaker("Ende-Täg zum Beenden.")
+    audio.espeaker(translator.translate("admin.use_number_cards"))
+    audio.espeaker(translator.translate("admin.update_software"))
+    audio.espeaker(translator.translate("admin.wifi_configuration"))
+    audio.espeaker(translator.translate("admin.delete_figures"))
+    audio.espeaker(translator.translate("admin.archive_stories"))
+    audio.espeaker(translator.translate("admin.end_tag"))
 
     while admin_exit_counter > time.time():
-
         for tag_name in rfidreaders.tags:
             if tag_name is not None and re.search("^[A-z]*[0-9]$", tag_name):
                 op = int(tag_name[-1])  # 1 from Hahn1
 
                 if op == 1:
-                    # git update
                     git()
                     admin_exit_counter = time.time() + 120
                 elif op == 2:
                     wifi()
                     admin_exit_counter = time.time() + 120
                 elif op == 3:
-                    # delete figure_db.txt, restart hoorch
                     new_set()
-
                 elif op == 4:
-                    # archive all figure stories
                     archive_stories()
                     admin_exit_counter = time.time() + 120
             elif tag_name == "ENDE":
@@ -61,36 +55,40 @@ def main():
         if breaker:
             break
 
-    audio.espeaker("Admin-Menü beendet.")
+    audio.espeaker(translator.translate("admin.admin_menu_end"))
 
 
 def archive_stories():
+    translator = Translator(locale='de')
     figure_dir = "./data/figures/"
     print("archive stories")
     recordings_list = os.listdir(figure_dir)
 
     for folder in recordings_list:
-        if os.path.isdir(figure_dir+folder):
-            if folder+".mp3" in os.listdir(figure_dir+folder+"/"):
+        if os.path.isdir(figure_dir + folder):
+            if folder + ".mp3" in os.listdir(figure_dir + folder + "/"):
                 now = datetime.datetime.now()
-                os.rename(f"{figure_dir}{folder}/{folder}.mp3", f"{figure_dir}{folder}/{folder}-{now:%Y-%m-%d-%H-%M}.mp3")
-                print(folder+".mp3 put into archive")
-
+                os.rename(f"{figure_dir}{folder}/{folder}.mp3",
+                          f"{figure_dir}{folder}/{folder}-{now:%Y-%m-%d-%H-%M}.mp3")
+                print(folder + ".mp3 put into archive")
             else:
                 print(folder + "-stories already in archive")
 
-    audio.espeaker("Alle Geschichten wurden archiviert.")
+    audio.espeaker(translator.translate("admin.archive_complete"))
 
 
 def new_set():
+    translator = Translator(locale='de')
     print("delete figure_db.txt, restart hoorch")
     os.rename("figure_db.txt", "figure_db-{0}.txt".format(
         datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")))
-    audio.espeaker("Figuren-Datenbank gelöscht. Ich starte jetzt neu.")
+    audio.espeaker(translator.translate("admin.db_deleted"))
     os.system("reboot")
 
 
+
 def git():
+    translator = Translator(locale='de')
     print("git update, restart hoorch")
     bus = dbus.SystemBus()
     # get comitup dbus object - https://davesteele.github.io/comitup/man/comitup.8.html
@@ -103,42 +101,41 @@ def git():
     state = str(tpl[0])
 
     if state == "HOTSPOT":
-        audio.espeaker("Weifei nicht verbunden.")
-        audio.espeaker(
-            "Öffne zuerst mit der Zahlenkarte 1 die WeiFei Konfiguration.")
+        audio.espeaker(translator.translate("admin.wifi_disconnected"))
+        audio.espeaker(translator.translate("admin.open_wifi_config"))
 
     elif state == "CONNECTED":
-        audio.espeaker(
-            "Aktualisierung wird gestartet. Dies kann einige Minuten dauern. Hoorch startet anschließend neu.")
+        audio.espeaker(translator.translate("admin.updating"))
         # Any local files that are not tracked by Git will not be affected:
         # git fetch downloads the latest from remote without trying to merge or rebase anything.
-        # git reset resets the master branch to what you just fetched. 
+        # git reset resets the master branch to what you just fetched.
         # The --hard option changes all the files in your working tree to match the files in origin/master.
         subprocess.run(['git', 'fetch', '--all'], stdout=subprocess.PIPE, check=False)
-        #subprocess.run(['git', 'branch', 'backup-master'], stdout=subprocess.PIPE)
+        # subprocess.run(['git', 'branch', 'backup-master'], stdout=subprocess.PIPE)
         subprocess.run(['git', 'reset', '--hard', 'origin/master'], stdout=subprocess.PIPE, check=False)
 
-        audio.espeaker("Aktualisierung beendet. Ich starte jetzt neu.")
+        audio.espeaker(translator.translate("admin.update_complete"))
         os.system("reboot")
 
 
 def wifi():
+    translator = Translator(locale='de')
     print("wifi config")
     rfkill_output = subprocess.run(
         ['rfkill', 'list', 'wifi'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
 
     if "yes" in rfkill_output:
         # wifi blocked / off
-        audio.espeaker("Weifei ist ausgeschaltet.")
-        audio.espeaker("Soll ich es einschalten?")
+        audio.espeaker(translator.translate("admin.wifi_off"))
+        audio.espeaker(translator.translate("admin.wifi_turn_on"))
 
         while True:
             if "JA" in rfidreaders.tags:
-                audio.espeaker(
-                    "Weifei wird gestartet. Dies kann einen Augenblick dauern.")
+                audio.espeaker(translator.translate("admin.wifi_starting"))
                 os.system("rfkill unblock wifi")
 
-                while not subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8'):
+                while not subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode(
+                        'utf-8'):
                     time.sleep(2)
 
                 output = subprocess.run(
@@ -146,8 +143,8 @@ def wifi():
                 ip_adress = output.split(" ", 1)
                 print(ip_adress)
 
-                audio.espeaker("Weifei eingeschaltet.")
-                audio.espeaker("Die IP-Adresse lautet")
+                audio.espeaker(translator.translate("admin.wifi_on"))
+                audio.espeaker(translator.translate("admin.ip_address"))
                 audio.espeaker(ip_adress[0])
 
                 break
@@ -155,7 +152,7 @@ def wifi():
             elif "NEIN" in rfidreaders.tags or "ENDE" in rfidreaders.tags:
                 break
     else:
-    # wifi on
+        # wifi on
 
         bus = dbus.SystemBus()
         # get comitup dbus object - https://davesteele.github.io/comitup/man/comitup.8.html
@@ -175,14 +172,13 @@ def wifi():
         hostname = str(info["apname"])
 
         if state == "HOTSPOT":
-            audio.espeaker("Keine Verbindung zum Internet.")
-            audio.espeaker(
-                f"Verbinde dich am Handy mit dem Hotspot namens {hostname}. Öffne dann im Brauser {hostname} Punkt local")
-            audio.espeaker("Stelle dort dein lokales WeLan und Passwort ein")
+            audio.espeaker(translator.translate("admin.no_internet"))
+            audio.espeaker(translator.translate("admin.hotspot_instructions", hostname=hostname))
+            audio.espeaker(translator.translate("admin.set_wifi_password"))
 
         # connected to a wifi
         elif state == "CONNECTED":
-            audio.espeaker(f"Mit WeiFei {connection} verbunden.")
+            audio.espeaker(translator.translate("admin.wifi_connected", connection=connection))
             output = subprocess.run(
                 ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
             ip_adress = output.split(" ", 1)
@@ -190,16 +186,16 @@ def wifi():
 
             # say adress twice
             for i in range(2):
-                audio.espeaker("Die IP-Adresse lautet")
+                audio.espeaker(translator.translate("admin.ip_address"))
                 audio.espeaker(ip_adress[0])
             time.sleep(2)
 
-            audio.espeaker("Soll ich es ausschalten?")
+            audio.espeaker(translator.translate("admin.should_turn_off"))
 
             while True:
                 if "JA" in rfidreaders.tags:
                     # os.system("rfkill block wifi")
-                    audio.espeaker("Weifei wurde gestoppt")
+                    audio.espeaker(translator.translate("admin.wifi_stop"))
                     break
 
                 elif "NEIN" in rfidreaders.tags or "ENDE" in rfidreaders.tags:
@@ -208,7 +204,7 @@ def wifi():
         # connecting
         else:
             audio.espeaker(
-                "Internet in wenigen Augenblicken verfügbar. Bitte warten.")
+                translator.translate("internet_wait"))
             time.sleep(2)
 
-    audio.espeaker("WeiFei-Konfiguration beendet.")
+    audio.espeaker(translator.translate("wifi_config_done"))
