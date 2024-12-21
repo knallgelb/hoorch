@@ -19,6 +19,20 @@ MOCK_MODULES = [
 for module_name in MOCK_MODULES:
     sys.modules[module_name] = MagicMock()
 
+from i18n import Translator
+
+locale = "de"
+
+@pytest.fixture
+def translator_factory():
+    """
+    Fixture that provides a Translator factory.
+    Allows creating a Translator with a specific locale.
+    """
+    def _translator(locale):
+        return Translator(locale=locale, translation_dir="translations")
+    return _translator
+
 @pytest.fixture
 def players():
     """Fixture to provide a list of players."""
