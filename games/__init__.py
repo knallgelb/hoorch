@@ -7,6 +7,7 @@ from . import game_hoerspiele
 from . import game_kakophonie
 from . import game_tier_orchester
 from . import game_tierlaute
+from . import game_zahlen
 
 games = {
     "Aufnehmen": game_geschichten_aufnehmen,
@@ -15,5 +16,6 @@ games = {
     "TierOrchester": game_tier_orchester,
     "Kakophonie": game_kakophonie,
     "Einmaleins": game_einmaleins,
-    "Animals": game_animals_english
+    "Animals": game_animals_english,
+    "Zahlen": game_zahlen
 }
