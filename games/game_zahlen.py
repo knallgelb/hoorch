@@ -42,7 +42,8 @@ def player_action(
         file_lib,
         rfid_position: List[int]
 ) -> bool:
-    expected_value = random.choice(file_lib.animal_numbers_db)
+
+    expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
 
     announce_score(expected_value.number)
 
