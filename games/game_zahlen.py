@@ -1,7 +1,3 @@
-import random
-import copy
-from time import sleep
-
 import file_lib
 from games import game_utils
 from games.game_utils import announce_score
