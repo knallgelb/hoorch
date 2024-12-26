@@ -8,6 +8,7 @@ import rfidreaders
 import random
 import time
 from typing import List
+import pdb
 
 
 def start():
@@ -31,7 +32,6 @@ def start():
     )
 
     game_utils.announce_score(score_players=score_players)
-    audio.espeaker("Das Spiel ist zu Ende.")
 
     return score_players
 
@@ -43,29 +43,22 @@ def player_action(
         rfid_position: List[int]
 ) -> bool:
     expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
-    game_utils.announce_score(expected_value.number)
+    audio.espeaker(expected_value.number)
 
-    # Wir warten bis zu 3 Sekunden, prüfen aber zwischendurch immer wieder
-    total_wait_seconds = 3.0
+    total_wait_seconds = 6.0
     start_time = time.time()
 
     while time.time() - start_time < total_wait_seconds:
-        relevant_tags = [
-            rfidreaders.tags[pos]
-            for pos in rfid_position
-            if pos < len(rfidreaders.tags)
-        ]
-        if any(
-            tag == expected_value
-            for tag in relevant_tags
-            if tag.number == expected_value.number
-        ):
-            return True
+        relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
 
-        # Warten wir kurz und prüfen dann wieder
+        for tag in relevant_tags:
+            pdb.set_trace()
+            if tag.number is not None and tag.number == expected_value.number:
+                if tag == expected_value:
+                    return True
+
         time.sleep(0.3)
 
-    # Wenn nach 3 Sekunden keine Übereinstimmung gefunden wurde, False
     return False
 
 
