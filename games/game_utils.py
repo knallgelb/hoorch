@@ -3,8 +3,6 @@ import audio
 import rfidreaders
 import leds
 import file_lib
-import random
-import copy
 
 def check_end_tag():
     """Return True if the ENDE tag is detected, else False."""
@@ -21,6 +19,12 @@ def announce_file(msg_id, path='TTS'):
     audio.play_file(path, msg_id)
     if check_end_tag():
         raise SystemExit
+
+def announce_score(score_players: dict):
+    """Play a message by its ID from the given path and check for ENDE tag."""
+    audio.play_full("TTS", 80)
+    for player, score in score_players.items():
+        audio.espeaker(f"{player.name} hat {score} richtige Antworten.")
 
 def wait_for_figure_placement(fields):
     """Ask players to place their figures on specified fields and wait."""
