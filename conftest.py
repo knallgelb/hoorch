@@ -59,3 +59,22 @@ def numbers():
 
 def filter_calls(calls):
     return [c for c in calls.mock_calls if c != call.__str__()]
+
+@pytest.fixture
+def mock_file_lib(numbers):
+    mock_lib = MagicMock()
+    # Beispiel: Wir wollen, dass .animal_numbers_db[0] = numbers[5]
+    # und numbers[5] liegt dann in mock_rfidreaders.tags an Index 1 oder 3
+    mock_lib.animal_numbers_db = [numbers[5], numbers[7]]
+    return mock_lib
+
+
+@pytest.fixture
+def mock_rfidreaders(numbers):
+    mock_readers = MagicMock()
+    # Achte darauf, dass an Index 1 oder 3 deines arrays `numbers[5]` liegt.
+    # Index:  0           1           2           3           4
+    # Inhalt: numbers[0], numbers[5], numbers[8], numbers[7], numbers[9]
+    # So liegt an Index 1 = numbers[5] und an Index 3 = numbers[7].
+    mock_readers.tags = [numbers[0], numbers[5], numbers[8], numbers[7], numbers[9]]
+    return mock_readers
