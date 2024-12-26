@@ -45,7 +45,7 @@ def player_action(
 
     expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
 
-    announce_score(expected_value.number)
+    game_utils.announce_score(expected_value.number)
 
     sleep(3.0)
 
