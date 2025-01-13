@@ -97,8 +97,8 @@ def init():
 
 def continuous_read():
     global currently_reading
-    logger.info("Tags: %s", tags)
-    logger.info("... continuous read function")
+    # logger.info("Tags: %s", tags)
+    # logger.info("... continuous read function")
 
     for index, r in enumerate(readers):
 
@@ -113,7 +113,7 @@ def continuous_read():
             continue
 
         if tag_uid:
-            logger.debug("Found card with UID: %s", "-".join([str(i) for i in tag_uid]))
+            # logger.debug("Found card with UID: %s", "-".join([str(i) for i in tag_uid]))
 
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
@@ -156,7 +156,7 @@ def continuous_read():
         # Sleep between readers to reduce power load
         time.sleep(0.2)
 
-    logger.debug("Current tags: %s", tags)
+    # logger.debug("Current tags: %s", tags)
 
     if read_continuously:
         # Only read when not playing or recording audio
