@@ -5,6 +5,8 @@ from models import RFIDTag
 import audio
 import rfidreaders
 
+import copy
+
 import random
 import time
 from typing import List
@@ -20,7 +22,7 @@ def start():
     rfid_position = [1, 3, 5]
 
     players = game_utils.filter_players_on_fields(
-        rfidreaders.tags,
+        copy.deepcopy(rfidreaders.tags),
         rfid_position,
         defined_figures
     )
@@ -52,7 +54,7 @@ def player_action(
         relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
 
         for tag in relevant_tags:
-            pdb.set_trace()
+            # pdb.set_trace()
             if tag.number is not None and tag.number == expected_value.number:
                 if tag == expected_value:
                     return True
