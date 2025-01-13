@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
-
+import pdb
 import subprocess
 import time
 import os
@@ -97,8 +97,8 @@ def play_story(figure_id):
     # Non-blocking play
     wait_for_reader()
 
-    file_path = data_path / 'figures' / figure_id / f"{figure_id}.mp3"
-    logger.info(f"Playing story for figure: {figure_id}")
+    file_path = data_path / 'figures' / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
     # Increase volume by STORY_VOLUME_FLOAT for stories
     subprocess.Popen(f"play -v{STORY_VOLUME_FLOAT} {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
 
@@ -118,9 +118,9 @@ def record_story(figure):
     # amp_sd.value = False
     logger.info(f"Recording story for figure: {figure}. Amplifier switched off.")
 
-    figure_dir = data_path / 'figures' / figure
+    figure_dir = data_path / 'figures' / figure.rfid_tag
     figure_dir.mkdir(parents=True, exist_ok=True)
-    file_path = figure_dir / f"{figure}.mp3"
+    file_path = figure_dir / f"{figure.rfid_tag}.mp3"
 
     subprocess.Popen(f"AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}", shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
@@ -135,11 +135,12 @@ def stop_recording(figure_id):
     # amp_sd.value = True
     # logger.info("Amplifier switched on.")
 
-    figure_dir = data_path / 'figures' / figure_id
-    mp3_file = figure_dir / f"{figure_id}.mp3"
+    figure_dir = data_path / 'figures' / figure_id.rfid_tag
+    mp3_file = figure_dir / f"{figure_id.rfid_tag}.mp3"
 
     # If file exists
     if mp3_file.is_file():
+        # pdb.set_trace()
         # If file is smaller than 50kB, delete it
         if mp3_file.stat().st_size < 50000:
             mp3_file.unlink()
@@ -161,6 +162,7 @@ def stop_recording(figure_id):
 
             return True
     else:
+        # pdb.set_trace()
         files_in_dir = list(figure_dir.iterdir())
 
         if not files_in_dir:
