@@ -102,7 +102,7 @@ def write_all_sets():
         print(path_db_file)
         print(path_db_file.exists())
         if path_db_file.exists():
-            break
+            continue
         write_set_from_file(input_file=input_filename, output_file=output_filename, path=path_files)
 
 
