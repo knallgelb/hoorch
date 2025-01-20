@@ -14,7 +14,7 @@ import pdb
 
 
 def start():
-    defined_figures = file_lib.figures_db
+    defined_figures = file_lib.all_tags
     audio.espeaker("Spiel Zahlen legen")
     audio.espeaker("Setze die Spielfiguren auf das Spielfeld. Mögliche Felder sind 1, 3, 5")
     time.sleep(3.0)
