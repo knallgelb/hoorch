@@ -50,10 +50,10 @@ def players():
 @pytest.fixture
 def numbers():
     """Fixture to provide a list of numbers."""
-    tags = []
+    tags = dict()
     for i in range(10):  # Zahlen 0-9
-        tags.append(RFIDTag(rfid_tag=f"4-216-28-{2 * i + 1}", name=str(i), number=i, rfid_type="number"))
-        tags.append(RFIDTag(rfid_tag=f"4-216-28-{2 * i + 2}", name=str(i), number=i, rfid_type="number"))
+        tags.update({f"4-216-28-{2 * i + 1}": RFIDTag(rfid_tag=f"4-216-28-{2 * i + 1}", name=str(i), number=i, rfid_type="number")})
+        tags.update({f"4-216-28-{2 * i + 2}": RFIDTag(rfid_tag=f"4-216-28-{2 * i + 2}", name=str(i), number=i, rfid_type="number")})
     return tags
 
 
@@ -65,7 +65,8 @@ def mock_file_lib(numbers):
     mock_lib = MagicMock()
     # Beispiel: Wir wollen, dass .animal_numbers_db[0] = numbers[5]
     # und numbers[5] liegt dann in mock_rfidreaders.tags an Index 1 oder 3
-    mock_lib.animal_numbers_db = [numbers[5], numbers[7]]
+    mock_lib.animal_numbers_db = numbers
+
     return mock_lib
 
 
@@ -76,5 +77,6 @@ def mock_rfidreaders(numbers):
     # Index:  0           1           2           3           4
     # Inhalt: numbers[0], numbers[5], numbers[8], numbers[7], numbers[9]
     # So liegt an Index 1 = numbers[5] und an Index 3 = numbers[7].
-    mock_readers.tags = [numbers[0], numbers[5], numbers[8], numbers[7], numbers[9]]
+    rfid_numbers = list(numbers.values())
+    mock_readers.tags = [rfid_numbers[0], rfid_numbers[5], rfid_numbers[8], rfid_numbers[7], rfid_numbers[9]]
     return mock_readers
