@@ -16,7 +16,7 @@ from . import game_utils
 
 def start():
     base_path = pathlib.Path("data") / "figures"
-    defined_figures = file_lib.gamer_figures_db
+    defined_figures = file_lib.all_tags
     audio.play_full("TTS", 60)  # Wir spielen die Geschichte für deine Figur ab
 
     leds.reset()  # reset leds
@@ -37,11 +37,6 @@ def start():
         defined_figures
     )
 
-    # check if player tag is predefined in definded_tags xor starts with number (then it's an unknown tag)
-    for i, p in enumerate(players):
-        if p not in defined_figures:
-            players[i] = None
-
     figure_count = sum(x is not None for x in players)
     if figure_count == 0:
         # Du hast keine Spielfigur auf das Spielfeld gestellt
@@ -53,9 +48,9 @@ def start():
 
     # remove figures without a recorded story from list
     for i, figure_id in enumerate(players):
-        pdb.set_trace()
         if figure_id is not None:
-            if base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3").exists():
+            file_path = base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3")
+            if file_path.exists():
                 continue
             players[i] = None
 
@@ -96,7 +91,8 @@ def start():
 
             # when figure folder exists and contains i.e. roboter.mp3
             # if figure_id in recordings_list and figure_id+'.mp3' in os.listdir(figure_dir):
-            if base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3").exists():
+            file_path = base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3")
+            if file_path.exists():
                 # play story
                 audio.play_story(figure_id)
                 # waitingtime = time.time() + float(subprocess.run(
