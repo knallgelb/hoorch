@@ -9,13 +9,14 @@ import audio
 import rfidreaders
 import leds
 import file_lib
-
-
-defined_figures = file_lib.gamer_figures_db
+import pathlib
+import pdb
+from . import game_utils
 
 
 def start():
-
+    base_path = pathlib.Path("data") / "figures"
+    defined_figures = file_lib.gamer_figures_db
     audio.play_full("TTS", 60)  # Wir spielen die Geschichte für deine Figur ab
 
     leds.reset()  # reset leds
@@ -25,10 +26,17 @@ def start():
     audio.play_file("sounds", "waiting.mp3")  # play wait sound
     leds.rotate_one_round(1.11)
 
-    if "ENDE" in rfidreaders.tags:
+    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
         return
 
-    players = copy.deepcopy(rfidreaders.tags)
+    rfid_position = []
+
+    players = game_utils.filter_players_on_fields(
+        copy.deepcopy(rfidreaders.tags),
+        rfid_position,
+        defined_figures
+    )
+
     # check if player tag is predefined in definded_tags xor starts with number (then it's an unknown tag)
     for i, p in enumerate(players):
         if p not in defined_figures:
@@ -40,13 +48,14 @@ def start():
         audio.play_full("TTS", 59)
         return
 
-    if "ENDE" in rfidreaders.tags:
+    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
         return
 
     # remove figures without a recorded story from list
     for i, figure_id in enumerate(players):
+        pdb.set_trace()
         if figure_id is not None:
-            if os.path.exists("./data/figures/"+figure_id+"/"+figure_id+".mp3"):
+            if base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3").exists():
                 continue
             players[i] = None
 
@@ -60,9 +69,9 @@ def start():
     leds.switch_on_with_color(players, (100, 100, 100))
 
     # TODO: x figuren haben eine geschichte gespeichert
-    audio.play_full("TTS", 5+figure_count)
+    audio.play_full("TTS", 5 + figure_count)
 
-    if "ENDE" in rfidreaders.tags:
+    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
         return
 
     first_round = True
@@ -74,34 +83,35 @@ def start():
             if first_round:  # at start
                 if figure_count > 1:
                     # Es beginnt die Spielfigur auf Spielfeld x
-                    audio.play_full("TTS", 12+i)
+                    audio.play_full("TTS", 12 + i)
                 first_round = False
                 # Ich Spiele dir jetzt deine Geschichte vor, wenn du stoppen willst nimm deine Spielfigur vom Spielfeld
                 audio.play_full("TTS", 61)
             else:
                 # Die nächste Spielfigur steht auf Spielfeld x
-                audio.play_full("TTS", 47+i)
+                audio.play_full("TTS", 47 + i)
 
-            if "ENDE" in rfidreaders.tags:
+            if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
                 return
 
             # when figure folder exists and contains i.e. roboter.mp3
             # if figure_id in recordings_list and figure_id+'.mp3' in os.listdir(figure_dir):
-            if os.path.exists("./data/figures/"+figure_id+"/"+figure_id+".mp3"):
+            if base_path / pathlib.Path(f"{figure_id.rfid_tag}/{figure_id.rfid_tag}.mp3").exists():
                 # play story
                 audio.play_story(figure_id)
-                waitingtime = time.time() + float(subprocess.run(
-                    ['soxi', '-D', './data/figures/'+figure_id+'/'+figure_id+'.mp3'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8'))
-                print(waitingtime)
+                # waitingtime = time.time() + float(subprocess.run(
+                #     ['soxi', '-D', './data/figures/' + figure_id + '/' + figure_id + '.mp3'], stdout=subprocess.PIPE,
+                #     check=False).stdout.decode('utf-8'))
+                # print(waitingtime)
             else:
                 # Du hast noch keine Geschichte aufgenommen!
                 audio.play_full("TTS", 62)
                 continue
 
-            while True:
-                if rfidreaders.tags[i] != figure_id or waitingtime < time.time() or "ENDE" in rfidreaders.tags:
-                    audio.kill_sounds()
-                    break
+            # while True:
+            #     if rfidreaders.tags[i] != figure_id or waitingtime < time.time() or "ENDE" in rfidreaders.tags:
+            #         audio.kill_sounds()
+            #         break
 
-            if "ENDE" in rfidreaders.tags:
+            if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
                 return
