@@ -89,9 +89,12 @@ def play_file(folder, audiofile):
     SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '10'))
 
     file_path = data_path / folder / audiofile
+    waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
+    waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip()) + 0.2
     logger.info(f"Playing audio file: {file_path}")
     logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
     subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
+    time.sleep(waitingtime)
 
 def play_story(figure_id):
     # Non-blocking play
