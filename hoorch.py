@@ -15,6 +15,7 @@ import tagwriter
 from pathlib import Path
 
 from models import RFIDTag
+from games import game_utils
 
 import logging
 
@@ -44,6 +45,26 @@ logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
 
+def announce_ip_adress():
+    output = None
+    while True:
+        output = subprocess.run(
+            ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
+
+        if output is None or output == '\n':
+            audio.espeaker("WeiFei nicht verbunden")
+            time.sleep(1.00)
+            # if connected to router but internet on router is down, we need to open
+            # comitup-cli and and delete connection with d and establish a new one
+
+        else:
+            break
+
+    ip_adress = output.split(" ", 1)
+    audio.espeaker("Die eipi Adresse lautet")
+    audio.espeaker(ip_adress[0])
+
+
 def init():
     logger.info("Initialisierung der Hardware")
 
@@ -58,34 +79,14 @@ def init():
     # RFID-Reader initialisieren
     rfidreaders.init()
 
-    # initialize figure_db if no tags defined for this hoorch set
-    if not Path("figures/figures_db.txt").exists():
-        # tell the ip adress
-        output = None
-        while True:
-            output = subprocess.run(
-                ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
-
-            if output is None or output == '\n':
-                audio.espeaker("WeiFei nicht verbunden")
-                time.sleep(1.00)
-                # if connected to router but internet on router is down, we need to open
-                # comitup-cli and and delete connection with d and establish a new one
-
-            else:
-                break
-
-        ip_adress = output.split(" ", 1)
-        audio.espeaker("Die eipi Adresse lautet")
-        audio.espeaker(ip_adress[0])
-
-        initial_hardware_test()
-
-        rfidreaders.read_continuously = False
-        time.sleep(1)
+    if len(file_lib.all_tags.values()) < 1:
         tagwriter.write_all_sets()
-        rfidreaders.read_continuously = True
-        # rfidreaders.continuous_read()
+        file_lib.read_database_files()
+
+    announce_ip_adress()
+    rfidreaders.read_continuously = True
+
+    initial_hardware_test()
 
 
 def initial_hardware_test():
@@ -174,12 +175,6 @@ def main():
         hoerspiele_list = [os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")]
         detected_hoerspiel_card = [i for i in hoerspiele_list if i in rfidreaders.tags]
 
-        # if detected_hoerspiel_card:
-        #     logger.info("Hörspiele")
-        #     leds.blink = False
-        #     game_hoerspiele.start("hoerspiele/", detected_hoerspiel_card[0])
-        #     shutdown_counter = time.time() + shutdown_time
-
         figure_dir = "./data/figures/"
         figure_dirs = [name for name in os.listdir(figure_dir) if os.path.isdir(os.path.join(figure_dir, name))]
         figure_with_recording = [k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)]
@@ -189,21 +184,9 @@ def main():
         figure_without_recording = [i for i in defined_figures if i not in figure_with_recording]
         detected_figure_without_recording = [m for m in figure_without_recording if m in rfidreaders.tags]
 
-        # Priorität für Figuren mit Aufnahmen
-        # if detected_figure_with_recording:
-        #     logger.info("Geschichte abspielen - aus Hauptmenü")
-        #     leds.blink = False
-        #     game_hoerspiele.start(f"figures/{detected_figure_with_recording[0]}", detected_figure_with_recording[0])
-        #     shutdown_counter = time.time() + shutdown_time
-        #
-        # if detected_figure_without_recording:
-        #     logger.info("Geschichte aufnehmen - aus Hauptmenü")
-        #     leds.blink = False
-        #     game_aufnehmen.start(detected_figure_without_recording[0])
-        #     shutdown_counter = time.time() + shutdown_time
-
         # Admin-Menü bei Erkennung von "JA" und "NEIN"
-        if "JA" in rfidreaders.tags and "NEIN" in rfidreaders.tags:
+        if file_lib.check_tag_attribute(rfidreaders.tags, "JA", "name") and file_lib.check_tag_attribute(
+                rfidreaders.tags, "NEIN", "name"):
             admin.main()
             shutdown_counter = time.time() + shutdown_time
 
