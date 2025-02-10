@@ -24,11 +24,14 @@ sudo usermod -a -G gpio,i2c,spi,audio pi
 echo "Erstelle /etc/asound.conf"
 sudo tee /etc/asound.conf >/dev/null <<EOF
 pcm.!default {
-	type asym
-	playback.pcm {
-		type plug
-		slave.pcm "hw:1,0"
-	}
+  type hw
+  card 0
+  device 0
+}
+
+ctl.!default {
+  type hw
+  card 0
 }
 EOF
 
