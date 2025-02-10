@@ -9,9 +9,41 @@ import dbus
 import rfidreaders
 import audio
 from i18n import Translator
+import file_lib
+from models import RFIDTag
+from games.game_utils import check_end_tag
+
+import logging
+
+# Erstelle das Verzeichnis 'logs', falls es nicht existiert
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Logger erstellen
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Sie können hier die Log-Level einstellen
+
+# Konsole-Handler erstellen und Level setzen
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Datei-Handler erstellen und Level setzen
+file_handler = logging.FileHandler('logs/admin.log')
+file_handler.setLevel(logging.DEBUG)
+
+# Formatter erstellen und zu den Handlern hinzufügen
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# Handler zum Logger hinzufügen
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 
 def main():
+    defined_figures = file_lib.all_tags
+
     translator = Translator(locale='de')  # Initialisiere Übersetzer mit deutschem Locale
     breaker = False
 
@@ -33,22 +65,24 @@ def main():
     audio.espeaker(translator.translate("admin.end_tag"))
 
     while admin_exit_counter > time.time():
-        for tag_name in rfidreaders.tags:
-            if tag_name is not None and re.search("^[A-z]*[0-9]$", tag_name):
-                op = int(tag_name[-1])  # 1 from Hahn1
+        relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
+        logger.debug(relevant_tags)
 
-                if op == 1:
-                    git()
-                    admin_exit_counter = time.time() + 120
-                elif op == 2:
-                    wifi()
-                    admin_exit_counter = time.time() + 120
-                elif op == 3:
-                    new_set()
-                elif op == 4:
-                    archive_stories()
-                    admin_exit_counter = time.time() + 120
-            elif tag_name == "ENDE":
+        for tag_name in relevant_tags:
+            op = int(tag_name.number)  # 1 from Hahn1
+
+            if op == 1:
+                git()
+                admin_exit_counter = time.time() + 120
+            elif op == 2:
+                wifi()
+                admin_exit_counter = time.time() + 120
+            elif op == 3:
+                new_set()
+            elif op == 4:
+                archive_stories()
+                admin_exit_counter = time.time() + 120
+            elif check_end_tag():
                 breaker = True
                 break
 
@@ -84,7 +118,6 @@ def new_set():
         datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")))
     audio.espeaker(translator.translate("admin.db_deleted"))
     os.system("reboot")
-
 
 
 def git():
@@ -208,3 +241,7 @@ def wifi():
             time.sleep(2)
 
     audio.espeaker(translator.translate("wifi_config_done"))
+
+
+if __name__ == "__main__":
+    main()
