@@ -13,7 +13,6 @@ from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 # import digitalio
 from digitalio import DigitalInOut
 import ndef
-import audio
 from pathlib import Path
 
 import file_lib
@@ -198,7 +197,6 @@ def read_from_ntag2(reader):
         logger.error(
             "NTAG2 Error while reading RFID tag content. Tag was probably removed before reading was completed.")
         # The figure could not be recognized. Leave it longer on the field.
-        audio.play_full("TTS", 199)
         return "#error#"
 
     except ndef.record.DecodeError as e:
