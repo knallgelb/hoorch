@@ -75,10 +75,12 @@ sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
 # i2s microphone
 CONFIG_FILE="/boot/firmware/config.txt"
 OVERLAY="dtoverlay=googlevoicehat-soundcard"
+DISABLE_HDMI_AUDIO="dtoverlay=vc4-kms-v3d,noaudio"
 
 if ! grep -q "^${OVERLAY}$" "$CONFIG_FILE"; then
     echo "Add ${OVERLAY} to ${CONFIG_FILE}"
     echo "$OVERLAY" | sudo tee -a "$CONFIG_FILE" > /dev/null
+    echo "$DISABLE_HDMI_AUDIO" | sudo tee -a "$CONFIG_FILE" > /dev/null
     echo "added ${OVERLAY} to ${CONFIG_FILE}!"
 else
     echo "${OVERLAY} already ${CONFIG_FILE} exists."
