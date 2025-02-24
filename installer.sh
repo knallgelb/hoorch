@@ -46,17 +46,17 @@ pcm.!default {
   type asym
   playback.pcm {
     type plug
-    slave.pcm "hw:1,0"
+    slave.pcm "hw:0,0"
   }
   capture.pcm {
     type plug
-    slave.pcm "hw:1,0"
+    slave.pcm "hw:0,0"
   }
 }
 
 ctl.!default {
   type hw
-  card 1
+  card 0
 }
 EOF
 
