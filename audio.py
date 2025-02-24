@@ -127,7 +127,11 @@ def record_story(figure):
     figure_dir.mkdir(parents=True, exist_ok=True)
     file_path = figure_dir / f"{figure.rfid_tag}.mp3"
 
-    subprocess.Popen(f"AUDIODEV=plughw:1,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}", shell=True, stdout=None, stderr=None)
+    execute_record = f"AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}"
+
+    logger.info(execute_record)
+
+    subprocess.Popen(execute_record, shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
 
 def stop_recording(figure_id):
