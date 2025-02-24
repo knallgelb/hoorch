@@ -28,6 +28,8 @@ Also visit our website:
 
 # Installation
 
+`curl -sSL https://raw.githubusercontent.com/knallgelb/hoorch/master/installer.sh | sudo bash`
+
 see [docs](docs)
 
 # License

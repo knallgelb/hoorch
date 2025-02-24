@@ -8,17 +8,30 @@ sudo apt update -y
 sudo apt upgrade -y
 
 echo "installing packages"
-sudo apt install -y python3-full
-sudo apt install -y python3-pip
-sudo apt install -y sox
-sudo apt install -y libsox-fmt-mp3
-sudo apt install -y espeak
-sudo apt install -y libsdl2-mixer-2.0-0
-sudo apt install -y git
-sudo apt install -y vim
-sudo apt install -y python3-venv
+sudo apt install -y python3-full python3-pip sox libsox-fmt-mp3 espeak \
+  libsdl2-mixer-2.0-0 git vim python3-venv
 
+# Neuen Benutzer "pi" mit Passwort "listentothemusic" anlegen und Root-Rechte geben
+echo "Erstelle Benutzer pi mit Root-Rechten"
+if ! id "pi" >/dev/null 2>&1; then
+  sudo useradd -m -s /bin/bash pi
+  echo "pi:listentothemusic" | sudo chpasswd
+  sudo usermod -aG sudo pi
+  echo "pi ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/pi
+else
+  echo "Benutzer pi existiert bereits."
+fi
+
+# Gruppenrechte für GPIO, I2C, SPI und Audio setzen
 sudo usermod -a -G gpio,i2c,spi,audio pi
+
+# Klonen des Repositories
+echo "Klonen des HOORCH Repositories"
+if [ ! -d "/home/pi/hoorch" ]; then
+  sudo -u pi git clone https://github.com/knallgelb/hoorch.git /home/pi/hoorch
+else
+  echo "Repository bereits vorhanden, überspringe Klonen."
+fi
 
 # Hier wird /etc/asound.conf mit deinen ALSA-Einstellungen erzeugt/überschrieben:
 echo "Erstelle /etc/asound.conf"
@@ -37,15 +50,12 @@ EOF
 
 # Set up the virtual environment
 echo "Setting up Python virtual environment"
-python3 -m venv venv --system-site-packages
-. venv/bin/activate
-
-# Install Python dependencies inside the virtual environment
-echo "Installing Python dependencies"
-pip install --upgrade pip setuptools
-pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml
-pip install --force-reinstall adafruit-blinka
-pip install --upgrade adafruit-python-shell
+sudo -u pi python3 -m venv /home/pi/hoorch/venv --system-site-packages
+sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade pip setuptools
+sudo -u pi /home/pi/hoorch/venv/bin/pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 \
+  board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml
+sudo -u pi /home/pi/hoorch/venv/bin/pip install --force-reinstall adafruit-blinka
+sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade adafruit-python-shell
 
 # Enable SPI
 sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
@@ -54,7 +64,6 @@ sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"
 CONFIG_FILE="/boot/firmware/config.txt"
 OVERLAY="dtoverlay=googlevoicehat-soundcard"
 
-# Prüfen, ob die Zeile bereits vorhanden ist
 if ! grep -q "^${OVERLAY}$" "$CONFIG_FILE"; then
     echo "Add ${OVERLAY} to ${CONFIG_FILE}"
     echo "$OVERLAY" | sudo tee -a "$CONFIG_FILE" > /dev/null
@@ -80,8 +89,8 @@ fi
 
 # Copy HOORCH files
 echo "Copying HOORCH files"
-sudo cp *.service /etc/systemd/system
-sudo cp gpio-shutoff.sh /lib/systemd/system-shutdown/
+sudo cp /home/pi/hoorch/*.service /etc/systemd/system
+sudo cp /home/pi/hoorch/gpio-shutoff.sh /lib/systemd/system-shutdown/
 sudo chmod +x /lib/systemd/system-shutdown/gpio-shutoff.sh
 
 # Enable and start HOORCH services
@@ -97,10 +106,6 @@ sudo apt install log2ram
 
 # Disable swapping
 sudo systemctl disable dphys-swapfile.service
-
-# Install comitup - wifi setup
-sudo apt update
-sudo apt install comitup -y
 
 # Disable unnecessary services
 sudo systemctl enable NetworkManager.service
