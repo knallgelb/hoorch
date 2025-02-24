@@ -76,7 +76,9 @@ def play_full(folder, audiofile):
     try:
         waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
         waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip()) + 0.2
-        subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
+        execute_play = f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null"
+        logger.info(execute_play)
+        subprocess.Popen(execute_play, shell=True, stdout=None, stderr=None)
         logger.debug(f"Waiting time for audio file {file_path}: {waitingtime} seconds")
         time.sleep(waitingtime)
     except Exception as e:
@@ -125,7 +127,7 @@ def record_story(figure):
     figure_dir.mkdir(parents=True, exist_ok=True)
     file_path = figure_dir / f"{figure.rfid_tag}.mp3"
 
-    subprocess.Popen(f"AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}", shell=True, stdout=None, stderr=None)
+    subprocess.Popen(f"AUDIODEV=plughw:1,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}", shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
 
 def stop_recording(figure_id):
@@ -189,5 +191,7 @@ def espeaker(words):
     logger.info(f"Speaking words: {words}")
 
     # -v language, -p pitch, -g word gap, -s speed, -a amplitude (volume)
-    os.system(f"espeak -v de+f2 -p 30 -g 12 -s 170 -a {SPEAKER_VOLUME} --stdout \"{words}\" | aplay -D 'default'")
+    execute_espeak = f"espeak -v de+f2 -p 30 -g 12 -s 170 -a {SPEAKER_VOLUME} --stdout \"{words}\" | aplay -D 'default'"
+    os.system(execute_espeak)
+    logger.info(execute_espeak)
     logger.debug(f"Executed eSpeak command for words: {words}")

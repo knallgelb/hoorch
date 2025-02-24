@@ -43,14 +43,20 @@ fi
 echo "Erstelle /etc/asound.conf"
 sudo tee /etc/asound.conf >/dev/null <<EOF
 pcm.!default {
-  type hw
-  card 0
-  device 0
+  type asym
+  playback.pcm {
+    type plug
+    slave.pcm "hw:1,0"
+  }
+  capture.pcm {
+    type plug
+    slave.pcm "hw:1,0"
+  }
 }
 
 ctl.!default {
   type hw
-  card 0
+  card 1
 }
 EOF
 
