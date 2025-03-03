@@ -163,7 +163,7 @@ def wifi():
         audio.espeaker(translator.translate("admin.wifi_turn_on"))
 
         while True:
-            if "JA" in rfidreaders.tags:
+            if file_lib.check_tag_attribute(rfidreaders.tags, "JA", "name"):
                 audio.espeaker(translator.translate("admin.wifi_starting"))
                 os.system("rfkill unblock wifi")
 
@@ -182,7 +182,7 @@ def wifi():
 
                 break
 
-            elif "NEIN" in rfidreaders.tags or "ENDE" in rfidreaders.tags:
+            elif file_lib.check_tag_attribute(rfidreaders.tags, "NEIN", "name") or file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
                 break
     else:
         # wifi on
@@ -226,12 +226,12 @@ def wifi():
             audio.espeaker(translator.translate("admin.should_turn_off"))
 
             while True:
-                if "JA" in rfidreaders.tags:
+                if file_lib.check_tag_attribute(rfidreaders.tags, "JA", "name"):
                     # os.system("rfkill block wifi")
                     audio.espeaker(translator.translate("admin.wifi_stop"))
                     break
 
-                elif "NEIN" in rfidreaders.tags or "ENDE" in rfidreaders.tags:
+                elif file_lib.check_tag_attribute(rfidreaders.tags, "NEIN", "name") or file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
                     break
 
         # connecting
