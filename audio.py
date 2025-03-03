@@ -88,7 +88,7 @@ def play_file(folder, audiofile):
     # Non-blocking play for sounds in /data and subfolders
     wait_for_reader()
     load_dotenv(override=True)
-    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '10'))
+    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '50'))
 
     file_path = data_path / folder / audiofile
     waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
