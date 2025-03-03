@@ -76,12 +76,12 @@ def init():
     # initialize leds
     leds.init()
 
-    # RFID-Reader initialisieren
-    rfidreaders.init()
-
     if len(file_lib.all_tags.values()) < 1:
         tagwriter.write_all_sets()
         file_lib.read_database_files()
+
+    # RFID-Reader initialisieren
+    rfidreaders.init()
 
     announce_ip_adress()
     rfidreaders.read_continuously = True
