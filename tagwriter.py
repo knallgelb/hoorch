@@ -91,7 +91,22 @@ path = "/home/pi/hoorch/figures"
 tagwriter.write_set_from_file(input_file, output_file, path)
 """
 
+
+def delete_all_sets():
+    filenames = ["actions", "animals", "figures", "games", "numeric"]
+    path_files = "/home/pi/hoorch/figures"
+
+    for filename in filenames:
+        path_db_file = Path(path_files) / Path(f"{filename}_db.txt")
+        if path_db_file.exists():
+            print(f"deleted {path_db_file}")
+            path_db_file.unlink()
+
+
 def write_all_sets():
+    leds.reset()  # Reset LEDs
+    leds.switch_on_with_color(0)
+
     filenames = ["actions", "animals", "figures", "games", "numeric"]
     path_files = "/home/pi/hoorch/figures"
 
