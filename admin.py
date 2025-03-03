@@ -69,7 +69,11 @@ def main():
         logger.debug(relevant_tags)
 
         for tag_name in relevant_tags:
-            op = int(tag_name.number)  # 1 from Hahn1
+            try:
+                op = int(tag_name.number)
+            except TypeError as e:
+                logger.debug(tag_name)
+                continue
 
             if op == 1:
                 git()
