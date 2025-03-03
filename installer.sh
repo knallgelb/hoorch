@@ -14,7 +14,7 @@ sudo apt install -y python3-full python3-pip sox libsox-fmt-mp3 espeak \
 # Set hostname to HOORCH
 echo "Setze Hostname auf HOORCH"
 echo "HOORCH" | sudo tee /etc/hostname
-sudo sed -i 's/127.0.1.1.*/127.0.1.1 HOORCH/' /etc/hosts
+sudo sed -i 's/127.0.0.1.*/127.0.0.1 HOORCH/' /etc/hosts
 sudo hostname HOORCH
 
 # Neuen Benutzer "pi" mit Passwort "listentothemusic" anlegen und Root-Rechte geben
