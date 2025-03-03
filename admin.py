@@ -8,6 +8,7 @@ import re
 import dbus
 import rfidreaders
 import audio
+import tagwriter
 from i18n import Translator
 import file_lib
 from models import RFIDTag
@@ -42,6 +43,7 @@ logger.addHandler(file_handler)
 
 
 def main():
+    rfidreaders.init()
     defined_figures = file_lib.all_tags
 
     translator = Translator(locale='de')  # Initialisiere Übersetzer mit deutschem Locale
@@ -73,6 +75,9 @@ def main():
                 op = int(tag_name.number)
             except TypeError as e:
                 logger.debug(tag_name)
+                if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+                    breaker = True
+                    break
                 continue
 
             if op == 1:
@@ -86,7 +91,7 @@ def main():
             elif op == 4:
                 archive_stories()
                 admin_exit_counter = time.time() + 120
-            elif check_end_tag():
+            if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
                 breaker = True
                 break
 
@@ -118,8 +123,7 @@ def archive_stories():
 def new_set():
     translator = Translator(locale='de')
     print("delete figure_db.txt, restart hoorch")
-    os.rename("figure_db.txt", "figure_db-{0}.txt".format(
-        datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")))
+    tagwriter.delete_all_sets()
     audio.espeaker(translator.translate("admin.db_deleted"))
     os.system("reboot")
 
