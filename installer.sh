@@ -108,8 +108,11 @@ sudo cp /home/pi/hoorch/gpio-shutoff.sh /lib/systemd/system-shutdown/
 sudo chmod +x /lib/systemd/system-shutdown/gpio-shutoff.sh
 
 # Enable and start HOORCH services
-sudo systemctl enable hoorch*.service
-sudo systemctl start hoorch*.service
+for service in /etc/systemd/system/hoorch*.service; do
+  sudo systemctl enable "$(basename "$service")"
+  sudo systemctl start "$(basename "$service")"
+done
+
 
 # Install log2ram
 echo "Installing log2ram"
