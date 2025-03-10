@@ -10,7 +10,10 @@ import copy
 import random
 import time
 from typing import List
+import pdb
+from logger_util import get_logger
 
+logger = get_logger(__name__, "logs/game_zahlen.log")
 
 def start():
     defined_figures = file_lib.all_tags
@@ -25,6 +28,8 @@ def start():
         rfid_position,
         defined_figures
     )
+
+    pdb.set_trace()
 
     score_players = game_utils.play_rounds(
         players=players,
@@ -54,10 +59,12 @@ def player_action(
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
+        logger.debug(relevant_tags)
 
         for tag in relevant_tags:
             # pdb.set_trace()
             if tag.number is not None and tag.number == expected_value.number:
+                logger.debug(tag)
                 if tag == expected_value:
                     return True
 

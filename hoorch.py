@@ -14,6 +14,7 @@ import admin
 import tagwriter
 from pathlib import Path
 import env_tools
+from logger_util import get_logger
 
 from models import RFIDTag
 from games import game_utils
@@ -22,32 +23,8 @@ from dotenv import load_dotenv
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
 
-import logging
 
-# Erstelle das Verzeichnis 'logs', falls es nicht existiert
-if not os.path.exists('logs'):
-    os.makedirs('logs')
-
-# Logger erstellen
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Sie können hier die Log-Level einstellen
-
-# Konsole-Handler erstellen und Level setzen
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# Datei-Handler erstellen und Level setzen
-file_handler = logging.FileHandler('logs/app.log')
-file_handler.setLevel(logging.DEBUG)
-
-# Formatter erstellen und zu den Handlern hinzufügen
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-
-# Handler zum Logger hinzufügen
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+logger = get_logger(__name__, "logs/app.log")
 
 
 def announce_ip_adress():
