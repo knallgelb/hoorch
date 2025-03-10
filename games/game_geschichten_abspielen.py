@@ -11,12 +11,14 @@ import leds
 import file_lib
 import pathlib
 import pdb
+from i18n import Translator
 
 from models import RFIDTag
 from . import game_utils
 
 
 def start():
+    translator = Translator(locale='de')  # Initialisiere Übersetzer mit deutschem Locale
     base_path = pathlib.Path("data") / "figures"
     defined_figures = file_lib.all_tags
     audio.play_full("TTS", 60)  # Wir spielen die Geschichte für deine Figur ab
@@ -73,6 +75,7 @@ def start():
         file_path = base_path / pathlib.Path(f"{player.rfid_tag}/{player.rfid_tag}.mp3")
         if file_path.exists():
             audio.play_story(player)
+            audio.play_file('sounds', 'page_turned_next_audio.mp3')
         else:
             # Du hast noch keine Geschichte aufgenommen!
             audio.play_full("TTS", 62)
@@ -80,3 +83,5 @@ def start():
 
         if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
             return
+
+    audio.espeaker(translator.translate("story.finished"))
