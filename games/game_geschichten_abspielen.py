@@ -65,9 +65,6 @@ def start():
         leds.reset()
         leds.switch_on_with_color(i, (0, 255, 0))
 
-        if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
-            return
-
         file_path = base_path / pathlib.Path(f"{player.rfid_tag}/{player.rfid_tag}.mp3")
         if file_path.exists():
             audio.play_story(player)

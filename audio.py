@@ -106,13 +106,16 @@ def play_file(folder, audiofile):
 def play_story(figure_id):
     # Non-blocking play
     wait_for_reader()
+    load_dotenv(override=True)
+    SPEAKER_VOLUME = int(os.getenv('SPEAKER_VOLUME', '50'))
 
     file_path = data_path / 'figures' / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
     waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
     waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip()) + 0.2
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
+    logger.info(f"Wating time: {waitingtime}")
     # Increase volume by STORY_VOLUME_FLOAT for stories
-    subprocess.Popen(f"play -v{STORY_VOLUME_FLOAT} {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
+    subprocess.Popen(f"play -v{SPEAKER_VOLUME} {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
     time.sleep(waitingtime)
 
 
