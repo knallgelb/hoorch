@@ -48,6 +48,7 @@ logger.addHandler(file_handler)
 # Path to the data directory
 data_path = Path('./data')
 
+
 # SD pin of I2S amp, GPIO6
 # Default: switched on (3.3V), only switch off (0V) for recording (to avoid clicking)
 # amp_sd = digitalio.DigitalInOut(board.D6)
@@ -57,6 +58,7 @@ def init():
     # Set environment variable for sox recording
     logger.info("Audio driver set to 'alsa' for sox recording.")
 
+
 def wait_for_reader():
     # Wait for RFID reader reading pause to avoid undervoltage when amp and reader start simultaneously
     while True:
@@ -64,6 +66,7 @@ def wait_for_reader():
             break
         time.sleep(0.01)
     logger.debug("Waited for RFID reader to be ready.")
+
 
 def play_full(folder, audiofile):
     # Blocking play, mostly for TTS
@@ -84,6 +87,7 @@ def play_full(folder, audiofile):
     except Exception as e:
         logger.error(f"Error playing audio file {file_path}: {e}")
 
+
 def play_file(folder, audiofile):
     # Non-blocking play for sounds in /data and subfolders
     wait_for_reader()
@@ -98,24 +102,31 @@ def play_file(folder, audiofile):
     subprocess.Popen(f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null", shell=True, stdout=None, stderr=None)
     time.sleep(waitingtime)
 
+
 def play_story(figure_id):
     # Non-blocking play
     wait_for_reader()
 
     file_path = data_path / 'figures' / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    waitingtime_output = subprocess.run(['soxi', '-D', str(file_path)], stdout=subprocess.PIPE, check=False)
+    waitingtime = float(waitingtime_output.stdout.decode('utf-8').strip()) + 0.2
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
     # Increase volume by STORY_VOLUME_FLOAT for stories
     subprocess.Popen(f"play -v{STORY_VOLUME_FLOAT} {file_path} 2>/dev/null", shell=True, stdout=None, stderr=None)
+    time.sleep(waitingtime)
+
 
 def kill_sounds():
     logger.info("Stopping all sounds.")
     subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
+
 
 def file_is_playing(audiofile):
     output = subprocess.run(['ps', 'ax'], stdout=subprocess.PIPE).stdout.decode('utf-8')
     is_playing = audiofile in output
     logger.debug(f"File {audiofile} is playing: {is_playing}")
     return is_playing
+
 
 def record_story(figure):
     # Switch off amp
@@ -133,6 +144,7 @@ def record_story(figure):
 
     subprocess.Popen(execute_record, shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
+
 
 def stop_recording(figure_id):
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
@@ -186,6 +198,7 @@ def stop_recording(figure_id):
             logger.info(f"Renamed latest file {latest_file} to {mp3_file}")
 
         return True
+
 
 def espeaker(words):
     wait_for_reader()
