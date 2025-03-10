@@ -49,3 +49,5 @@ de:
     play_story: "Ich spiele dir jetzt die Geschichte vor."
     recording_failed: "Aufnahme hat nicht geklappt. Audio nicht gefunden."
     test_complete: "Test abgeschlossen."
+  story:
+    finished: "Das ist das Ende der Geschichte."
