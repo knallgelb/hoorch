@@ -29,8 +29,6 @@ def start():
         defined_figures
     )
 
-    pdb.set_trace()
-
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
@@ -59,14 +57,11 @@ def player_action(
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
-        logger.debug(relevant_tags)
 
         for tag in relevant_tags:
             # pdb.set_trace()
             if tag.number is not None and tag.number == expected_value.number:
-                logger.debug(tag)
-                if tag == expected_value:
-                    return True
+                return True
 
         time.sleep(0.3)
 
