@@ -50,4 +50,4 @@ uk:
     recording_failed: "Запис не вдався. Аудіо не знайдено."
     test_complete: "Тест завершено."
   story:
-    finished: "Це кінець історії."
+    finished: "ende_der_geschichte.mp3"

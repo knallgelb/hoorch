@@ -84,4 +84,4 @@ def start():
         if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
             return
 
-    audio.espeaker(translator.translate("story.finished"))
+    audio.play_file('sounds', translator.translate("story.finished"))

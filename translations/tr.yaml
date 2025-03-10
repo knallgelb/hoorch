@@ -50,4 +50,4 @@ tr:
     recording_failed: "Kayıt başarısız oldu. Ses bulunamadı."
     test_complete: "Test tamamlandı."
   story:
-    finished: "Bu, hikayenin sonu."
+    finished: "end_of_the_story.mp3"

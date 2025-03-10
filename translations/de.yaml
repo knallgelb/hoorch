@@ -50,4 +50,4 @@ de:
     recording_failed: "Aufnahme hat nicht geklappt. Audio nicht gefunden."
     test_complete: "Test abgeschlossen."
   story:
-    finished: "Das ist das Ende der Geschichte."
+    finished: "ende_der_geschichte.mp3"

@@ -50,4 +50,4 @@ ar:
     recording_failed: "فشلت التسجيل. لم يتم العثور على الصوت."
     test_complete: "اكتمل الاختبار."
   story:
-    finished: "هذه هي نهاية القصة."
+    finished: "ende_der_geschichte.mp3"

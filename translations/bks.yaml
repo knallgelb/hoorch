@@ -50,4 +50,4 @@ bks:
     recording_failed: "Snimanje nije uspjelo. Zvuk nije pronađen."
     test_complete: "Test je završen."
   story:
-    finished: "Ovo je kraj priče."
+    finished: "ende_der_geschichte.mp3"

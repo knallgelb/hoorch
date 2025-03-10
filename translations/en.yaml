@@ -50,4 +50,4 @@ en:
     recording_failed: "Recording failed. Audio not found."
     test_complete: "Test complete."
   story:
-    finished: "And this is how the story ends."
+    finished: "end_of_the_story.mp3"

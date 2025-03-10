@@ -50,4 +50,4 @@ fa:
     recording_failed: "ضبط ناموفق بود. صدا یافت نشد."
     test_complete: "آزمایش به پایان رسید."
   story:
-    finished: "این پایان داستان است."
+    finished: "end_of_the_story.mp3"

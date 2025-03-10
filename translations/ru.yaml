@@ -50,4 +50,4 @@ ru:
     recording_failed: "Запись не удалась. Аудио не найдено."
     test_complete: "Тест завершен."
   story:
-    finished: "Это конец истории."
+    finished: "end_of_the_story.mp3"
