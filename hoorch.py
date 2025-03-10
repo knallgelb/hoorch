@@ -88,10 +88,10 @@ def init():
     # RFID-Reader initialisieren
     rfidreaders.init()
 
-    announce_ip_adress()
     rfidreaders.read_continuously = True
 
     if env_tools.str_to_bool(os.getenv("TEST_HARDWARE", "false")):
+        announce_ip_adress()
         initial_hardware_test()
 
 
