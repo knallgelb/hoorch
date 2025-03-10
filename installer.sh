@@ -17,16 +17,19 @@ echo "HOORCH" | sudo tee /etc/hostname
 sudo sed -i 's/127.0.0.1.*/127.0.0.1 HOORCH/' /etc/hosts
 sudo hostname HOORCH
 
-# Neuen Benutzer "pi" mit Passwort "listentothemusic" anlegen und Root-Rechte geben
+# Neuen Benutzer "pi" anlegen, falls nicht vorhanden, und Root-Rechte geben
 echo "Erstelle Benutzer pi mit Root-Rechten"
 if ! id "pi" >/dev/null 2>&1; then
   sudo useradd -m -s /bin/bash pi
   echo "pi:listentothemusic" | sudo chpasswd
   sudo usermod -aG sudo pi
-  echo "pi ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/pi
 else
   echo "Benutzer pi existiert bereits."
 fi
+
+# Sudoers-Konfiguration für pi anlegen, sodass kein Passwort abgefragt wird
+echo "pi ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/pi
+sudo chmod 0440 /etc/sudoers.d/pi
 
 # Gruppenrechte für GPIO, I2C, SPI und Audio setzen
 sudo usermod -a -G gpio,i2c,spi,audio pi
@@ -112,7 +115,6 @@ for service in /etc/systemd/system/hoorch*.service; do
   sudo systemctl enable "$(basename "$service")"
   sudo systemctl start "$(basename "$service")"
 done
-
 
 # Install log2ram
 echo "Installing log2ram"
