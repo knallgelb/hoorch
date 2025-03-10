@@ -11,6 +11,8 @@ import leds
 import file_lib
 import pathlib
 import pdb
+
+from models import RFIDTag
 from . import game_utils
 
 
@@ -64,6 +66,9 @@ def start():
     for i, player in enumerate(players):
         leds.reset()
         leds.switch_on_with_color(i, (0, 255, 0))
+
+        if not isinstance(player, RFIDTag):
+            continue
 
         file_path = base_path / pathlib.Path(f"{player.rfid_tag}/{player.rfid_tag}.mp3")
         if file_path.exists():
