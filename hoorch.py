@@ -13,9 +13,14 @@ import games
 import admin
 import tagwriter
 from pathlib import Path
+import env_tools
 
 from models import RFIDTag
 from games import game_utils
+
+from dotenv import load_dotenv
+dotenv_path = "/home/pi/hoorch/.env"
+load_dotenv(dotenv_path, override=True)
 
 import logging
 
@@ -86,7 +91,8 @@ def init():
     announce_ip_adress()
     rfidreaders.read_continuously = True
 
-    initial_hardware_test()
+    if env_tools.str_to_bool(os.getenv("TEST_HARDWARE", "false")):
+        initial_hardware_test()
 
 
 def initial_hardware_test():
