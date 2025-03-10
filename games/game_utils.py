@@ -92,3 +92,7 @@ def play_rounds(players, num_rounds, player_action) -> dict:
         audio.espeaker(f"Runde {round_num} abgeschlossen.")
 
     return score_players
+
+def leds_switch_on_with_color(player: RFIDTag, color: tuple[int, int, int]) -> None:
+    if rfidreaders.tags.index(player):
+        leds.switch_on_with_color(rfidreaders.tags.index(player), color=color)

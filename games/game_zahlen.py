@@ -50,7 +50,7 @@ def player_action(
     start_time = time.time()
 
     leds.reset()
-    leds.switch_on_with_color(rfidreaders.tags.index(player), (0,255,0))
+    game_utils.leds_switch_on_with_color(player=player, color=(0, 255, 0))
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
