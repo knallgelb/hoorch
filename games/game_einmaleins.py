@@ -18,6 +18,10 @@ from .game_utils import (
     get_solution_from_tags
 )
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_einmaleins.log")
+
 def start():
     defined_figures = file_lib.figures_db
     all_tags = file_lib.all_tags

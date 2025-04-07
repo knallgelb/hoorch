@@ -10,7 +10,6 @@ import copy
 import random
 import time
 from typing import List
-import pdb
 from logger_util import get_logger
 
 logger = get_logger(__name__, "logs/game_zahlen.log")

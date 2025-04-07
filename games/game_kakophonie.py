@@ -7,7 +7,10 @@ import audio
 import rfidreaders
 import leds
 import file_lib
-import pdb
+
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_kakophonie.log")
 
 from .game_utils import (
     check_end_tag,

@@ -5,6 +5,10 @@ import leds
 import file_lib
 from models import RFIDTag
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_utils.log")
+
 
 def check_end_tag():
     """Return True if the ENDE tag is detected, else False."""

@@ -7,6 +7,10 @@ import rfidreaders
 import leds
 import audio
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_hoerspiele.log")
+
 def start(folder, audiofile):
     
     leds.reset()  # reset leds
