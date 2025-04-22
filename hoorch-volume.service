@@ -5,7 +5,7 @@ After=sound.target
 DefaultDependencies=false
 
 [Service]
-User=pi
+User=root
 Type=simple
 ExecStart=/home/pi/hoorch/venv/bin/python3 /home/pi/hoorch/service_volume_control.py
 
