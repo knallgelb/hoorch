@@ -9,6 +9,10 @@ import leds
 import audio
 import file_lib
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_aufnehmen.log")
+
 def start(figure_id):
     leds.reset()  # reset leds
 

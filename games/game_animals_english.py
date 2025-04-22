@@ -16,6 +16,10 @@ from .game_utils import (
     filter_players_on_fields
 )
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_animals.log")
+
 
 def start():
     defined_figures = file_lib.figures_db

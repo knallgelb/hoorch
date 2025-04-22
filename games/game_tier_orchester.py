@@ -6,8 +6,6 @@ import time
 import audio
 import rfidreaders
 import leds
-import logging
-import os
 import file_lib
 from models import RFIDTag
 
@@ -17,32 +15,9 @@ from .game_utils import (
     announce_file,
 )
 
-# Create 'logs' directory if it doesn't exist
-if not os.path.exists('logs'):
-    os.makedirs('logs')
+from logger_util import get_logger
 
-# Get the log filename based on the script's name
-log_filename = os.path.join('logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-
-# Configure logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-# Create handlers
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-
-file_handler = logging.FileHandler(log_filename)
-file_handler.setLevel(logging.INFO)
-
-# Create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-
-# Add handlers to the logger
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+logger = get_logger(__name__, "logs/game_tier_orchester.log")
 
 
 def start():

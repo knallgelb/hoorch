@@ -24,7 +24,7 @@ Folders:
 HOORCH was developed at the University for Teacher Training (PH Wien) in Vienna, Austria.
 
 Also visit our website:
-(http://hoorch.phwien.ac.at)
+(https://hoorch.at)
 
 # Installation
 

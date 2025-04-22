@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import os
 import copy
-import subprocess
-import time
 import audio
 import rfidreaders
 import leds
 import file_lib
 import pathlib
-import pdb
 from i18n import Translator
 
 from models import RFIDTag
 from . import game_utils
+
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_abspielen.log")
 
 
 def start():

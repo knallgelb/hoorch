@@ -13,6 +13,10 @@ from typing import List
 
 from . import game_utils
 
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_tierlaute.log")
+
 
 def start():
     defined_figures = file_lib.figures_db

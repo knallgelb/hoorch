@@ -12,7 +12,9 @@ import leds
 import file_lib
 import pathlib
 
-import pdb
+from logger_util import get_logger
+
+logger = get_logger(__name__, "logs/game_aufnehmen.log")
 
 from . import game_utils
 
