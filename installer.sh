@@ -84,9 +84,11 @@ echo "Setting up Python virtual environment..."
 sudo -u pi python3 -m venv /home/pi/hoorch/venv --system-site-packages
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade pip setuptools
 sudo -u pi /home/pi/hoorch/venv/bin/pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 \
-  board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml
+  board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml Adafruit-Blinka-Raspberry-Pi5-Neopixel
+# Raspberry pi 5: Adafruit-Blinka-Raspberry-Pi5-Neopixel
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --force-reinstall adafruit-blinka
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade adafruit-python-shell
+
 
 # Enable SPI
 sudo sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" "/boot/firmware/config.txt"

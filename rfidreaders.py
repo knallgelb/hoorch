@@ -53,7 +53,7 @@ reader2_pin = DigitalInOut(board.D22)
 reader3_pin = DigitalInOut(board.D4)
 reader4_pin = DigitalInOut(board.D26)
 reader5_pin = DigitalInOut(board.D27)
-reader6_pin = DigitalInOut(board.D16)
+# reader6_pin = DigitalInOut(board.D16) # not working with Pi 5...
 
 readers = []
 tags = []
@@ -72,7 +72,8 @@ def init():
     logger.info("Initializing the RFID readers")
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
-    reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin, reader6_pin]
+    # reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin, reader6_pin] # removed pin6 (D!&)
+    reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin]
 
     for idx, reader_pin in enumerate(reader_pins):
         try:
