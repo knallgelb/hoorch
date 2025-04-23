@@ -2,9 +2,12 @@
 # -*- coding: UTF8 -*-
 
 # require: see installer.sh
+from operator import imod
 import os
 import time
 import subprocess
+
+from sqlmodel.orm.session import Session
 import audio
 import file_lib
 import rfidreaders
@@ -14,9 +17,13 @@ import admin
 import tagwriter
 from pathlib import Path
 import env_tools
+from sqlmodel import SQLModel
+import database
+import crud
 from logger_util import get_logger
+import datetime
 
-from models import RFIDTag
+from models import RFIDTag, Usage
 from games import game_utils
 
 from dotenv import load_dotenv
@@ -26,6 +33,7 @@ load_dotenv(dotenv_path, override=True)
 
 logger = get_logger(__name__, "logs/app.log")
 
+SQLModel.metadata.create_all(database.engine)
 
 def announce_ip_adress():
     output = None
@@ -48,6 +56,7 @@ def announce_ip_adress():
 
 
 def init():
+    crud.add_game_entry(Usage(box_id=os.getenv("HOORCH_UID"), game="HOORCH", players=0, timestamp=datetime.datetime.utcnow()))
     logger.info("Initialisierung der Hardware")
 
     # initialize audio

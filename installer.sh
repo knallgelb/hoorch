@@ -9,7 +9,7 @@ sudo apt upgrade -y
 
 echo "Installing necessary packages..."
 sudo apt install -y python3-full python3-pip sox libsox-fmt-mp3 espeak \
-  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime
+  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime sqlite3
 
 # Set hostname to HOORCH
 echo "Setting hostname to HOORCH"
@@ -84,7 +84,7 @@ echo "Setting up Python virtual environment..."
 sudo -u pi python3 -m venv /home/pi/hoorch/venv --system-site-packages
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade pip setuptools
 sudo -u pi /home/pi/hoorch/venv/bin/pip install flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 \
-  board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml Adafruit-Blinka-Raspberry-Pi5-Neopixel
+  board pygame rpi_ws281x adafruit-circuitpython-neopixel adafruit-circuitpython-debouncer python-i18n pyyaml Adafruit-Blinka-Raspberry-Pi5-Neopixel sqlmodel httpx
 # Raspberry pi 5: Adafruit-Blinka-Raspberry-Pi5-Neopixel
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --force-reinstall adafruit-blinka
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade adafruit-python-shell
