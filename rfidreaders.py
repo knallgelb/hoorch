@@ -4,7 +4,7 @@
 import time
 import threading
 import os
-import logging
+from logger_util import get_logger
 # import unicodedata
 import board
 import busio
@@ -22,24 +22,7 @@ if not os.path.exists('logs'):
     os.makedirs('logs')
 
 # Configure logging
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-# Create handlers
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-file_handler = logging.FileHandler('logs/rfid.log')
-file_handler.setLevel(logging.DEBUG)
-
-# Create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-
-# Add handlers to the logger
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+logger = get_logger(__name__, 'logs/rfid.log')
 
 # GPIO pin assignments
 # Reader 1: Pin18 - GPIO24
@@ -48,12 +31,16 @@ logger.addHandler(file_handler)
 # Reader 4: Pin37 - GPIO26
 # Reader 5: Pin13 - GPIO27
 # Reader 6: Pin36 - GPIO16
-reader1_pin = DigitalInOut(board.D24)
-reader2_pin = DigitalInOut(board.D22)
-reader3_pin = DigitalInOut(board.D4)
-reader4_pin = DigitalInOut(board.D26)
-reader5_pin = DigitalInOut(board.D27)
-# reader6_pin = DigitalInOut(board.D16) # not working with Pi 5...
+
+reader_pins = [
+    DigitalInOut(board.D24),
+    DigitalInOut(board.D22),
+    DigitalInOut(board.D4),
+    DigitalInOut(board.D26),
+    DigitalInOut(board.D27),
+    # reader6_pin = DigitalInOut(board.D16) # not working with Pi 5...
+]
+
 
 readers = []
 tags = []
@@ -71,9 +58,6 @@ def init():
     file_lib.read_database_files()
     logger.info("Initializing the RFID readers")
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-
-    # reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin, reader6_pin] # removed pin6 (D!&)
-    reader_pins = [reader1_pin, reader2_pin, reader3_pin, reader4_pin, reader5_pin]
 
     for idx, reader_pin in enumerate(reader_pins):
         try:
