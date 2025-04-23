@@ -24,7 +24,7 @@ def start():
 
     animals_played = []  # store the already played animals to avoid repetition
 
-    rfid_position = [1, 3, 5]
+    rfid_position = []
 
     audio.play_full("TTS", 4)  # Ihr spielt das Spiel Tierlaute erraten.
     leds.reset()  # reset leds
@@ -52,7 +52,7 @@ def start():
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
-        player_action=lambda p: player_action(p, rfidreaders, file_lib, rfid_position)
+        player_action=lambda p: player_action(p, rfidreaders, file_lib, rfid_position, animals_played)
     )
 
     game_utils.announce_score(score_players=score_players)
@@ -64,9 +64,19 @@ def player_action(
         player: RFIDTag,
         rfidreaders,
         file_lib,
-        rfid_position: List[int]
+        rfid_position: List[int],
+        animals_played: list
 ) -> bool:
-    expected_value = random.choice(list(file_lib.animal_figures_db.values()))
+    available_animals = [
+            animal for animal in file_lib.animal_figures_db.values()
+            if animal not in animals_played
+        ]
+    if not available_animals:
+            logger.warning("No more unused animals left!")
+            audio.espeaker("Es sind keine Tiere mehr übrig!")
+            return False
+    expected_value = random.choice(available_animals)
+    animals_played.append(expected_value)
     game_utils.announce_file(f"{expected_value.name}.mp3", "animal_sounds")
 
     relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
