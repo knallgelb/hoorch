@@ -7,7 +7,9 @@ import audio
 import rfidreaders
 import leds
 import file_lib
-from models import RFIDTag
+import models
+import crud
+
 
 from .game_utils import (
     check_end_tag,
@@ -26,6 +28,10 @@ def start():
     logger.info(f"Defined animals: {defined_animals}")
     logger.info("The animal orchestra is starting. Place the animal figures on the game fields!")
 
+    # Log Usage
+    u = models.Usage(game="tier_orchester", players=1)
+    crud.add_game_entry(usage=u)
+
     announce(63)
     leds.reset()  # Reset LEDs
 
@@ -33,7 +39,7 @@ def start():
     leds.blink = True
     while True:
         animals = [tag for tag in copy.deepcopy(rfidreaders.tags) if
-                   isinstance(tag, RFIDTag) and tag.rfid_type == 'animal']
+                   isinstance(tag, models.RFIDTag) and tag.rfid_type == 'animal']
         logger.debug(f"Current animals on fields: {animals}")
 
         if check_end_tag():
@@ -44,7 +50,7 @@ def start():
             return
 
         for i, animal in enumerate(animals):
-            assert isinstance(animal, RFIDTag)
+            assert isinstance(animal, models.RFIDTag)
             if animal is not None:
                 if not audio.file_is_playing(animal.name + ".mp3"):
                     announce_file(msg_id=animal.name + ".mp3", path="animal_sounds")
