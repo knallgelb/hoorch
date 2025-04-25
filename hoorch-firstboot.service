@@ -1,0 +1,11 @@
+[Unit]
+Description=HOORCH: Generate unique UID on first boot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hoorch-firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
