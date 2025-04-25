@@ -11,6 +11,8 @@ import rfidreaders
 import leds
 import file_lib
 import pathlib
+import models
+import crud
 
 from logger_util import get_logger
 
@@ -49,6 +51,11 @@ def start():
     )
 
     figure_count = sum(x is not None for x in players)
+
+    # Log Usage
+    u = models.Usage(game="aufnehmen", players=figure_count)
+    crud.add_game_entry(usage=u)
+
     if figure_count == 0:
         # "Du hast keine Spielfigure auf das Spielfeld gestellt."
         game_utils.announce(59)
