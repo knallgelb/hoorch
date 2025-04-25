@@ -4,6 +4,8 @@ from models import RFIDTag
 import audio
 import rfidreaders
 import leds
+import models
+import crud
 
 import copy
 
@@ -27,6 +29,12 @@ def start():
         rfid_position,
         defined_figures
     )
+
+    figure_count = sum(p is not None for p in players)
+
+    # Log Usage
+    u = models.Usage(game="zahlen", players=figure_count)
+    crud.add_game_entry(usage=u)
 
     score_players = game_utils.play_rounds(
         players=players,
