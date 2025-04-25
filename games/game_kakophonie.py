@@ -7,6 +7,8 @@ import audio
 import rfidreaders
 import leds
 import file_lib
+import models
+import crud
 
 from logger_util import get_logger
 
@@ -24,6 +26,10 @@ def start():
     print("Wir spielen Kakophonie")
 
     defined_numbers = file_lib.animal_numbers_db
+
+    # Log Usage
+    u = models.Usage(game="einmaleins", players=1)
+    crud.add_game_entry(usage=u)
 
     volume = 0
 
