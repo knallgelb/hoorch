@@ -8,6 +8,8 @@ import leds
 import file_lib
 import pathlib
 from i18n import Translator
+import models
+import crud
 
 from models import RFIDTag
 from . import game_utils
@@ -42,6 +44,11 @@ def start():
     )
 
     figure_count = sum(x is not None for x in players)
+
+    # Log Usage
+    u = models.Usage(game="abspielen", players=figure_count)
+    crud.add_game_entry(usage=u)
+
     if figure_count == 0:
         # Du hast keine Spielfigur auf das Spielfeld gestellt
         audio.play_full("TTS", 59)
