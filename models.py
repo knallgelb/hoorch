@@ -1,9 +1,14 @@
 from dataclasses import dataclass
+from operator import imod
 from sqlmodel import SQLModel, Field
 from typing import Optional, List
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
-# @dataclass(frozen=True)
+dotenv_path = "/home/pi/hoorch/.env"
+load_dotenv(dotenv_path, override=True)
+
 @dataclass
 class RFIDTag:
     rfid_tag: str
@@ -16,8 +21,8 @@ class RFIDTag:
 
 class Usage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    box_id: str
     game: str
     players: int
+    box_id: str = Field(default=os.getenv("HOORCH_UID"))
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     is_transmitted: bool = Field(default=False)
