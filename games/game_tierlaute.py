@@ -8,7 +8,8 @@ import audio
 import leds
 import rfidreaders
 import file_lib
-from models import RFIDTag
+import models
+import crud
 from typing import List
 
 from . import game_utils
@@ -49,6 +50,12 @@ def start():
         defined_figures
     )
 
+    figure_count = sum(p is not None for p in players)
+
+    # Log Usage
+    u = models.Usage(game="tierlaute", players=figure_count)
+    crud.add_game_entry(usage=u)
+
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
@@ -61,7 +68,7 @@ def start():
 
 
 def player_action(
-        player: RFIDTag,
+        player: models.RFIDTag,
         rfidreaders,
         file_lib,
         rfid_position: List[int],
@@ -79,7 +86,7 @@ def player_action(
     animals_played.append(expected_value)
     game_utils.announce_file(f"{expected_value.name}.mp3", "animal_sounds")
 
-    relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
+    relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, models.RFIDTag)]
 
     for tag in relevant_tags:
         # pdb.set_trace()
