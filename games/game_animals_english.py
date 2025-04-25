@@ -9,6 +9,9 @@ import audio
 import rfidreaders
 import leds
 import file_lib
+import models
+import crud
+import pdb
 
 from .game_utils import (
     check_end_tag,
@@ -40,6 +43,7 @@ def start():
     leds.rotate_one_round(1.11)
 
     players = copy.deepcopy(rfidreaders.tags)
+
     isthefirst = True
 
     if check_end_tag():
@@ -56,6 +60,7 @@ def start():
                 break
 
             figures_on_board = copy.deepcopy(rfidreaders.tags)
+
             for i, tag_obj in enumerate(figures_on_board):
                 if tag_obj and tag_obj.rfid_tag in defined_animals:
                     leds.switch_on_with_color(i)
@@ -69,6 +74,10 @@ def start():
     else:
         players = filter_players_on_fields(copy.deepcopy(rfidreaders.tags), [], defined_figures)
         figure_count = sum(x is not None for x in players)
+
+        # Log Usage
+        u = models.Usage(game="animals", players=figure_count)
+        crud.add_game_entry(usage=u)
 
         time.sleep(1)
         if figure_count == 0:
