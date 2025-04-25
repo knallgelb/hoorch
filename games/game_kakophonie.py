@@ -28,7 +28,7 @@ def start():
     defined_numbers = file_lib.animal_numbers_db
 
     # Log Usage
-    u = models.Usage(game="einmaleins", players=1)
+    u = models.Usage(game="kakophonie", players=1)
     crud.add_game_entry(usage=u)
 
     volume = 0
