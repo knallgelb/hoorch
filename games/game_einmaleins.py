@@ -8,6 +8,9 @@ import audio
 import rfidreaders
 import leds
 import file_lib
+import models
+import crud
+
 
 from .game_utils import (
     check_end_tag,
@@ -35,6 +38,10 @@ def start():
 
     players = filter_players_on_fields(copy.deepcopy(rfidreaders.tags), [1, 3, 5], defined_figures)
     figure_count = sum(p is not None for p in players)
+
+    # Log Usage
+    u = models.Usage(game="einmaleins", players=figure_count)
+    crud.add_game_entry(usage=u)
 
     if figure_count == 0:
         announce(59)  # "No figures placed."
