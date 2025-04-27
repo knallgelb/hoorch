@@ -4,7 +4,6 @@
 
 set -e
 
-sudo rpi-update
 sudo apt full-upgrade -y
 
 # 1. Update and upgrade system packages

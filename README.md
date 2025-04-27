@@ -15,7 +15,7 @@ We currently have 6 games:
 * a game for learning the parts of a modern instrumental song (e.g. bass line, hi-hat, snare, kick, melody)
 
 Folders:
-* . : python program, installation file (installer.sh), 
+* . : python program, installation file (installer.sh),
 * [data](data): audio files
 * [pcb](pcb): schematics, made with KiCad
 * [graphics](graphics): laser cutter files for box, figures. vinylcutter files for cards, graphic files for animal stickers
@@ -27,6 +27,8 @@ Also visit our website:
 (https://hoorch.at)
 
 # Installation
+
+`sudo rpi-update`
 
 `curl -sSL https://raw.githubusercontent.com/knallgelb/hoorch/master/installer.sh | sudo bash`
 
