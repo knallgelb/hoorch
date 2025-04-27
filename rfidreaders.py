@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import time
-import threading
 import os
-from logger_util import get_logger
+import threading
+import time
+
 # import unicodedata
 import board
 import busio
+import ndef
 from adafruit_pn532.spi import PN532_SPI
-from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
+
 # import digitalio
 from digitalio import DigitalInOut
-import ndef
-from pathlib import Path
 
 import file_lib
+import state
+from logger_util import get_logger
 
 # Create 'logs' directory if it doesn't exist
-if not os.path.exists('logs'):
-    os.makedirs('logs')
+if not os.path.exists("logs"):
+    os.makedirs("logs")
 
 # Configure logging
-logger = get_logger(__name__, 'logs/rfid.log')
+logger = get_logger(__name__, "logs/rfid.log")
 
 # GPIO pin assignments
 # Reader 1: Pin18 - GPIO24
@@ -49,9 +50,9 @@ timer = []
 endofmessage = "#"  # chr(35)
 
 read_continuously = True
-currently_reading = False
 
-auth_key = b'\xFF\xFF\xFF\xFF\xFF\xFF'
+
+auth_key = b"\xff\xff\xff\xff\xff\xff"
 
 
 def init():
@@ -69,7 +70,7 @@ def init():
             readers.append(reader)
             tags.append(None)
             timer.append(0)
-            logger.info('Initialized and configured RFID/NFC reader %d', idx + 1)
+            logger.info("Initialized and configured RFID/NFC reader %d", idx + 1)
         except Exception as e:
             logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
         time.sleep(0.03)
@@ -80,12 +81,11 @@ def init():
 
 
 def continuous_read():
-    global currently_reading
+    state.currently_reading = True
     # logger.info("Tags: %s", tags)
     # logger.info("... continuous read function")
 
     for index, r in enumerate(readers):
-
         mifare = False
 
         currently_reading = True
@@ -122,9 +122,13 @@ def continuous_read():
                 currently_reading = False
 
                 if not tag_name:
-                    logger.info("Added new unknown gamer figure to the temporary gamer_figure list")
+                    logger.info(
+                        "Added new unknown gamer figure to the temporary gamer_figure list"
+                    )
             else:
-                logger.debug("Tag ID %s found in figures_db with name %s", id_readable, tag_name)
+                logger.debug(
+                    "Tag ID %s found in figures_db with name %s", id_readable, tag_name
+                )
         else:
             tag_name = None
 
@@ -145,6 +149,7 @@ def continuous_read():
     if read_continuously:
         # Only read when not playing or recording audio
         threading.Timer(0.02, continuous_read).start()
+    state.currently_reading = False
 
 
 def read_from_mifare(reader, tag_uid: str):
@@ -172,7 +177,7 @@ def read_from_ntag2(reader):
         # for i in range(4, 12):
         for i in range(0, 12):
             read_data.extend(reader.ntag2xx_read_block(i))
-        to_decode = read_data[2:read_data.find(b'\xfe')]
+        to_decode = read_data[2 : read_data.find(b"\xfe")]
 
         text = list(ndef.message_decoder(to_decode))[0].text
         logger.info("Read NTAG2 tag with text: %s", text)
@@ -180,7 +185,8 @@ def read_from_ntag2(reader):
 
     except TypeError:
         logger.error(
-            "NTAG2 Error while reading RFID tag content. Tag was probably removed before reading was completed.")
+            "NTAG2 Error while reading RFID tag content. Tag was probably removed before reading was completed."
+        )
         # The figure could not be recognized. Leave it longer on the field.
         return "#error#"
 
