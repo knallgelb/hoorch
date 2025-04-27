@@ -2,31 +2,29 @@
 # -*- coding: UTF8 -*-
 
 # require: see installer.sh
-from operator import imod
-import os
-import time
-import subprocess
-
-from sqlmodel.orm.session import Session
-import audio
-import file_lib
-import rfidreaders
-import leds
-import games
-import admin
-import tagwriter
-from pathlib import Path
-import env_tools
-from sqlmodel import SQLModel
-import database
-import crud
-from logger_util import get_logger
 import datetime
-
-from models import RFIDTag, Usage
-from games import game_utils
+import os
+import subprocess
+import time
+from pathlib import Path
 
 from dotenv import load_dotenv
+from sqlmodel import SQLModel
+
+import admin
+import audio
+import crud
+import database
+import env_tools
+import file_lib
+import games
+import leds
+import rfidreaders
+import tagwriter
+from logger_util import get_logger
+from models import RFIDTag, Usage
+from utils import report_stats
+
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
 
@@ -35,13 +33,15 @@ logger = get_logger(__name__, "logs/app.log")
 
 SQLModel.metadata.create_all(database.engine)
 
+
 def announce_ip_adress():
     output = None
     while True:
         output = subprocess.run(
-            ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
+            ["hostname", "-I"], stdout=subprocess.PIPE, check=False
+        ).stdout.decode("utf-8")
 
-        if output is None or output == '\n':
+        if output is None or output == "\n":
             audio.espeaker("WeiFei nicht verbunden")
             time.sleep(1.00)
             # if connected to router but internet on router is down, we need to open
@@ -56,7 +56,14 @@ def announce_ip_adress():
 
 
 def init():
-    crud.add_game_entry(Usage(box_id=os.getenv("HOORCH_UID"), game="HOORCH", players=0, timestamp=datetime.datetime.utcnow()))
+    crud.add_game_entry(
+        Usage(
+            box_id=os.getenv("HOORCH_UID"),
+            game="HOORCH",
+            players=0,
+            timestamp=datetime.datetime.utcnow(),
+        )
+    )
     logger.info("Initialisierung der Hardware")
 
     # initialize audio
@@ -102,14 +109,18 @@ def initial_hardware_test():
     leds.reset()
 
     audio.espeaker(
-        "Ich teste jetzt das Audio, die Aufnahme beginnt in 3 Sekunden und dauert 6 Sekunden")
+        "Ich teste jetzt das Audio, die Aufnahme beginnt in 3 Sekunden und dauert 6 Sekunden"
+    )
     time.sleep(3)
     leds.switch_all_on_with_color()
 
     logger.info("Aufnahme starten")
     subprocess.Popen(
         "AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer ./data/figures/test/test.aif",
-        shell=True, stdout=None, stderr=None)
+        shell=True,
+        stdout=None,
+        stderr=None,
+    )
     time.sleep(6)
     logger.info("Aufnahme beendet")
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
@@ -135,6 +146,9 @@ def main():
 
     greet_time = time.time()
 
+    # transfer data to Server
+    report_stats.send_and_update_stats()
+
     while True:
         leds.blink = True
 
@@ -147,7 +161,11 @@ def main():
 
         # schauen, ob die Länge der Tags größer 0 ist
         # Extract der RFID-GAME-Tags
-        game_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag) and tag.rfid_type == 'game']
+        game_tags = [
+            tag
+            for tag in rfidreaders.tags
+            if isinstance(tag, RFIDTag) and tag.rfid_type == "game"
+        ]
 
         if len(game_tags) > 0 and games.games[game_tags[0].name]:
             logger.info(f"Game {game_tags[0].name} starten.")
@@ -164,21 +182,36 @@ def main():
             shutdown_counter = time.time() + shutdown_time
 
         # Hörspiele
-        hoerspiele_list = [os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")]
+        hoerspiele_list = [
+            os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
+        ]
         detected_hoerspiel_card = [i for i in hoerspiele_list if i in rfidreaders.tags]
 
         figure_dir = "./data/figures/"
-        figure_dirs = [name for name in os.listdir(figure_dir) if os.path.isdir(os.path.join(figure_dir, name))]
-        figure_with_recording = [k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)]
-        detected_figure_with_recording = [j for j in figure_with_recording if j in rfidreaders.tags]
+        figure_dirs = [
+            name
+            for name in os.listdir(figure_dir)
+            if os.path.isdir(os.path.join(figure_dir, name))
+        ]
+        figure_with_recording = [
+            k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)
+        ]
+        detected_figure_with_recording = [
+            j for j in figure_with_recording if j in rfidreaders.tags
+        ]
 
         defined_figures = file_lib.gamer_figures_db
-        figure_without_recording = [i for i in defined_figures if i not in figure_with_recording]
-        detected_figure_without_recording = [m for m in figure_without_recording if m in rfidreaders.tags]
+        figure_without_recording = [
+            i for i in defined_figures if i not in figure_with_recording
+        ]
+        detected_figure_without_recording = [
+            m for m in figure_without_recording if m in rfidreaders.tags
+        ]
 
         # Admin-Menü bei Erkennung von "JA" und "NEIN"
-        if file_lib.check_tag_attribute(rfidreaders.tags, "JA", "name") and file_lib.check_tag_attribute(
-                rfidreaders.tags, "NEIN", "name"):
+        if file_lib.check_tag_attribute(
+            rfidreaders.tags, "JA", "name"
+        ) and file_lib.check_tag_attribute(rfidreaders.tags, "NEIN", "name"):
             admin.main()
             shutdown_counter = time.time() + shutdown_time
 
