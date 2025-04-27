@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-# require: see installer.sh
 import datetime
 import os
 import subprocess
@@ -18,7 +17,7 @@ import database
 import env_tools
 import file_lib
 import games
-import leds
+import leds  # <--- Client-gemoddetes leds.py!
 import rfidreaders
 import tagwriter
 from logger_util import get_logger
@@ -27,7 +26,6 @@ from utils import report_stats
 
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
-
 
 logger = get_logger(__name__, "logs/app.log")
 
@@ -44,9 +42,6 @@ def announce_ip_adress():
         if output is None or output == "\n":
             audio.espeaker("WeiFei nicht verbunden")
             time.sleep(1.00)
-            # if connected to router but internet on router is down, we need to open
-            # comitup-cli and and delete connection with d and establish a new one
-
         else:
             break
 
@@ -71,8 +66,8 @@ def init():
 
     audio.play_full("TTS", 1)
 
-    # initialize leds
-    leds.init()
+    # initialize leds (macht evtl. nichts, ist nur placeholder für zukünftige Logik)
+    leds.reset()  # Setzt alle LEDs aus (wird vom Server umgesetzt)
 
     if len(file_lib.all_tags.values()) < 1:
         tagwriter.write_all_sets()
@@ -89,14 +84,10 @@ def init():
 
 
 def initial_hardware_test():
-    # test run to check hardware on first hoorch start - will test leds, readers, speakers, microphone
-    # leds.blink = False
-
     audio.espeaker("Jetzt wird die ganze Hardware getestet")
 
     audio.espeaker("Jetzt werden alle LEDs beleuchtet.")
-    ## leds.rainbow_cycle(0.001)
-    leds.rainbow_cycle(0.01)
+    leds.rainbow_cycle(0.01)  # Diese Funktion sendet jetzt an den Server
 
     audio.espeaker("Wir testen jetzt die Ar ef eidi Leser.")
     for i in range(6):
@@ -150,17 +141,19 @@ def main():
     report_stats.send_and_update_stats()
 
     while True:
-        leds.blink = True
+        # Statt: leds.blink = True
+        # => Falls dein Server Blinken unterstützt: Klasse:
+        # leds.blinker()  # (implementier evtl. als toggelnden Effekt)
+        pass
+        # Du kannst hier auch einfach per Timer die Farbe zufällig setzen etc.
+        # oder das blink-Pattern auf Server-Seite bauen und hier nur triggern.
 
         if greet_time < time.time():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
             greet_time = time.time() + 30
 
-        # debug Message
         logger.info(rfidreaders.tags)
 
-        # schauen, ob die Länge der Tags größer 0 ist
-        # Extract der RFID-GAME-Tags
         game_tags = [
             tag
             for tag in rfidreaders.tags
@@ -169,19 +162,21 @@ def main():
 
         if len(game_tags) > 0 and games.games[game_tags[0].name]:
             logger.info(f"Game {game_tags[0].name} starten.")
-            leds.blink = False
+            # leds.blink = False
+            # => Stopp ggf. das Blinken per Server-Kommando, falls realisiert:
+            # leds.blinker()  # toggelt aus
+            leds.reset()
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
             shutdown_counter = time.time() + shutdown_time
 
-        # Erklärung
         if "FRAGEZEICHEN" in rfidreaders.tags:
             logger.info("Hoorch Erklärung")
-            leds.blink = False
+            # leds.blink = False
+            leds.reset()
             audio.play_full("TTS", 65)  # Erklärung
             shutdown_counter = time.time() + shutdown_time
 
-        # Hörspiele
         hoerspiele_list = [
             os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
         ]
@@ -220,8 +215,8 @@ def main():
     # Shutdown
     logger.info("Shutdown")
     audio.play_full("TTS", 196)
-    leds.blink = False
-    leds.led_value = [1, 1, 1, 1, 1, 1]
+    # leds.blink = False
+    leds.reset()
     # os.system("shutdown -P now")
 
 

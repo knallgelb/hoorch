@@ -69,6 +69,7 @@ sudo chmod +x /usr/local/bin/hoorch-firstboot.sh
 sudo cp /home/pi/hoorch/hoorch-firstboot.service /etc/systemd/system/hoorch-firstboot.service
 sudo systemctl enable hoorch-firstboot.service
 
+
 # 8. Set up Python virtual environment and install dependencies
 echo "Setting up Python virtual environment..."
 sudo -u pi python3 -m venv /home/pi/hoorch/venv --system-site-packages
@@ -126,6 +127,15 @@ sudo sed -i "s/# ap_name: comitup-<nnn>/ap_name: hoorch-<nnn>/" /etc/comitup.con
 sudo sed -i "s/# web_service:/web_service: hoorch-webserver.service/" /etc/comitup.conf
 
 # 13. Deploy HOORCH systemd services and shutdown script
+
+if [ -f "/home/pi/hoorch/leds_server.service" ]; then
+  sudo cp /home/pi/hoorch/leds_server.service /etc/systemd/system/
+  sudo systemctl enable leds_server.service
+  sudo systemctl start leds_server.service
+else
+  echo "Warnung: leds_server.service wurde nicht gefunden!"
+fi
+
 echo "Installing HOORCH systemd services..."
 sudo cp /home/pi/hoorch/*.service /etc/systemd/system/
 sudo cp /home/pi/hoorch/gpio-shutoff.sh /lib/systemd/system-shutdown/

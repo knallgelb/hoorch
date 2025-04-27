@@ -1,136 +1,82 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import random
-import threading
-import time
+import json
+import socket
 
-import board
-import neopixel
-
-# LEDS
-
-# Neopixel connected to GPIO12 / pin32
-pixel_pin = board.D12
-
-# The number of NeoPixels
+SOCK_FILE = "/tmp/hoorch_led.sock"
 num_pixels = 6
 
-# The order of the pixel colors - RGB or GRB.
-ORDER = neopixel.GRB
 
-_pixels = None
-
-
-def get_pixels():
-    global _pixels
-    if _pixels is None:
-        _pixels = neopixel.NeoPixel(
-            pixel_pin, num_pixels, brightness=0.9, auto_write=False, pixel_order=ORDER
-        )
-    return _pixels
-
-
-# start random blinking of leds
-blink = False
-
-
-def init():
-    # Optionale Initialisierung; ruft reset und ggf. blinker auf,
-    # wird aber NICHT beim Import, sondern nur auf expliziten Wunsch ausgeführt!
-    reset()
-    blinker()
-
-
-def testr():
-    pixels = get_pixels()
-    for i in range(0, 1):
-        # rot
-        pixels.fill((255, 0, 0))
-        pixels.show()
-        time.sleep(3)
-
-        # gruen
-        pixels.fill((0, 255, 0))
-        pixels.show()
-        time.sleep(3)
-
-        # blau
-        pixels.fill((0, 0, 255))
-        pixels.show()
-        time.sleep(3)
-        reset()
+def send_led_command(cmd, **kwargs):
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(SOCK_FILE)
+        cmdobj = dict(cmd=cmd)
+        cmdobj.update(kwargs)
+        s.sendall(json.dumps(cmdobj).encode())
+        s.close()
+    except Exception as e:
+        print(f"LED-IPC ERROR: {e} (cmd={cmd} kwargs={kwargs})")
 
 
 def reset():
-    pixels = get_pixels()
-    # set all pixels to no color
-    pixels.fill((0, 0, 0))
-    pixels.show()
-
-
-def rainbow_cycle(wait):
-    pixels = get_pixels()
-    for j in range(255):
-        for i in range(num_pixels):
-            pixel_index = (i * 256 // num_pixels) + j
-            pixels[i] = wheel(pixel_index & 255)
-        pixels.show()
-        time.sleep(wait)
-    reset()
-
-
-def rotate_one_round(time_per_led):
-    pixels = get_pixels()
-    color = wheel(random.randrange(0, 255))
-    for i in range(len(pixels)):
-        pixels.fill((0, 0, 0))
-        pixels[i] = color
-        pixels.show()
-        time.sleep(time_per_led)
-    reset()
-
-
-def blinker():
-    global blink
-    pixels = get_pixels()
-    if blink:
-        pixels.fill((0, 0, 0))
-        pixels[random.randrange(len(pixels))] = wheel(random.randrange(0, 255))
-        pixels.show()
-        # alle 0,5s wieder aufgerufen – Rekursion/Threading!
-        threading.Timer(0.50, blinker).start()
+    """Alle LEDs aus."""
+    send_led_command("off")
 
 
 def switch_all_on_with_color(color=None):
-    switch_on_with_color(list(range(num_pixels)), color)
+    """Alle LEDs auf eine Farbe setzen. Ohne Angabe zufällige Farbe."""
+    if color is None:
+        from random import randint
+
+        color = (randint(0, 255), randint(0, 255), randint(0, 255))
+    send_led_command("color", color=list(color))  # Farbtupel als Liste
 
 
 def switch_on_with_color(number, color=None):
-    pixels = get_pixels()
-    reset()
-    # random color if none given
+    """Einzelne LEDs oder Liste/Tuple ansteuern (z.B. switch_on_with_color([0,3,5], (128,255,0)))"""
     if color is None:
-        color = wheel(random.randrange(0, 255))
+        from random import randint
 
-    if isinstance(number, tuple):
-        # leds.switch_on_with_color((0,3,5), (200,200,100))
-        for c in number:
-            pixels[c] = color
-    elif isinstance(number, list):
-        # expect players list
-        for i, p in enumerate(number):
-            if p is not None:
-                pixels[i] = color
+        color = (randint(0, 255), randint(0, 255), randint(0, 255))
+    if isinstance(number, int):
+        leds = [number]
     else:
-        pixels[number] = color
+        leds = list(number)
+    send_led_command("multi", leds=leds, color=list(color))
 
-    pixels.show()
+
+def rainbow_cycle(wait=0.01):
+    """Starte Rainbow-Effect (optional: Dauer zwischen Steps, default 10ms)"""
+    send_led_command("rainbow", wait=wait)
+
+
+def rotate_one_round(time_per_led=0.2):
+    """Rotiert eine Farbe rundherum."""
+    send_led_command("rotate", delay=time_per_led)
+
+
+def blinker():
+    """Starte oder stoppe Blinken (toggle)."""
+    send_led_command("blinker")
+
+
+def testr():
+    """Einfacher LED-Farbtest."""
+    switch_all_on_with_color((255, 0, 0))
+    import time
+
+    time.sleep(1)
+    switch_all_on_with_color((0, 255, 0))
+    time.sleep(1)
+    switch_all_on_with_color((0, 0, 255))
+    time.sleep(1)
+    reset()
 
 
 def wheel(pos):
-    # Input a value 0 to 255 to get a color value.
-    # The colours are a transition r - g - b - back to r.
+    """Farbrad wie gewohnt"""
     if pos < 0 or pos > 255:
         r = g = b = 0
     elif pos < 85:
@@ -150,9 +96,10 @@ def wheel(pos):
     return (r, g, b)
 
 
+# Dummy blink state (da keine Hardware mehr) – falls Code darauf prüft
+blink = False
+
 if __name__ == "__main__":
-    # Testfunktion nach Bedarf nachrüsten:
-    # z.B. testr(), rainbow_cycle(0.01)
-    print("leds.py as main: testrun (rot, grün, blau, aus)")
+    print("leds.py as main: Testlauf über Server")
     testr()
     reset()

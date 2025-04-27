@@ -1,0 +1,13 @@
+[Unit]
+Description=HooRCH NeoPixel LED Server
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/hoorch
+ExecStart=/home/pi/hoorch/venv/bin/python /home/pi/hoorch/leds_server.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
