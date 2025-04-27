@@ -13,7 +13,7 @@ sudo apt update -y && sudo apt upgrade -y
 # 2. Install necessary packages
 echo "Installing required packages..."
 sudo apt install -y python3-full python3-pip sox libsox-fmt-mp3 espeak \
-  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime sqlite3 pydantic
+  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime sqlite3
 
 # 3. Set hostname to HOORCH
 echo "Setting hostname to HOORCH"
@@ -76,7 +76,7 @@ sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade pip setuptools
 sudo -u pi /home/pi/hoorch/venv/bin/pip install \
   flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 \
   board pygame rpi_ws281x adafruit-circuitpython-neopixel \
-  adafruit-circuitpython-debouncer python-i18n pyyaml \
+  adafruit-circuitpython-debouncer python-i18n pyyaml pydantic \
   Adafruit-Blinka-Raspberry-Pi5-Neopixel sqlmodel httpx
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --force-reinstall adafruit-blinka
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade adafruit-python-shell
