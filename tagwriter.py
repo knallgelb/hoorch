@@ -146,6 +146,48 @@ def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
                     time.sleep(1.5)
                     break
 
+def write_missing_entries_for_category(category, missing_names, path="figures"):
+    """
+    Für fehlende Einträge in einer Kategorie werden diese in die passende DB geschrieben.
+    category: z.B. 'actions', 'animals', 'figures', 'games', 'numeric'
+    missing_names: Iterable der Strings (Einträge in txt-Datei, noch nicht in _db.txt)
+    """
+    # Nicer Outputfile bestimmen
+    output_filename = f"{category}_db.txt"
+    full_path_output = Path(path) / Path(output_filename)
+
+    # Prüfe, ob Datei existiert, sonst lege sie mit Header neu an
+    if not full_path_output.exists():
+        with full_path_output.open("w", encoding="utf-8") as f:
+            writer = csv.writer(f, delimiter=";")
+            writer.writerow(["RFID_TAG", "NAME"])  # immer diese beiden Spalten für alle bis auf numeric
+
+    # Fieldnames & CSV
+    fieldnames = ["RFID_TAG", "NAME"]
+    if category == "numeric":
+        fieldnames = ["RFID_TAG", "NUMBER"]
+
+    # Öffne im "a" Append-modus, damit nichts verloren geht!
+    with full_path_output.open("a", encoding="utf-8") as f:
+        csv_writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=";")
+        rdr = get_reader()
+        audio.espeaker(f"{category}")
+        for name in missing_names:
+            audio.espeaker(f"{name}")
+            print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
+
+            tag_uid = None
+            while not tag_uid:
+                tag_uid = rdr.read_passive_target(timeout=1.0)
+
+            tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+            if category == "numeric":
+                csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NUMBER": name})
+            else:
+                csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NAME": name})
+            time.sleep(1.5)
+
+    audio.espeaker(f"Alle fehlenden Tags für {category} fertig!")
 
 def write_set():
     audio.espeaker(

@@ -23,6 +23,7 @@ import tagwriter
 from logger_util import get_logger
 from models import RFIDTag, Usage
 from utils import report_stats
+import integrity_check
 
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
@@ -72,6 +73,10 @@ def init():
     if len(file_lib.all_tags.values()) < 1:
         tagwriter.write_all_sets()
         file_lib.read_database_files()
+
+    if integrity_check.any_missing_entries():
+        audio.espeaker("Unvollständige RFID Zuordnung. Fehlende Karten werden jetzt nachgezogen.")
+        integrity_check.remap_missing_entries()
 
     # RFID-Reader initialisieren
     rfidreaders.init()
