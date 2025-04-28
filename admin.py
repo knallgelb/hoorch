@@ -156,7 +156,7 @@ def git():
         subprocess.run(['git', 'reset', '--hard', 'origin/master'], stdout=subprocess.PIPE, check=False)
 
         audio.espeaker(translator.translate("admin.update_complete"))
-        os.system("reboot")
+        os.system("sudo reboot")
 
 
 def wifi():
