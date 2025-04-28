@@ -36,14 +36,24 @@ def start():
     u = models.Usage(game="zahlen", players=figure_count)
     crud.add_game_entry(usage=u)
 
+    def action_with_led(player):
+        idx = players.index(player)
+        leds.switch_on_with_color(idx, (0,255,0))
+        result = player_action(player, rfidreaders, file_lib, rfid_position)
+        leds.switch_on_with_color(idx, (0,0,0))
+        return result
+
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
-        player_action=lambda p: player_action(p, rfidreaders, file_lib, rfid_position)
+        player_action=action_with_led
     )
 
     game_utils.announce_score(score_players=score_players)
 
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.2)
+    leds.reset()
     return score_players
 
 
