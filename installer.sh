@@ -77,7 +77,7 @@ sudo -u pi /home/pi/hoorch/venv/bin/pip install \
   flask werkzeug ndeflib RPI.GPIO adafruit-circuitpython-pn532 \
   board pygame rpi_ws281x adafruit-circuitpython-neopixel \
   adafruit-circuitpython-debouncer python-i18n pyyaml pydantic \
-  Adafruit-Blinka-Raspberry-Pi5-Neopixel sqlmodel httpx
+  Adafruit-Blinka-Raspberry-Pi5-Neopixel sqlmodel httpx dotenv
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --force-reinstall adafruit-blinka
 sudo -u pi /home/pi/hoorch/venv/bin/pip install --upgrade adafruit-python-shell
 
