@@ -32,10 +32,12 @@ def start():
     leds.reset()
 
     if check_end_tag():
+        leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
         return
 
     announce(193)  # Hinweise für das Aufstellen der Figuren
     if check_end_tag():
+        leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
         return
 
     audio.play_file("sounds", "waiting.mp3")
@@ -46,6 +48,7 @@ def start():
     isthefirst = True
 
     if check_end_tag():
+        leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
         return
 
     # Lehrmodus (FRAGEZEICHEN-Figur vorhanden)
@@ -56,19 +59,19 @@ def start():
         while True:
             if check_end_tag():
                 audio.kill_sounds()
+                leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
                 break
 
             figures_on_board = copy.deepcopy(rfidreaders.tags)
 
             for i, tag_obj in enumerate(figures_on_board):
                 if tag_obj and tag_obj.rfid_tag in defined_animals:
-                    leds.switch_on_with_color(i)
+                    leds.switch_on_with_color(i, (0, 255, 0))
                     animal_file = tag_obj.name + ".mp3"
                     if not audio.file_is_playing(animal_file):
                         audio.play_file("TTS/animals_en", animal_file)
                         time.sleep(2)
-                    leds.reset()
-
+                    leds.switch_on_with_color(i, (0, 0, 0))
     # Spielmodus (kein FRAGEZEICHEN)
     else:
         players = filter_players_on_fields(copy.deepcopy(rfidreaders.tags), [], defined_figures)
@@ -81,6 +84,7 @@ def start():
         time.sleep(1)
         if figure_count == 0:
             announce(59)  # "Du hast keine Spielfigure auf das Spielfeld gestellt."
+            leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
             return
 
         announce(5 + figure_count)  # "Es spielen x Figuren mit"
@@ -94,19 +98,20 @@ def start():
                     continue
 
                 leds.reset()
-                leds.switch_on_with_color(i)
+                leds.switch_on_with_color(i, (0, 255, 0))  # Spieler grün
 
                 if r == 0 and isthefirst:
                     isthefirst = False
                     if figure_count > 1:
                         announce(12 + i)  # "Es beginnt die Spielfigur auf Spielfeld x"
-                    announce(194)  # "Ich spiele dir jetzt die englischen Namen eines Tiers vor..."
+                    announce(194)
                 elif figure_count == 1:
-                    announce(67)  # "Du bist nochmal dran"
+                    announce(67)
                 else:
-                    announce(48 + i)  # "Die nächste Spielfigur steht auf Spielfeld x"
+                    announce(48 + i)
 
                 if check_end_tag():
+                    leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
                     return
 
                 # Tierauswahl
@@ -115,7 +120,6 @@ def start():
                 elif len(animals_played) == 0:
                     animals_played.append("dummy_animal")
 
-                # Wähle zufälliges neues Tier
                 animal_tag = random.choice(list(defined_animals.values())).name
                 while animal_tag in animals_played:
                     animal_tag = random.choice(list(defined_animals.values())).name
@@ -124,10 +128,12 @@ def start():
                 time.sleep(2)
 
                 if check_end_tag():
+                    leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
                     return
 
                 while True:
                     if check_end_tag():
+                        leds.switch_all_on_with_color((0, 0, 255)); time.sleep(0.2); leds.reset()
                         return
 
                     if not audio.file_is_playing(animal_tag + ".mp3"):
@@ -146,7 +152,8 @@ def start():
                                 time.sleep(0.2)
                                 announce(27)  # "Richtig!"
                                 audio.play_file("sounds", "winner.mp3")
-                                time.sleep(0.2)
+                                leds.switch_on_with_color(i, (255, 215, 0))  # Gold für richtig
+                                time.sleep(0.3)
                                 points[i] += 1
                                 rfidreaders.tags[i] = None
                                 break
@@ -154,7 +161,8 @@ def start():
                                 time.sleep(0.2)
                                 announce(26)  # "Falsch!"
                                 audio.play_file("sounds", "loser.mp3")
-                                time.sleep(0.2)
+                                leds.switch_on_with_color(i, (255, 0, 0))   # Rot für falsch
+                                time.sleep(0.3)
                                 rfidreaders.tags[i] = None
                                 break
 
@@ -165,10 +173,12 @@ def start():
         for i, p in enumerate(players):
             if p is not None:
                 leds.reset()
-                leds.switch_on_with_color(i, 100)
+                leds.switch_on_with_color(i, (30, 144, 255)) # blau für Punkteansage
                 announce(74 + i)  # "Spielfigur auf Spielfeld x"
                 time.sleep(0.2)
                 announce(68 + points[i])  # "x Punkte"
                 time.sleep(1)
 
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.2)
     leds.reset()

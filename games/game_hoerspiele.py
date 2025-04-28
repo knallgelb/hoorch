@@ -12,10 +12,10 @@ from logger_util import get_logger
 logger = get_logger(__name__, "logs/game_hoerspiele.log")
 
 def start(folder, audiofile):
-    
+
     leds.reset()  # reset leds
     #swith on led where tag is placed
-    leds.switch_on_with_color(rfidreaders.tags.index(audiofile))
+    leds.switch_on_with_color(rfidreaders.tags.index(audiofile), (0, 255, 0))
 
     audio.play_file(folder, f"{audiofile}.mp3")
     waitingtime = time.time() + float(subprocess.run(
@@ -26,5 +26,7 @@ def start(folder, audiofile):
         if audiofile not in rfidreaders.tags or waitingtime < time.time():
             audio.kill_sounds()
             break
-   
+
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.1)
     leds.reset()

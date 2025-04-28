@@ -31,17 +31,20 @@ def start():
     leds.reset()  # reset leds
 
     if game_utils.check_end_tag():
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.3); leds.reset()
         return
 
     audio.play_full("TTS", 5)  # Stelle deine Figur auf eines der Spielfelder
 
     if game_utils.check_end_tag():
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.3); leds.reset()
         return
 
     audio.play_file("sounds", "waiting.mp3")  # play wait sound
     leds.rotate_one_round(1.11)
 
     if game_utils.check_end_tag():
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.3); leds.reset()
         return
 
     players = game_utils.filter_players_on_fields(
@@ -56,14 +59,24 @@ def start():
     u = models.Usage(game="tierlaute", players=figure_count)
     crud.add_game_entry(usage=u)
 
+    def action_with_led(player):
+        idx = players.index(player)
+        leds.switch_on_with_color(idx, (0,255,0))   # grün für rate-Spielfigur
+        result = player_action(player, rfidreaders, file_lib, rfid_position, animals_played)
+        leds.switch_on_with_color(idx, (0,0,0))
+        return result
+
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
-        player_action=lambda p: player_action(p, rfidreaders, file_lib, rfid_position, animals_played)
+        player_action=action_with_led
     )
 
     game_utils.announce_score(score_players=score_players)
 
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.3)
+    leds.reset()
     return score_players
 
 

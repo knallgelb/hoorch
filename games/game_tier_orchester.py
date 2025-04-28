@@ -53,8 +53,13 @@ def start():
             assert isinstance(animal, models.RFIDTag)
             if animal is not None:
                 if not audio.file_is_playing(animal.name + ".mp3"):
+                    leds.switch_on_with_color(i, (255, 255, 0))  # Gelb für aktuelles Tier
                     announce_file(msg_id=animal.name + ".mp3", path="animal_sounds")
                     playing_animals[i] = animal
                     logger.info(f"Playing sound for animal '{animal}' on field {i + 1}")
+                    time.sleep(0.3)
+                    leds.switch_on_with_color(i, (0, 0, 0))      # wieder LED aus
 
         time.sleep(0.2)
+    leds.blink = False
+    leds.reset()

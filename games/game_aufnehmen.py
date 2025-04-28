@@ -17,7 +17,7 @@ def start(figure_id):
     leds.reset()  # reset leds
 
     field = rfidreaders.tags.index(figure_id)
-    
+
     #switch on led where tag is placed
     leds.switch_on_with_color(field, (0, 255, 0))
 
@@ -25,7 +25,7 @@ def start(figure_id):
     figure_folder = "./data/figures/"
     figure_dirs = os.listdir(figure_folder)
     figure_dir = figure_folder+figure_id
-    
+
     if figure_id not in figure_dirs:
         os.mkdir(figure_dir)
 
@@ -48,6 +48,9 @@ def start(figure_id):
         print("error while recording!")
         # Bei der Aufname ist ein Fehler passiert. Lass die Figur beim nächsten mal länger stehen
         audio.play_full("TTS", 197)
+        leds.switch_all_on_with_color((0,0,255))
+        time.sleep(0.1)
+        leds.reset()
         return
 
     # play audio after recording
@@ -90,5 +93,7 @@ def start(figure_id):
             # Geschichte nicht gespeichert
             audio.play_full("TTS", 83)
             break
-    
+
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.1)
     leds.reset()

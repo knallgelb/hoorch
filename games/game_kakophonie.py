@@ -71,6 +71,8 @@ def start():
                 x.set_volume(1.0)
                 x.stop()
             pygame.mixer.quit()
+            leds.blink = False
+            leds.reset()
             return
 
     leds.blink = False

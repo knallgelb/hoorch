@@ -33,6 +33,7 @@ def start():
     leds.rotate_one_round(0.55)
 
     if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
         return
 
     rfid_position = []
@@ -52,24 +53,28 @@ def start():
     if figure_count == 0:
         # Du hast keine Spielfigur auf das Spielfeld gestellt
         audio.play_full("TTS", 59)
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
         return
 
     if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
         return
 
     figure_count = sum(x is not None for x in players)
     if figure_count == 0:
         # Keine deiner Spielfiguren hat eine Geschichte gespeichert.
         audio.play_full("TTS", 201)
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
         return
 
     # switch on leds at player field
-    leds.switch_on_with_color(players, (100, 100, 100))
+    leds.switch_on_with_color(players, (0, 255, 0))
 
     # TODO: x figuren haben eine geschichte gespeichert
     audio.play_full("TTS", 5 + figure_count)
 
     if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
         return
 
     for i, player in enumerate(players):
@@ -89,6 +94,10 @@ def start():
             continue
 
         if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+            leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
             return
 
+    leds.switch_all_on_with_color((0,0,255))
+    time.sleep(0.2)
+    leds.reset()
     audio.play_file('sounds', translator.translate("story.finished"))
