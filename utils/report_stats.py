@@ -3,12 +3,24 @@ import crud
 import os
 import models
 from schemas import UsageTransfer
-
 from dotenv import load_dotenv
+
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
 
+def has_internet_connection(url='https://www.google.com/', timeout=3):
+    try:
+        httpx.head(url, timeout=timeout)
+        return True
+    except Exception:
+        return False
+
 def send_and_update_stats():
+    # Prüfe Internetverbindung BEVOR wir senden:
+    if not has_internet_connection():
+        print("Keine Internetverbindung – Daten werden nicht gesendet.")
+        return
+
     usages = crud.get_all_games_to_submit()
     for usage in usages:
         send_single_usage(usage)

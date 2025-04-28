@@ -168,6 +168,7 @@ def main():
             leds.reset()
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
+            report_stats.send_and_update_stats()
             shutdown_counter = time.time() + shutdown_time
 
         if "FRAGEZEICHEN" in rfidreaders.tags:
