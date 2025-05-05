@@ -1,6 +1,7 @@
 [Unit]
 Description=HOORCH Main Program
-After=basic.target sound.target
+After=basic.target sound.target leds_server.service
+Requires=leds_server.service
 DefaultDependencies=false
 
 [Service]
