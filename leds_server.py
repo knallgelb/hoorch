@@ -18,6 +18,31 @@ pixels = neopixel.NeoPixel(
 )
 
 
+def blink(color, times=5, interval=0.3, leds=None):
+    """
+    Lässt LEDs blinken.
+    :param color: Farbe als [R, G, B]
+    :param times: Anzahl der Blinks
+    :param interval: Pause zwischen Ein/Aus (Sekunden)
+    :param leds: Liste der LEDs (oder Einzel-LED), None für alle
+    """
+    c = tuple(color)
+    if leds is not None:
+        if isinstance(leds, int):
+            leds = [leds]
+    for _ in range(times):
+        if leds is None:
+            pixels.fill(c)
+        else:
+            reset()
+            for led in leds:
+                pixels[led] = c
+        pixels.show()
+        time.sleep(interval)
+        reset()
+        time.sleep(interval)
+
+
 def reset():
     pixels.fill((0, 0, 0))
     pixels.show()
@@ -82,6 +107,13 @@ try:
                 switch_on_with_color(cmd["leds"], cmd["color"])
             elif cmd["cmd"] == "rainbow":
                 rainbow_cycle(cmd.get("wait", 0.01))
+            elif cmd["cmd"] == "blink":
+                blink(
+                    cmd.get("color", [255, 255, 255]),
+                    cmd.get("times", 5),
+                    cmd.get("interval", 0.3),
+                    cmd.get("leds"),
+                )
         except Exception as e:
             print("Fehler beim Verarbeiten des Kommandos:", e)
         conn.close()

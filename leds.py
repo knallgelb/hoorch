@@ -59,7 +59,7 @@ def rotate_one_round(time_per_led=0.2):
 
 def blinker():
     """Starte oder stoppe Blinken (toggle)."""
-    send_led_command("blinker")
+    send_led_command("blink")
 
 
 def testr():
