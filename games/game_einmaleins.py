@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import random
 import copy
+import random
 import time
-import audio
-import rfidreaders
-import leds
-import file_lib
-import models
+
 import crud
-
-
-from .game_utils import (
-    check_end_tag,
-    announce,
-    wait_for_figure_placement,
-    filter_players_on_fields,
-    blink_led,
-    get_solution_from_tags
-)
-
+import file_lib
+import leds
+import models
+import rfidreaders
 from logger_util import get_logger
 
+from .game_utils import (
+    announce,
+    blink_led,
+    check_end_tag,
+    filter_players_on_fields,
+    get_solution_from_tags,
+    wait_for_figure_placement,
+)
+
 logger = get_logger(__name__, "logs/game_einmaleins.log")
+
 
 def start():
     defined_figures = file_lib.figures_db
@@ -36,7 +35,9 @@ def start():
     announce(86)  # "Place your figures..."
     wait_for_figure_placement((0, 2, 4))
 
-    players = filter_players_on_fields(copy.deepcopy(rfidreaders.tags), [1, 3, 5], defined_figures)
+    players = filter_players_on_fields(
+        copy.deepcopy(rfidreaders.tags), [1, 3, 5], defined_figures
+    )
     figure_count = sum(p is not None for p in players)
 
     # Log Usage
@@ -45,13 +46,17 @@ def start():
 
     if figure_count == 0:
         announce(59)  # "No figures placed."
-        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+        leds.switch_all_on_with_color((0, 0, 255))
+        time.sleep(0.2)
+        leds.reset()
         return
 
     announce(5 + figure_count)  # "x figures are playing"
 
     if check_end_tag():
-        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+        leds.switch_all_on_with_color((0, 0, 255))
+        time.sleep(0.2)
+        leds.reset()
         return
 
     rounds = 3
@@ -59,7 +64,9 @@ def start():
     points = [0] * len(players)
 
     if check_end_tag():
-        leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+        leds.switch_all_on_with_color((0, 0, 255))
+        time.sleep(0.2)
+        leds.reset()
         return
 
     is_first_round = True
@@ -69,53 +76,61 @@ def start():
                 continue
 
             leds.reset()
-            leds.switch_on_with_color(i, (0,255,0))
+            leds.switch_on_with_color(i, (0, 255, 0))
 
             if is_first_round:
                 is_first_round = False
                 announce(12 + i)  # "The figure on field x starts"
-                announce(89)      # "Place the tens digit..."
+                announce(89)  # "Place the tens digit..."
             elif figure_count == 1:
-                announce(67)      # "It's your turn again"
+                announce(67)  # "It's your turn again"
             else:
                 announce(48 + i)  # "The next figure on field x"
 
             if check_end_tag():
-                leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+                leds.switch_all_on_with_color((0, 0, 255))
+                time.sleep(0.2)
+                leds.reset()
                 return
 
             # Generate and announce math problem
             num1, num2 = random.randint(1, 9), random.randint(1, 9)
             solution = num1 * num2
 
-            announce(87)             # "How much is..."
-            announce(90 + num1)      # first number
-            announce(88)             # "times"
-            announce(90 + num2)      # second number
+            announce(87)  # "How much is..."
+            announce(90 + num1)  # first number
+            announce(88)  # "times"
+            announce(90 + num2)  # second number
 
             if check_end_tag():
-                leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+                leds.switch_all_on_with_color((0, 0, 255))
+                time.sleep(0.2)
+                leds.reset()
                 return
 
             blink_led(i)
 
             if check_end_tag():
-                leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+                leds.switch_all_on_with_color((0, 0, 255))
+                time.sleep(0.2)
+                leds.reset()
                 return
 
             # Check solution
             player_solution = get_solution_from_tags(i, players)
             if player_solution == solution:
                 announce(27)
-                leds.switch_on_with_color(i, (50,255,50))
+                leds.switch_on_with_color(i, (50, 255, 50))
                 points[i] += 1
             else:
                 announce(26)
-                leds.switch_on_with_color(i, (255,0,0))
+                leds.switch_on_with_color(i, (255, 0, 0))
             time.sleep(0.3)
 
             if check_end_tag():
-                leds.switch_all_on_with_color((0,0,255)); time.sleep(0.2); leds.reset()
+                leds.switch_all_on_with_color((0, 0, 255))
+                time.sleep(0.2)
+                leds.reset()
                 return
 
     # Announce scores
@@ -123,11 +138,11 @@ def start():
     for i, player in enumerate(players):
         if player is not None:
             leds.reset()
-            leds.switch_on_with_color(i, (30,144,255))
-            announce(74 + i)        # "Figure on field x"
-            announce(68 + points[i])# "x points"
+            leds.switch_on_with_color(i, (30, 144, 255))
+            announce(74 + i)  # "Figure on field x"
+            announce(68 + points[i])  # "x points"
             time.sleep(1)
 
-    leds.switch_all_on_with_color((0,0,255))
+    leds.switch_all_on_with_color((0, 0, 255))
     time.sleep(0.2)
     leds.reset()
