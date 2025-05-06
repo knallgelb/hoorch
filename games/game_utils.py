@@ -1,11 +1,11 @@
 import time
-import audio
-import rfidreaders
-import leds
-import file_lib
-from models import RFIDTag
 
+import audio
+import file_lib
+import leds
+import rfidreaders
 from logger_util import get_logger
+from models import RFIDTag
 
 logger = get_logger(__name__, "logs/game_utils.log")
 
@@ -15,14 +15,14 @@ def check_end_tag():
     return file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name")
 
 
-def announce(msg_id, path='TTS'):
+def announce(msg_id, path="TTS"):
     """Play a message by its ID from the given path and check for ENDE tag."""
     audio.play_full(path, msg_id)
     if check_end_tag():
         raise SystemExit
 
 
-def announce_file(msg_id, path='TTS'):
+def announce_file(msg_id, path="TTS"):
     """Play a message by its ID from the given path and check for ENDE tag."""
     audio.play_file(path, msg_id)
     if check_end_tag():
@@ -33,7 +33,7 @@ def announce_score(score_players: dict):
     """Play a message by its ID from the given path and check for ENDE tag."""
     audio.play_full("TTS", 80)
     for player, score in score_players.items():
-        if not isinstance(player,RFIDTag):
+        if not isinstance(player, RFIDTag):
             continue
         audio.espeaker(f"{player.name} hat {score} richtige Antworten.")
 
@@ -48,9 +48,11 @@ def wait_for_figure_placement(fields):
 def filter_players_on_fields(players, valid_fields, defined_figures):
     """Set players to None if they are not on the valid fields or not defined figures."""
     for i in range(len(players)):
-        if (i in valid_fields
-                or players[i] is None
-                or players[i].rfid_tag not in defined_figures):
+        if (
+            i in valid_fields
+            or players[i] is None
+            or players[i].rfid_tag not in defined_figures
+        ):
             players[i] = None
     return players
 
@@ -95,7 +97,10 @@ def play_rounds(players, num_rounds, player_action) -> dict:
 
         audio.espeaker(f"Runde {round_num} abgeschlossen.")
 
+    leds.blinker()
+
     return score_players
+
 
 def leds_switch_on_with_color(player: RFIDTag, color: tuple[int, int, int]) -> None:
     if rfidreaders.tags.index(player):

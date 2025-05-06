@@ -19,6 +19,7 @@ HEADPHONES_VOLUME = int(os.getenv("HEADPHONES_VOLUME", "5"))
 MIC_VOLUME = int(os.getenv("MIC_VOLUME", "95"))
 STORY_VOLUME = int(os.getenv("STORY_VOLUME", "2"))
 STORY_VOLUME_FLOAT = float(STORY_VOLUME)
+WAITTIME_OFFSET = 0
 
 # Create 'logs' directory if it doesn't exist
 logs_dir = Path("logs")
@@ -76,7 +77,9 @@ def play_full(folder, audiofile):
         waitingtime_output = subprocess.run(
             ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
         )
-        waitingtime = float(waitingtime_output.stdout.decode("utf-8").strip()) + 0.2
+        waitingtime = (
+            float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+        )
         execute_play = f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null"
         logger.info(execute_play)
         subprocess.Popen(execute_play, shell=True, stdout=None, stderr=None)
@@ -96,7 +99,9 @@ def play_file(folder, audiofile):
     waitingtime_output = subprocess.run(
         ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
     )
-    waitingtime = float(waitingtime_output.stdout.decode("utf-8").strip()) + 0.2
+    waitingtime = (
+        float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+    )
     logger.info(f"Playing audio file: {file_path}")
     logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
     subprocess.Popen(
@@ -118,7 +123,9 @@ def play_story(figure_id):
     waitingtime_output = subprocess.run(
         ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
     )
-    waitingtime = float(waitingtime_output.stdout.decode("utf-8").strip()) + 0.2
+    waitingtime = (
+        float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+    )
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
     logger.info(f"Wating time: {waitingtime}")
     # Increase volume by STORY_VOLUME_FLOAT for stories
