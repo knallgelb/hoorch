@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
-import pdb
-import re
 import pygame
-import audio
-import rfidreaders
-import leds
-import file_lib
-import models
-import crud
 
+import crud
+import file_lib
+import leds
+import models
+import rfidreaders
 from logger_util import get_logger
 
 logger = get_logger(__name__, "logs/game_kakophonie.log")
 
 from .game_utils import (
-    check_end_tag,
     announce,
+    check_end_tag,
 )
 
 phones = []
@@ -44,20 +41,26 @@ def start():
         pygame.mixer.set_num_channels(6)
 
         for s in range(0, 6):
-            phones.append(pygame.mixer.Sound("data/phonie/00"+str(s+1)+".ogg"))
+            phones.append(pygame.mixer.Sound("data/phonie/00" + str(s + 1) + ".ogg"))
             phones[s].set_volume(0)
     else:
         pygame.mixer.unpause()
 
     for p in phones:
         p.play(loops=-1)
-    leds.blink = True
+    leds.blinker()
 
     while True:
         found_digits = []
+        active_leds = []
         for i, tag in enumerate(rfidreaders.tags):
             if tag is not None and tag.number is not None:
-                found_digits.append(int(rfidreaders.tags[i].number))  # get digit
+                active_leds.append(i)
+                found_digits.append(int(tag.number))
+
+        leds.switch_on_with_color(
+            active_leds, color=[0, 255, 0]
+        )  # Beispiel: Grün für alle gefundenen
 
         for i in range(0, 6):
             if i not in found_digits:
@@ -71,7 +74,7 @@ def start():
                 x.set_volume(1.0)
                 x.stop()
             pygame.mixer.quit()
-            leds.blink = False
+            leds.blinker()
             leds.reset()
             return
 
