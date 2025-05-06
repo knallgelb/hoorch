@@ -58,9 +58,7 @@ def start():
                 active_leds.append(i)
                 found_digits.append(int(tag.number))
 
-        leds.switch_on_with_color(
-            active_leds, color=[0, 255, 0]
-        )  # Beispiel: Grün für alle gefundenen
+        leds.switch_on_with_color(active_leds)  # Beispiel: Grün für alle gefundenen
 
         for i in range(0, 6):
             if i not in found_digits:
