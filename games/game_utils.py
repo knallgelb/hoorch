@@ -103,5 +103,9 @@ def play_rounds(players, num_rounds, player_action) -> dict:
 
 
 def leds_switch_on_with_color(player: RFIDTag, color: tuple[int, int, int]) -> None:
-    if rfidreaders.tags.index(player):
-        leds.switch_on_with_color(rfidreaders.tags.index(player), color=color)
+    try:
+        if rfidreaders.tags.index(player):
+            leds.switch_on_with_color(rfidreaders.tags.index(player), color=color)
+            return
+    except ValueError:
+        leds.blinker()
