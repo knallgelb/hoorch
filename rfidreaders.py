@@ -17,6 +17,7 @@ from digitalio import DigitalInOut
 import file_lib
 import state
 from logger_util import get_logger
+import models
 
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists("logs"):
@@ -164,7 +165,12 @@ def read_from_mifare(reader, tag_uid: str):
     if tag_uid_database:
         return tag_uid_database
 
-    return tag_uid_readable
+    new_rfid_tag = models.RFIDTag(rfid_tag=tag_uid_readable, name=tag_uid_readable, rfid_type="unknown", number=99)
+
+
+    file_lib.all_tags[tag_uid_readable] = new_rfid_tag
+
+    return new_rfid_tag
 
 
 def read_from_ntag2(reader):
