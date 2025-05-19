@@ -36,14 +36,14 @@ def start():
     leds.reset()  # Reset LEDs
 
     playing_animals = [None, None, None, None, None, None]
-    leds.blink = True
+    leds.blinker()
     while True:
         animals = [tag for tag in copy.deepcopy(rfidreaders.tags) if
                    isinstance(tag, models.RFIDTag) and tag.rfid_type == 'animal']
         logger.debug(f"Current animals on fields: {animals}")
 
         if check_end_tag():
-            leds.blink = False
+            leds.blinker()
             leds.reset()
             audio.kill_sounds()
             logger.info("Game ended by detecting 'ENDE' tag.")
@@ -61,5 +61,5 @@ def start():
                     leds.switch_on_with_color(i, (0, 0, 0))      # wieder LED aus
 
         time.sleep(0.2)
-    leds.blink = False
+    leds.blinker()
     leds.reset()
