@@ -48,11 +48,31 @@ def find_missing_entries():
 
 def remap_missing_entries():
     from tagwriter import write_missing_entries_for_category
+    from crud import get_all_rfid_tags
 
     missing_entries = find_missing_entries()
+
+    # Get all RFIDTag objects from DB
+    all_tags = get_all_rfid_tags()
+
+    # Map name and category to RFIDTag object for quick lookup
+    tag_lookup = {}
+    for tag in all_tags:
+        tag_lookup[(tag.rfid_type, tag.name)] = tag
+
     for cat, missing_names in missing_entries.items():
         if missing_names:
-            write_missing_entries_for_category(cat, missing_names)
+            # Prepare list of tuples (name, RFIDTag ID) for missing
+            missing_with_ids = []
+            for name in missing_names:
+                tag_obj = tag_lookup.get((cat, name))
+                if tag_obj:
+                    missing_with_ids.append((name, tag_obj.id))
+                else:
+                    # If no tag found, append with None as id
+                    missing_with_ids.append((name, None))
+
+            write_missing_entries_for_category(cat, missing_with_ids)
             # Reload from DB to update
             file_lib.load_all_tags()
 

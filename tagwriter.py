@@ -165,14 +165,17 @@ def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
                 time.sleep(1.5)
                 break
 
-def write_missing_entries_for_category(category, missing_names, path="figures"):
+def write_missing_entries_for_category(category, missing_names_with_ids, path="figures"):
     """
     Für fehlende Einträge in einer Kategorie werden diese in die DB geschrieben.
     Die Zuordnung erfolgt durch Neu-Lesen der RFID Tags.
+    missing_names_with_ids is a list of tuples: (name, RFIDTag id)
     """
+    from crud import update_rfid_tag_by_id
+
     rdr = get_reader()
     audio.espeaker(f"{category}")
-    for name in missing_names:
+    for name, tag_id in missing_names_with_ids:
         audio.espeaker(f"{name}")
         print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
 
@@ -181,7 +184,14 @@ def write_missing_entries_for_category(category, missing_names, path="figures"):
             tag_uid = rdr.read_passive_target(timeout=1.0)
 
         tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
-        success = update_rfid_in_db(tag_uid_readable, name, category)
+        if tag_id is not None:
+            from models import RFIDTag
+            # Update the record with the actual RFID tag read from the hardware
+            updated_tag = RFIDTag(id=tag_id, rfid_tag=tag_uid_readable, name=name, rfid_type=category)
+            success = update_rfid_tag_by_id(tag_uid_readable, updated_tag)
+        else:
+            success = update_rfid_in_db(tag_uid_readable, name, category)
+
 #        if success:
 #            audio.espeaker(f"Zuordnung für {name} in DB gespeichert")
 #        else:
