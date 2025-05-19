@@ -50,9 +50,13 @@ def main():
     breaker = False
 
     # 2 minutes until exit if no user interaction occurs
-    admin_exit_counter = time.time() + 120
+    admin_exit_counter = time.time() + 122
 
     audio.espeaker(translator.translate("admin.admin_menu"))
+
+    audio.espeaker(translator.translate("admin.ip_address"))
+    ip_adress = get_ip_address()
+    audio.espeaker(ip_adress)
 
     subprocess.run(['git', 'remote', 'update'], stdout=subprocess.PIPE, check=False)
     git_status = subprocess.run(['git', 'status', '-uno'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
