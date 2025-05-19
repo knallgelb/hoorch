@@ -60,7 +60,7 @@ def start():
 def player_action(
     player: RFIDTag, rfidreaders, file_lib, rfid_position: List[int]
 ) -> bool:
-    expected_value = random.choice(list(file_lib.get_tags_by_type("numeric").values()))
+    expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
     audio.espeaker(expected_value.number)
 
     total_wait_seconds = 6.0
@@ -74,7 +74,7 @@ def player_action(
 
         for tag in relevant_tags:
             # pdb.set_trace()
-            if tag.number is not None and tag.number == expected_value.number:
+            if tag.name is not None and int(tag.name) == expected_value.number:
                 game_utils.announce(27)
                 return True
 
