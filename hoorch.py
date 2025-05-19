@@ -73,7 +73,7 @@ def init():
     all_tags = file_lib.load_all_tags()
     if len(all_tags.values()) < 1:
         tagwriter.write_all_sets()
-        file_lib.read_database_files()
+        file_lib.load_all_tags()
 
     if integrity_check.any_missing_entries():
         audio.espeaker("Unvollständige RFID Zuordnung. Fehlende Karten werden jetzt nachgezogen.")
