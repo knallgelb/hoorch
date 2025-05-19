@@ -23,7 +23,7 @@ logger = get_logger(__name__, "logs/game_tier_orchester.log")
 
 
 def start():
-    defined_animals = file_lib.animal_figures_db
+    defined_animals = file_lib.get_tags_by_type("animal")
 
     logger.info(f"Defined animals: {defined_animals}")
     logger.info("The animal orchestra is starting. Place the animal figures on the game fields!")
@@ -60,6 +60,6 @@ def start():
                     time.sleep(0.3)
                     leds.switch_on_with_color(i, (0, 0, 0))      # wieder LED aus
 
-        time.sleep(0.2)
-    leds.blinker()
-    leds.reset()
+    time.sleep(0.2)
+leds.blinker()
+leds.reset()

@@ -22,7 +22,7 @@ phones = []
 def start():
     print("Wir spielen Kakophonie")
 
-    defined_numbers = file_lib.animal_numbers_db
+    defined_numbers = file_lib.get_tags_by_type("numeric")
 
     # Log Usage
     u = models.Usage(game="kakophonie", players=1)

@@ -20,8 +20,8 @@ logger = get_logger(__name__, "logs/game_tierlaute.log")
 
 
 def start():
-    defined_figures = file_lib.figures_db
-    defined_animals = file_lib.animal_figures_db
+    defined_figures = file_lib.get_tags_by_type("figure")
+    defined_animals = file_lib.get_tags_by_type("animal")
 
     animals_played = []  # store the already played animals to avoid repetition
 
@@ -95,7 +95,7 @@ def player_action(
 ) -> bool:
     available_animals = [
         animal
-        for animal in file_lib.animal_figures_db.values()
+        for animal in file_lib.get_tags_by_type("animal").values()
         if animal not in animals_played
     ]
     if not available_animals:

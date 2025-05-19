@@ -25,7 +25,7 @@ logger = get_logger(__name__, "logs/game_einmaleins.log")
 
 
 def start():
-    defined_figures = file_lib.figures_db
+    defined_figures = file_lib.get_tags_by_type("figure")
     all_tags = file_lib.all_tags
 
     announce(85)  # "We are now practicing multiplication."

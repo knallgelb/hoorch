@@ -17,7 +17,7 @@ logger = get_logger(__name__, "logs/game_zahlen.log")
 
 
 def start():
-    defined_figures = file_lib.all_tags
+    defined_figures = file_lib.get_tags_by_type("figure")
     audio.espeaker("Spiel Zahlen legen")
     audio.espeaker(
         "Setze die Spielfiguren auf das Spielfeld. Mögliche Felder sind 1, 3, 5"
@@ -60,7 +60,7 @@ def start():
 def player_action(
     player: RFIDTag, rfidreaders, file_lib, rfid_position: List[int]
 ) -> bool:
-    expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
+    expected_value = random.choice(list(file_lib.get_tags_by_type("numeric").values()))
     audio.espeaker(expected_value.number)
 
     total_wait_seconds = 6.0
