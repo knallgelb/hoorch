@@ -16,13 +16,13 @@ def add_game_entry(usage: Usage, db: Session = next(get_db())):
 
 
 def get_all_games(db: Session = next(get_db())):
-    games = db.exec(select(Usage)).all()
+    games = db.exec(select(Usage).order_by(Usage.game)).all()
     logger.debug(f"Retrieved {len(games)} games from database.")
     return games
 
 
 def get_all_games_to_submit(db: Session = next(get_db())):
-    games = db.exec(select(Usage).filter(Usage.is_transmitted == False)).all()
+    games = db.exec(select(Usage).filter(Usage.is_transmitted == False).order_by(Usage.game)).all()
     logger.debug(f"Retrieved {len(games)} games to submit from database.")
     return games
 
@@ -71,7 +71,7 @@ def initialize_rfid_tags():
 
                     # Check how many tags with this number already exist
                     count_existing = session.exec(
-                        select(RFIDTag.rfid_tag).where(RFIDTag.number == number)
+                        select(RFIDTag.rfid_tag).where(RFIDTag.number == number).order_by(RFIDTag.name)
                     ).all()
                     count_existing = len(count_existing)
 
@@ -86,7 +86,7 @@ def initialize_rfid_tags():
             else:
                 for name in lines:
                     existing = session.exec(
-                        select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category)
+                        select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category).order_by(RFIDTag.name)
                     ).first()
                     if existing:
                         continue
@@ -115,7 +115,7 @@ def get_rfid_tag_by_id(rfid_tag_id: str, db: Session = next(get_db())) -> RFIDTa
 
 
 def get_all_rfid_tags(db: Session = next(get_db())) -> list[RFIDTag]:
-    tags = db.exec(select(RFIDTag)).all()
+    tags = db.exec(select(RFIDTag).order_by(RFIDTag.name)).all()
     logger.debug(f"Retrieved {len(tags)} RFIDTags from database.")
     return tags
 
@@ -162,7 +162,11 @@ def get_tags_with_empty_rfid_tag(db: Session = next(get_db())) -> dict[str, list
     """
     Returns a dictionary mapping rfid_type to list of tag names where rfid_tag is empty or None.
     """
-    tags = db.exec(select(RFIDTag).where((RFIDTag.rfid_tag == "") | (RFIDTag.rfid_tag == None))).all()
+    tags = db.exec(
+        select(RFIDTag).where(
+            (RFIDTag.rfid_tag == "") | (RFIDTag.rfid_tag == None)
+        ).order_by(RFIDTag.name)
+    ).all()
     result: dict[str, list[str]] = {}
     for tag in tags:
         if tag.rfid_type not in result:
