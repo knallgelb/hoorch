@@ -136,18 +136,19 @@ def create_rfid_tag(tag: RFIDTag, db: Session = next(get_db())) -> RFIDTag | Non
     return tag
 
 
-def update_rfid_tag_by_id(rfid_tag_id: str, updated_tag: RFIDTag, db: Session = next(get_db())) -> RFIDTag | None:
-    tag = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == rfid_tag_id)).first()
+def update_rfid_tag_by_id(record_id: int, updated_tag: RFIDTag, db: Session = next(get_db())) -> RFIDTag | None:
+    tag = db.exec(select(RFIDTag).where(RFIDTag.id == record_id)).first()
     if not tag:
-        logger.warning(f"RFIDTag not found for update: {rfid_tag_id}")
+        logger.warning(f"RFIDTag not found for update id: {record_id}")
         return None
+    tag.rfid_tag = updated_tag.rfid_tag
     tag.name = updated_tag.name
     tag.rfid_type = updated_tag.rfid_type
     tag.number = updated_tag.number
     db.add(tag)
     db.commit()
     db.refresh(tag)
-    logger.debug(f"Updated RFIDTag {rfid_tag_id} to new values: {updated_tag}")
+    logger.debug(f"Updated RFIDTag id {record_id} to new values: {updated_tag}")
     return tag
 
 

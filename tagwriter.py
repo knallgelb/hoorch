@@ -188,7 +188,7 @@ def write_missing_entries_for_category(category, missing_names_with_ids, path="f
             from models import RFIDTag
             # Update the record with the actual RFID tag read from the hardware
             updated_tag = RFIDTag(id=tag_id, rfid_tag=tag_uid_readable, name=name, rfid_type=category)
-            success = update_rfid_tag_by_id(tag_uid_readable, updated_tag)
+            success = update_rfid_tag_by_id(tag_id, updated_tag)
         else:
             success = update_rfid_in_db(tag_uid_readable, name, category)
 
