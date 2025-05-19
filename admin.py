@@ -159,6 +159,15 @@ def git():
         os.system("sudo reboot")
 
 
+def get_ip_address():
+    output = subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8').strip()
+    ip_addresses = output.split()
+    if ip_addresses:
+        return ip_addresses[0]
+    else:
+        return None
+
+
 def wifi():
     translator = Translator(locale='de')
     print("wifi config")
@@ -175,18 +184,15 @@ def wifi():
                 audio.espeaker(translator.translate("admin.wifi_starting"))
                 os.system("rfkill unblock wifi")
 
-                while not subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode(
-                        'utf-8'):
+                while not get_ip_address():
                     time.sleep(2)
 
-                output = subprocess.run(
-                    ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
-                ip_adress = output.split(" ", 1)
+                ip_adress = get_ip_address()
                 print(ip_adress)
 
                 audio.espeaker(translator.translate("admin.wifi_on"))
                 audio.espeaker(translator.translate("admin.ip_address"))
-                audio.espeaker(ip_adress[0])
+                audio.espeaker(ip_adress)
 
                 break
 
@@ -220,15 +226,13 @@ def wifi():
         # connected to a wifi
         elif state == "CONNECTED":
             audio.espeaker(translator.translate("admin.wifi_connected", connection=connection))
-            output = subprocess.run(
-                ['hostname', '-I'], stdout=subprocess.PIPE, check=False).stdout.decode('utf-8')
-            ip_adress = output.split(" ", 1)
+            ip_adress = get_ip_address()
             print(ip_adress)
 
             # say adress twice
             for i in range(2):
                 audio.espeaker(translator.translate("admin.ip_address"))
-                audio.espeaker(ip_adress[0])
+                audio.espeaker(ip_adress)
             time.sleep(2)
 
             audio.espeaker(translator.translate("admin.should_turn_off"))
