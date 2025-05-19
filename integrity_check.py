@@ -19,20 +19,18 @@ def get_expected_entries():
     return expected
 
 
-def get_assigned_entries():
-    actions_db = file_lib.get_tags_by_type("action")
-    figures_db = file_lib.get_tags_by_type("figure")
-    gamer_figures_db = file_lib.get_tags_by_type("game")
-    animal_figures_db = file_lib.get_tags_by_type("animal")
-    animal_numbers_db = file_lib.get_tags_by_type("numeric")
+from crud import get_tags_with_empty_rfid_tag
 
-    return {
-        "actions": set(getattr(tag, "name", None) for tag in actions_db.values()),
-        "animals": set(getattr(tag, "name", None) for tag in animal_figures_db.values()),
-        "figures": set(getattr(tag, "name", None) for tag in figures_db.values()),
-        "games": set(getattr(tag, "name", None) for tag in gamer_figures_db.values()),
-        "numeric": set(getattr(tag, "number", None) for tag in animal_numbers_db.values()),
-    }
+def get_assigned_entries():
+    """
+    Returns the names of tags per category that have empty rfid_tag in database,
+    i.e. where the actual RFID number/tag is missing.
+    """
+    empty_tags = get_tags_with_empty_rfid_tag()
+    result = {}
+    for category, names in empty_tags.items():
+        result[category] = set(names)
+    return result
 
 
 def find_missing_entries():
@@ -41,7 +39,7 @@ def find_missing_entries():
     # 'None' entfernen, falls beim ersten Mal Füllen durch getattr 'None' vorkommt
     missing = {
         cat: {
-            val for val in expected[cat] if val and val not in assigned.get(cat, set())
+            val for val in expected[cat] if val and val in assigned.get(cat, set())
         }
         for cat in expected
     }
