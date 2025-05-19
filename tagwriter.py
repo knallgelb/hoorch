@@ -158,10 +158,10 @@ def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
                 # Update DB instead of writing CSV
                 category = Path(input_file).stem
                 success = update_rfid_in_db(tag_uid_readable, figure, category)
-                if success:
-                    audio.espeaker(f"Zuordnung für {figure} in DB gespeichert")
-                else:
-                    audio.espeaker(f"Fehler: Kein DB Eintrag für {figure} gefunden")
+#                if success:
+#                    audio.espeaker(f"Zuordnung für {figure} in DB gespeichert")
+#                else:
+#                    audio.espeaker(f"Fehler: Kein DB Eintrag für {figure} gefunden")
                 time.sleep(1.5)
                 break
 
