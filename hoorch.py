@@ -166,7 +166,7 @@ def main():
 
 
         # Get all tags of type "game" from the database
-        game_tags_db = file_lib.get_tags_by_type("game")
+        game_tags_db = file_lib.get_tags_by_type("games")
 
         # Match the detected tags by their rfid_tag string with those in game_tags_db
         game_tags = []
