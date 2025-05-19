@@ -1,93 +1,40 @@
-import os
-from pathlib import Path
-import csv
-import re
-import logging
+from typing import Dict, Optional
+
 from models import RFIDTag
+from crud import get_all_rfid_tags, get_rfid_tag_by_id
+from logger_util import get_logger
 
-# Initialisiere die Datenbanken als leere Dictionaries
-figures_db = dict()
-gamer_figures_db = dict()
-animal_figures_db = dict()
-animal_numbers_db = dict()
-actions_db = dict()
-all_tags = dict()
-
-# Logging konfigurieren
-if not Path('logs').exists():
-    os.makedirs('logs')
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-file_handler = logging.FileHandler('logs/database_from_file.log')
-file_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-console_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+logger = get_logger(__name__, "logs/file_lib.log")
 
 
-def get_figure_from_database(rfid_tag) -> RFIDTag:
-    return all_tags.get(rfid_tag)
+def load_all_tags() -> Dict[str, RFIDTag]:
+    """Load all RFID tags from the database using CRUD."""
+    tags = get_all_rfid_tags()
+    tag_dict = {tag.rfid_tag: tag for tag in tags if tag.rfid_tag}
+    logger.debug(f"Loaded {len(tag_dict)} RFIDTag entries from DB")
+    return tag_dict
 
 
-def read_database_file(path_object: Path,
-                       category_dict: dict,
-                       all_tags: dict,
-                       which_field: str = "name",
-                       rfid_type: str = ""):
-    if path_object.exists():
-        with open(path_object, mode="r", encoding="utf-8") as file:
-            csv_reader = csv.DictReader(file, delimiter=';', fieldnames=["RFID_TAG", "NAME"])
-            next(csv_reader)
-
-            for row in csv_reader:
-                field_value = row["NAME"]
-                kwargs = {'rfid_tag': row["RFID_TAG"], which_field: field_value, "rfid_type": rfid_type}
-
-                rfid_tag = row["RFID_TAG"]
-
-                existing_tag = all_tags.get(rfid_tag)
-                if existing_tag:
-                    setattr(existing_tag, which_field, field_value)
-                else:
-                    existing_tag = RFIDTag(**kwargs)
-                    all_tags[rfid_tag] = existing_tag
-
-                category_dict[rfid_tag] = existing_tag
+def get_figure_from_database(rfid_tag: str) -> Optional[RFIDTag]:
+    """Get RFIDTag by rfid_tag value."""
+    tag = get_rfid_tag_by_id(rfid_tag)
+    if tag:
+        logger.debug(f"Found tag for RFID {rfid_tag}")
     else:
-        logger.warning(f"Datei {path_object} existiert nicht.")
-    return category_dict
+        logger.debug(f"No tag found for RFID {rfid_tag}")
+    return tag
 
 
-def read_database_files():
-    global actions_db, figures_db, gamer_figures_db, animal_figures_db, animal_numbers_db, all_tags
-
-    all_tags = {}
-    actions_db = {}
-    figures_db = {}
-    gamer_figures_db = {}
-    animal_figures_db = {}
-    animal_numbers_db = {}
-
-    path_actions = Path("figures") / "actions_db.txt"
-    path_animals = Path("figures") / "animals_db.txt"
-    path_figures = Path("figures") / "figures_db.txt"
-    path_games = Path("figures") / "games_db.txt"
-    path_numbers = Path("figures") / "numeric_db.txt"
-
-    actions_db = read_database_file(path_actions, actions_db, all_tags, rfid_type="action")
-    figures_db = read_database_file(path_figures, figures_db, all_tags, rfid_type="figure")
-    gamer_figures_db = read_database_file(path_games, gamer_figures_db, all_tags, rfid_type="game")
-    animal_figures_db = read_database_file(path_animals, animal_figures_db, all_tags, rfid_type="animal")
-    animal_numbers_db = read_database_file(path_numbers, animal_numbers_db, all_tags, which_field='number', rfid_type="number")
+def group_tags_by_type() -> tuple[Dict[str, RFIDTag], Dict[str, RFIDTag], Dict[str, RFIDTag], Dict[str, RFIDTag], Dict[str, RFIDTag]]:
+    """Group all tags by their rfid_type into separate dictionaries."""
+    tags = load_all_tags()
+    actions_db = {tag.rfid_tag: tag for tag in tags.values() if tag.rfid_type == "action"}
+    figures_db = {tag.rfid_tag: tag for tag in tags.values() if tag.rfid_type == "figure"}
+    gamer_figures_db = {tag.rfid_tag: tag for tag in tags.values() if tag.rfid_type == "game"}
+    animal_figures_db = {tag.rfid_tag: tag for tag in tags.values() if tag.rfid_type == "animal"}
+    animal_numbers_db = {tag.rfid_tag: tag for tag in tags.values() if tag.rfid_type == "numeric"}
+    logger.debug(f"Grouped tags by type: action={len(actions_db)}, figure={len(figures_db)}, game={len(gamer_figures_db)}, animal={len(animal_figures_db)}, numeric={len(animal_numbers_db)}")
+    return actions_db, figures_db, gamer_figures_db, animal_figures_db, animal_numbers_db
 
 
 def check_tag_attribute(tags, value, attribute='name'):
@@ -106,12 +53,13 @@ def check_tag_attribute(tags, value, attribute='name'):
 
 
 if __name__ == "__main__":
-    read_database_files()
-    logger.debug("Alle Tags:")
-    for tag_id, tag in all_tags.items():
+    all_tags_db = load_all_tags()
+    logger.debug("Alle Tags aus der DB:")
+    for tag_id, tag in all_tags_db.items():
         logger.debug(f"RFID_TAG: {tag.rfid_tag}, Attribute: {tag.__dict__}")
 
-    # Beispiel: Ausgabe der Tags pro Kategorie
+    actions_db, figures_db, gamer_figures_db, animal_figures_db, animal_numbers_db = group_tags_by_type()
+
     logger.debug("Actions DB:")
     for tag_id, tag in actions_db.items():
-        logger.debug(f"RFID_TAG: {tag.rfid_tag}, Name: {getattr(tag, 'name', None)}")
+        logger.debug(f"RFID_TAG: {tag.rfid_tag}, Name: {tag.name}")
