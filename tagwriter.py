@@ -13,10 +13,13 @@ from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 from adafruit_pn532.spi import PN532_SPI
 from digitalio import DigitalInOut
 
+from sqlmodel import Session, select
+from hoorch.database import engine, get_db
+from hoorch.models import RFIDTag
+
 import audio
 import leds
 
-# KEINE Hardware-Initialisierung auf Modulebene!
 reader = None
 
 
@@ -28,6 +31,24 @@ def get_reader():
         reader = PN532_SPI(spi, reader1_pin, debug=False)
         reader.SAM_configuration()
     return reader
+
+
+def update_rfid_in_db(rfid_tag: str, name: str, rfid_type: str):
+    """
+    Update the database entry for a matching name and rfid_type with the given rfid_tag.
+    """
+    with Session(engine) as session:
+        tag = session.exec(
+            select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == rfid_type)
+        ).first()
+        if tag:
+            tag.rfid_tag = rfid_tag
+            session.add(tag)
+            session.commit()
+            session.refresh(tag)
+            return True
+        else:
+            return False
 
 
 path = "./figure_ids.txt"
@@ -118,74 +139,54 @@ def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
     audio.espeaker(f"Set {input_file}")
 
     full_path_input = Path(path) / Path(input_file)
-    full_path_output = Path(path) / Path(output_file)
 
     figure_list = []
-
-    fieldnames = ["RFID_TAG", "NAME"]
 
     with full_path_input.open("r") as input_file_handle:
         for line in input_file_handle:
             figure_list.append(line.strip())
 
-    with full_path_output.open("w") as output_file_handle:
-        csv_writer = csv.DictWriter(
-            output_file_handle, fieldnames=fieldnames, delimiter=";"
-        )
-        csv_writer.writeheader()
+    rdr = get_reader()
+    audio.espeaker(f"Starte das Schreiben für {input_file}")
+    for figure in figure_list:
+        audio.espeaker(f"Nächste Figur: {figure}")
+        while True:
+            tag_uid = rdr.read_passive_target(timeout=1.0)
 
-        rdr = get_reader()
-        for figure in figure_list:
-            audio.espeaker(f"Nächste Figur: {figure}")
-            while True:
-                tag_uid = rdr.read_passive_target(timeout=1.0)
-
-                if tag_uid:
-                    tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
-                    csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NAME": figure})
-                    time.sleep(1.5)
-                    break
+            if tag_uid:
+                tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+                # Update DB instead of writing CSV
+                category = Path(input_file).stem
+                success = update_rfid_in_db(tag_uid_readable, figure, category)
+                if success:
+                    audio.espeaker(f"Zuordnung für {figure} in DB gespeichert")
+                else:
+                    audio.espeaker(f"Fehler: Kein DB Eintrag für {figure} gefunden")
+                time.sleep(1.5)
+                break
 
 def write_missing_entries_for_category(category, missing_names, path="figures"):
     """
-    Für fehlende Einträge in einer Kategorie werden diese in die passende DB geschrieben.
-    category: z.B. 'actions', 'animals', 'figures', 'games', 'numeric'
-    missing_names: Iterable der Strings (Einträge in txt-Datei, noch nicht in _db.txt)
+    Für fehlende Einträge in einer Kategorie werden diese in die DB geschrieben.
+    Die Zuordnung erfolgt durch Neu-Lesen der RFID Tags.
     """
-    # Nicer Outputfile bestimmen
-    output_filename = f"{category}_db.txt"
-    full_path_output = Path(path) / Path(output_filename)
+    rdr = get_reader()
+    audio.espeaker(f"{category}")
+    for name in missing_names:
+        audio.espeaker(f"{name}")
+        print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
 
-    # Prüfe, ob Datei existiert, sonst lege sie mit Header neu an
-    if not full_path_output.exists():
-        with full_path_output.open("w", encoding="utf-8") as f:
-            writer = csv.writer(f, delimiter=";")
-            writer.writerow(["RFID_TAG", "NAME"])  # immer diese beiden Spalten für alle bis auf numeric
+        tag_uid = None
+        while not tag_uid:
+            tag_uid = rdr.read_passive_target(timeout=1.0)
 
-    # Fieldnames & CSV
-    fieldnames = ["RFID_TAG", "NAME"]
-    if category == "numeric":
-        fieldnames = ["RFID_TAG", "NUMBER"]
-
-    # Öffne im "a" Append-modus, damit nichts verloren geht!
-    with full_path_output.open("a", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=";")
-        rdr = get_reader()
-        audio.espeaker(f"{category}")
-        for name in missing_names:
-            audio.espeaker(f"{name}")
-            print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
-
-            tag_uid = None
-            while not tag_uid:
-                tag_uid = rdr.read_passive_target(timeout=1.0)
-
-            tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
-            if category == "numeric":
-                csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NUMBER": name})
-            else:
-                csv_writer.writerow({"RFID_TAG": tag_uid_readable, "NAME": name})
-            time.sleep(1.5)
+        tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+        success = update_rfid_in_db(tag_uid_readable, name, category)
+        if success:
+            audio.espeaker(f"Zuordnung für {name} in DB gespeichert")
+        else:
+            audio.espeaker(f"Fehler: Kein DB Eintrag für {name} gefunden")
+        time.sleep(1.5)
 
     audio.espeaker(f"Alle fehlenden Tags für {category} fertig!")
 
@@ -231,14 +232,11 @@ def write_set():
                 id_readable = id_readable[:-1]
 
             figure_database.append([id_readable, figure])
-            print("Added figure to figure database")
+            # Instead of writing to file, update the DB here
+            update_rfid_in_db(id_readable, figure, "figures")
 
     leds.reset()
-    audio.espeaker("Ende der Datei erreicht, schreibe die Datenbank")
-
-    with open("figure_db.txt", "w") as db_file:
-        for pair in figure_database:
-            db_file.write(str(pair[0]) + ";" + str(pair[1]) + "\n")
+    audio.espeaker("Ende der Datei erreicht, alle Daten in der DB gespeichert")
 
 
 def write_on_tag(tag_uid, word, id_readable):
