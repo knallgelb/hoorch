@@ -164,13 +164,24 @@ def main():
 
         logger.info(rfidreaders.tags)
 
-        game_tags = [
-            tag
-            for tag in rfidreaders.tags
-            if isinstance(tag, RFIDTag) and tag.rfid_type == "game"
-        ]
 
-        if len(game_tags) > 0 and games.games[game_tags[0].name]:
+        # Get all tags of type "game" from the database
+        game_tags_db = file_lib.get_tags_by_type("game")
+
+        # Match the detected tags by their rfid_tag string with those in game_tags_db
+        game_tags = []
+        for detected_tag in rfidreaders.tags:
+            if detected_tag is None:
+                continue
+            rfid_tag_str = None
+            if hasattr(detected_tag, "rfid_tag"):
+                rfid_tag_str = detected_tag.rfid_tag
+            elif isinstance(detected_tag, str):
+                rfid_tag_str = detected_tag
+            if rfid_tag_str and rfid_tag_str in game_tags_db:
+                game_tags.append(game_tags_db[rfid_tag_str])
+
+        if len(game_tags) > 0 and game_tags[0].name in games.games:
             logger.info(f"Game {game_tags[0].name} starten.")
             # leds.blink = False
             # => Stopp ggf. das Blinken per Server-Kommando, falls realisiert:
