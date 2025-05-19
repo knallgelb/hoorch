@@ -25,7 +25,7 @@ def start():
         locale="de"
     )  # Initialisiere Übersetzer mit deutschem Locale
     base_path = pathlib.Path("data") / "figures"
-    defined_figures = file_lib.all_tags
+    defined_figures = file_lib.load_all_tags()
     audio.play_full("TTS", 60)  # Wir spielen die Geschichte für deine Figur ab
 
     leds.reset()  # reset leds

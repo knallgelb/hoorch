@@ -29,7 +29,7 @@ def start():
 
     init_recording(base_path)
 
-    defined_figures = file_lib.all_tags
+    defined_figures = file_lib.load_all_tags()
 
     # Wir nehmen eine Geschichte für deine Figur auf
     audio.play_full("TTS", 55)
