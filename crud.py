@@ -85,8 +85,12 @@ def initialize_rfid_tags():
                         session.add(new_tag)
             else:
                 for name in lines:
+                    # Check if this name already exists for the category in database
                     existing = session.exec(
-                        select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category).order_by(RFIDTag.name)
+                        select(RFIDTag).where(
+                            RFIDTag.name == name,
+                            RFIDTag.rfid_type == category,
+                        ).order_by(RFIDTag.name)
                     ).first()
                     if existing:
                         continue
