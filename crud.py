@@ -60,27 +60,38 @@ def initialize_rfid_tags():
             with file_path.open("r", encoding="utf-8") as f:
                 lines = [line.strip() for line in f if line.strip()]
 
-            for name in lines:
-                existing = session.exec(
-                    select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category)
-                ).first()
-                if existing:
-                    continue
-
-                number = None
-                if category == "numeric":
+            if category == "numeric":
+                # For numeric category, insert all entries including duplicates
+                for name in lines:
+                    number = None
                     try:
                         number = int(name)
                     except ValueError:
                         number = None
 
-                new_tag = RFIDTag(
-                    rfid_tag='',
-                    name=name,
-                    rfid_type=category,
-                    number=number,
-                )
-                session.add(new_tag)
+                    new_tag = RFIDTag(
+                        rfid_tag='',
+                        name=name,
+                        rfid_type=category,
+                        number=number,
+                    )
+                    session.add(new_tag)
+            else:
+                for name in lines:
+                    existing = session.exec(
+                        select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category)
+                    ).first()
+                    if existing:
+                        continue
+
+                    number = None
+                    new_tag = RFIDTag(
+                        rfid_tag='',
+                        name=name,
+                        rfid_type=category,
+                        number=number,
+                    )
+                    session.add(new_tag)
         session.commit()
 
 

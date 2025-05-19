@@ -57,7 +57,7 @@ auth_key = b"\xff\xff\xff\xff\xff\xff"
 
 
 def init():
-    file_lib.read_database_files()
+    file_lib.load_all_tags()
     logger.info("Initializing the RFID readers")
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
