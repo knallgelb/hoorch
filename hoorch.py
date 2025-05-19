@@ -206,7 +206,7 @@ def main():
             j for j in figure_with_recording if j in rfidreaders.tags
         ]
 
-        defined_figures = file_lib.gamer_figures_db
+        defined_figures = file_lib.get_tags_by_type("game")
         figure_without_recording = [
             i for i in defined_figures if i not in figure_with_recording
         ]
