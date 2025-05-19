@@ -71,7 +71,7 @@ def initialize_rfid_tags():
 
                     # Check how many tags with this number already exist
                     count_existing = session.exec(
-                        select([RFIDTag.rfid_tag]).where(RFIDTag.number == number)
+                        select(RFIDTag.rfid_tag).where(RFIDTag.number == number)
                     ).all()
                     count_existing = len(count_existing)
 
