@@ -70,7 +70,8 @@ def init():
     # initialize leds (macht evtl. nichts, ist nur placeholder für zukünftige Logik)
     leds.reset()  # Setzt alle LEDs aus (wird vom Server umgesetzt)
 
-    if len(file_lib.all_tags.values()) < 1:
+    all_tags = file_lib.load_all_tags()
+    if len(all_tags.values()) < 1:
         tagwriter.write_all_sets()
         file_lib.read_database_files()
 
