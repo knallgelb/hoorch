@@ -14,8 +14,8 @@ from adafruit_pn532.spi import PN532_SPI
 from digitalio import DigitalInOut
 
 from sqlmodel import Session, select
-from hoorch.database import engine, get_db
-from hoorch.models import RFIDTag
+from database import engine, get_db
+from models import RFIDTag
 
 import audio
 import leds
