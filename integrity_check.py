@@ -20,7 +20,11 @@ def get_expected_entries():
 
 
 def get_assigned_entries():
-    actions_db, figures_db, gamer_figures_db, animal_figures_db, animal_numbers_db = file_lib.group_tags_by_type()
+    actions_db = file_lib.get_tags_by_type("action")
+    figures_db = file_lib.get_tags_by_type("figure")
+    gamer_figures_db = file_lib.get_tags_by_type("game")
+    animal_figures_db = file_lib.get_tags_by_type("animal")
+    animal_numbers_db = file_lib.get_tags_by_type("numeric")
 
     return {
         "actions": set(getattr(tag, "name", None) for tag in actions_db.values()),
