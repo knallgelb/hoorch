@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import file_lib
-from tagwriter import write_missing_entries_for_category
 
 
 def load_reference_set(category):
@@ -46,6 +45,8 @@ def find_missing_entries():
 
 
 def remap_missing_entries():
+    from tagwriter import write_missing_entries_for_category
+
     missing_entries = find_missing_entries()
     for cat, missing_names in missing_entries.items():
         if missing_names:
