@@ -182,10 +182,10 @@ def write_missing_entries_for_category(category, missing_names, path="figures"):
 
         tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
         success = update_rfid_in_db(tag_uid_readable, name, category)
-        if success:
-            audio.espeaker(f"Zuordnung für {name} in DB gespeichert")
-        else:
-            audio.espeaker(f"Fehler: Kein DB Eintrag für {name} gefunden")
+#        if success:
+#            audio.espeaker(f"Zuordnung für {name} in DB gespeichert")
+#        else:
+#            audio.espeaker(f"Fehler: Kein DB Eintrag für {name} gefunden")
         time.sleep(1.5)
 
     audio.espeaker(f"Alle fehlenden Tags für {category} fertig!")
