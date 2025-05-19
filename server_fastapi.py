@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 import os
 import shutil
 from typing import List
+import uvicorn
 
 from models import RFIDTag
 from schemas import BaseModel, RFIDTagSchema
@@ -35,6 +36,10 @@ app = FastAPI()
 app.mount("/files", StaticFiles(directory=UPLOAD_FOLDER), name="files")
 
 templates = Jinja2Templates(directory="templates")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
 
 ALLOWED_EXTENSIONS = {'mp3'}
 
