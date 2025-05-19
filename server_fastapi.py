@@ -38,8 +38,6 @@ app.mount("/files", StaticFiles(directory=UPLOAD_FOLDER), name="files")
 templates = Jinja2Templates(directory="templates")
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
 
 ALLOWED_EXTENSIONS = {'mp3'}
 
@@ -170,3 +168,6 @@ async def delete_rfid_tag(tag_id: str, db: Session = Depends(get_db)):
     db.delete(tag)
     db.commit()
     return {"detail": "RFID tag deleted"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
