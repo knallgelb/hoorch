@@ -21,22 +21,14 @@ def get_expected_entries():
 
 
 def get_assigned_entries():
+    actions_db, figures_db, gamer_figures_db, animal_figures_db, animal_numbers_db = file_lib.group_tags_by_type()
+
     return {
-        "actions": set(
-            getattr(tag, "name", None) for tag in file_lib.actions_db.values()
-        ),
-        "animals": set(
-            getattr(tag, "name", None) for tag in file_lib.animal_figures_db.values()
-        ),
-        "figures": set(
-            getattr(tag, "name", None) for tag in file_lib.figures_db.values()
-        ),
-        "games": set(
-            getattr(tag, "name", None) for tag in file_lib.gamer_figures_db.values()
-        ),
-        "numeric": set(
-            getattr(tag, "number", None) for tag in file_lib.animal_numbers_db.values()
-        ),
+        "actions": set(getattr(tag, "name", None) for tag in actions_db.values()),
+        "animals": set(getattr(tag, "name", None) for tag in animal_figures_db.values()),
+        "figures": set(getattr(tag, "name", None) for tag in figures_db.values()),
+        "games": set(getattr(tag, "name", None) for tag in gamer_figures_db.values()),
+        "numeric": set(getattr(tag, "number", None) for tag in animal_numbers_db.values()),
     }
 
 
@@ -58,7 +50,8 @@ def remap_missing_entries():
     for cat, missing_names in missing_entries.items():
         if missing_names:
             write_missing_entries_for_category(cat, missing_names)
-            file_lib.read_database_files()
+            # Reload from DB to update
+            file_lib.load_all_tags()
 
 
 def any_missing_entries():
