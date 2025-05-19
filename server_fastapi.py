@@ -21,7 +21,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
-FIGURES_PATH = "./hoorch/figures"
+FIGURES_PATH = "./figures"
 CATEGORY_FILES = [
     "actions.txt",
     "animals.txt",

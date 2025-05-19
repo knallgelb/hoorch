@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
+from pathlib import Path
 
-from database import get_db
+from database import get_db, engine
 from models import Usage, RFIDTag
 from logger_util import get_logger
 
@@ -37,6 +38,50 @@ def set_transmitted(usage: Usage, db: Session = next(get_db())):
     db.refresh(u)
     logger.debug(f"Usage entry set as transmitted: {u}")
     return u
+
+
+def initialize_rfid_tags():
+    CATEGORY_FILES = [
+        "actions.txt",
+        "animals.txt",
+        "figures.txt",
+        "games.txt",
+        "numeric.txt",
+    ]
+    FIGURES_PATH = "./figures"
+
+    with Session(engine) as session:
+        for filename in CATEGORY_FILES:
+            category = filename.split(".")[0]
+            file_path = Path(FIGURES_PATH) / filename
+            if not file_path.exists():
+                continue
+
+            with file_path.open("r", encoding="utf-8") as f:
+                lines = [line.strip() for line in f if line.strip()]
+
+            for name in lines:
+                existing = session.exec(
+                    select(RFIDTag).where(RFIDTag.name == name, RFIDTag.rfid_type == category)
+                ).first()
+                if existing:
+                    continue
+
+                number = None
+                if category == "numeric":
+                    try:
+                        number = int(name)
+                    except ValueError:
+                        number = None
+
+                new_tag = RFIDTag(
+                    rfid_tag='',
+                    name=name,
+                    rfid_type=category,
+                    number=number,
+                )
+                session.add(new_tag)
+        session.commit()
 
 
 # --- CRUD functions for RFIDTag ---

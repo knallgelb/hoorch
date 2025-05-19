@@ -52,6 +52,7 @@ def announce_ip_adress():
 
 
 def init():
+    # Initialize game entry
     crud.add_game_entry(
         Usage(
             box_id=os.getenv("HOORCH_UID"),
@@ -61,6 +62,9 @@ def init():
         )
     )
     logger.info("Initialisierung der Hardware")
+
+    # Initialize RFID tags in database via CRUD
+    crud.initialize_rfid_tags()
 
     # initialize audio
     audio.init()
