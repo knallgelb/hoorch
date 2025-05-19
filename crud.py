@@ -69,13 +69,19 @@ def initialize_rfid_tags():
                     except ValueError:
                         number = None
 
-                    new_tag = RFIDTag(
-                        rfid_tag='',
-                        name=name,
-                        rfid_type=category,
-                        number=number,
-                    )
-                    session.add(new_tag)
+                    # Check how many tags with this number already exist
+                    count_existing = session.exec(
+                        select(RFIDTag).where(RFIDTag.number == number)
+                    ).count()
+
+                    if count_existing < 2:
+                        new_tag = RFIDTag(
+                            rfid_tag='',
+                            name=name,
+                            rfid_type=category,
+                            number=number,
+                        )
+                        session.add(new_tag)
             else:
                 for name in lines:
                     existing = session.exec(
