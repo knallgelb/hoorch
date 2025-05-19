@@ -8,9 +8,9 @@ import os
 import shutil
 from typing import List
 
-from hoorch.models import RFIDTag
-from hoorch.schemas import BaseModel, RFIDTagSchema
-from hoorch.database import get_db
+from models import RFIDTag
+from schemas import BaseModel, RFIDTagSchema
+from database import get_db
 
 import csv
 from pathlib import Path

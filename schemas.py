@@ -16,5 +16,4 @@ class RFIDTagSchema(BaseModel):
     rfid_type: str
     number: int | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
