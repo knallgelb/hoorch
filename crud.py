@@ -110,12 +110,27 @@ def initialize_rfid_tags():
 
 
 def get_rfid_tag_by_id(rfid_tag_id: str, db: Session = next(get_db())) -> RFIDTag | None:
-    tag = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == rfid_tag_id)).first()
-    if tag:
-        logger.debug(f"Found RFIDTag by id: {rfid_tag_id}")
-    else:
+    tags = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == rfid_tag_id)).all()
+    if not tags:
         logger.debug(f"RFIDTag not found by id: {rfid_tag_id}")
-    return tag
+        return None
+
+    combined_tag = RFIDTag(
+        id=tags[0].id,
+        rfid_tag=rfid_tag_id,
+        name=None,
+        rfid_type=tags[0].rfid_type if tags else '',
+        number=None
+    )
+
+    for tag in tags:
+        if tag.name and combined_tag.name is None:
+            combined_tag.name = tag.name
+        if tag.number is not None and combined_tag.number is None:
+            combined_tag.number = tag.number
+
+    logger.debug(f"Found combined RFIDTag by id: {rfid_tag_id} with name: {combined_tag.name}, number: {combined_tag.number}")
+    return combined_tag
 
 
 def get_all_rfid_tags(db: Session = next(get_db())) -> list[RFIDTag]:
