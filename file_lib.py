@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
 from models import RFIDTag
-from crud import get_all_rfid_tags, get_rfid_tag_by_id
+from crud import get_all_rfid_tags, get_rfid_tag_by_id, get_all_rfid_tags_by_tag_id
 from logger_util import get_logger
 
 logger = get_logger(__name__, "logs/file_lib.log")
