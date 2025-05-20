@@ -18,6 +18,9 @@ import file_lib
 import state
 from logger_util import get_logger
 import models
+import crud
+from sqlmodel import Session
+from database import engine
 
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists("logs"):
@@ -165,10 +168,17 @@ def read_from_mifare(reader, tag_uid: str):
     if tag_uid_database:
         return tag_uid_database
 
+
     new_rfid_tag = models.RFIDTag(rfid_tag=tag_uid_readable, name=tag_uid_readable, rfid_type="unknown", number=99)
 
-
-    file_lib.all_tags[tag_uid_readable] = new_rfid_tag
+    with Session(engine) as session:
+        # Persist the new RFID tag in the database
+        created_tag = crud.create_rfid_tag(new_rfid_tag, db=session)
+        if created_tag is None:
+            logger.warning(f"RFID read, but could not create new tag in DB: {tag_uid_readable}")
+            return None
+        else:
+            logger.info(f"New RFID tag created in DB: {created_tag}")
 
     return new_rfid_tag
 
