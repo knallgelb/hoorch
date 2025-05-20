@@ -80,7 +80,6 @@ def player_action(
                     relevant_tags.extend(db_tags)
 
         for tag in relevant_tags:
-            # pdb.set_trace()
             if tag.name is not None and tag.name == expected_value.name:
                 game_utils.announce(27)
                 return True
