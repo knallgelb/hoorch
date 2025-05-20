@@ -40,6 +40,13 @@ def set_transmitted(usage: Usage, db: Session = next(get_db())):
     return u
 
 
+def get_all_rfid_tags_by_tag_id(rfid_tag: str, db: Session = next(get_db())) -> list[RFIDTag]:
+    """Fetch all RFIDTag objects matching the given rfid_tag string."""
+    tags = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == rfid_tag)).all()
+    logger.debug(f"Retrieved {len(tags)} RFIDTags with rfid_tag={rfid_tag} from database.")
+    return tags
+
+
 def initialize_rfid_tags():
     CATEGORY_FILES = [
         "actions.txt",
