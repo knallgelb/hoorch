@@ -23,7 +23,7 @@ logger = get_logger(__name__, "logs/game_tier_orchester.log")
 
 
 def start():
-    defined_animals = file_lib.get_tags_by_type("animal")
+    defined_animals = file_lib.get_tags_by_type("animals")
 
     logger.info(f"Defined animals: {defined_animals}")
     logger.info("The animal orchestra is starting. Place the animal figures on the game fields!")
