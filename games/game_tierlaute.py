@@ -106,7 +106,12 @@ def player_action(
     animals_played.append(expected_value)
     game_utils.announce_file(f"{expected_value.name}.mp3", "animal_sounds")
 
-    relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, models.RFIDTag)]
+    relevant_tags = []
+    for tag in rfidreaders.tags:
+                if isinstance(tag, models.RFIDTag):
+                    db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
+                    if db_tags:
+                        relevant_tags.extend(db_tags)
 
     for tag in relevant_tags:
         # pdb.set_trace()
