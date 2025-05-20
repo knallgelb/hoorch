@@ -147,3 +147,5 @@ done
 
 
 echo "Installation complete. Please reboot to apply all changes."
+
+sudo reboot
