@@ -238,3 +238,21 @@ def espeaker(words):
     os.system(execute_espeak)
     logger.info(execute_espeak)
     logger.debug(f"Executed eSpeak command for words: {words}")
+
+
+def delete_story(figure):
+    figure_dir = data_path / "figures" / figure.rfid_tag
+    mp3_file = figure_dir / f"{figure.rfid_tag}.mp3"
+
+    if mp3_file.is_file():
+        mp3_file.unlink()
+        logger.info(f"Deleted story file: {mp3_file}")
+
+        # If directory is empty after deletion, delete the directory
+        if not any(figure_dir.iterdir()):
+            figure_dir.rmdir()
+            logger.info(f"Deleted empty figure directory: {figure_dir}")
+        return True
+    else:
+        logger.warning(f"Story file not found for deletion: {mp3_file}")
+        return False

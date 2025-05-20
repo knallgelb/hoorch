@@ -155,6 +155,7 @@ def start():
                           or file_lib.check_tag_attribute(
                                 rfidreaders.tags, "ENDE", "name")):
                         audio.kill_sounds()
+                        audio.delete_story(figure=figure_id)
                         # new_recording = False
                         break
 
