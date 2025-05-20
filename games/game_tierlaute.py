@@ -20,8 +20,8 @@ logger = get_logger(__name__, "logs/game_tierlaute.log")
 
 
 def start():
-    defined_figures = file_lib.get_tags_by_type("figure")
-    defined_animals = file_lib.get_tags_by_type("animal")
+    defined_figures = file_lib.get_tags_by_type("figures")
+    defined_animals = file_lib.get_tags_by_type("animals")
 
     animals_played = []  # store the already played animals to avoid repetition
 
