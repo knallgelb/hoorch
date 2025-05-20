@@ -95,7 +95,7 @@ def player_action(
 ) -> bool:
     available_animals = [
         animal
-        for animal in file_lib.get_tags_by_type("animal").values()
+        for animal in file_lib.get_tags_by_type("animals").values()
         if animal not in animals_played
     ]
     if not available_animals:
@@ -108,10 +108,10 @@ def player_action(
 
     relevant_tags = []
     for tag in rfidreaders.tags:
-                if isinstance(tag, models.RFIDTag):
-                    db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
-                    if db_tags:
-                        relevant_tags.extend(db_tags)
+        if isinstance(tag, models.RFIDTag):
+            db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
+            if db_tags:
+                relevant_tags.extend(db_tags)
 
     for tag in relevant_tags:
         # pdb.set_trace()
