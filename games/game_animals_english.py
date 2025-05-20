@@ -24,8 +24,8 @@ logger = get_logger(__name__, "logs/game_animals.log")
 
 
 def start():
-    defined_figures = file_lib.get_tags_by_type("figure")
-    defined_animals = file_lib.get_tags_by_type("animal")
+    defined_figures = file_lib.get_tags_by_type("figures")
+    defined_animals = file_lib.get_tags_by_type("animals")
     animals_played = []
 
     announce(192)  # "Wir lernen jetzt Tiernamen auf Englisch."
