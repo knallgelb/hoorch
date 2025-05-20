@@ -139,6 +139,12 @@ def get_all_rfid_tags(db: Session = next(get_db())) -> list[RFIDTag]:
     return tags
 
 
+def get_all_rfid_tags_by_tag_id(rfid_tag: str, db: Session = next(get_db())) -> list[RFIDTag]:
+    tags = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == rfid_tag)).all()
+    logger.debug(f"Retrieved {len(tags)} RFIDTags from database for tag_id {rfid_tag}.")
+    return tags
+
+
 def create_rfid_tag(tag: RFIDTag, db: Session = next(get_db())) -> RFIDTag | None:
     existing = db.exec(select(RFIDTag).where(RFIDTag.rfid_tag == tag.rfid_tag)).first()
     if existing:

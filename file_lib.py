@@ -33,6 +33,20 @@ def get_figure_from_database(rfid_tag: str) -> Optional[RFIDTag]:
     return tag
 
 
+def get_all_figures_by_rfid_tag(rfid_tag: str) -> list[RFIDTag]:
+    """
+    Fetch all RFIDTag entries from the database matching the given rfid_tag.
+    Returns a list of RFIDTag objects.
+    """
+    # This requires a new CRUD function, e.g. get_all_rfid_tags_by_tag_id to fetch multiple entries
+    tags = get_all_rfid_tags_by_tag_id(rfid_tag)
+    if tags:
+        logger.debug(f"Found {len(tags)} entries for RFID {rfid_tag}")
+    else:
+        logger.debug(f"No entries found for RFID {rfid_tag}")
+    return tags
+
+
 def check_tag_attribute(tags, value, attribute='name'):
     """
     Checks if any RFIDTag in the tags list has a specific attribute value.

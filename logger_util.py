@@ -1,5 +1,9 @@
 import logging
 import os
+from dotenv import load_dotenv
+
+dotenv_path = "/home/pi/hoorch/.env"
+load_dotenv(dotenv_path, override=True)
 
 
 def get_logger(name: str, log_file: str, level: int = logging.DEBUG) -> logging.Logger:
@@ -17,6 +21,8 @@ def get_logger(name: str, log_file: str, level: int = logging.DEBUG) -> logging.
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
+    debug_mode = os.getenv("DEBUG_MODE", "false").lower() == "true"
+
     # Verhindert, dass Handler mehrfach hinzugefügt werden, wenn der Logger bereits konfiguriert wurde.
     if not logger.handlers:
         # Erstelle das Verzeichnis für das Logfile, falls es nicht existiert.
@@ -28,17 +34,19 @@ def get_logger(name: str, log_file: str, level: int = logging.DEBUG) -> logging.
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(level)
 
-        # Erstelle einen Konsolen-Handler.
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(level)
-
-        # Formatter, der Datum, Logger-Namen, Log-Level und die Nachricht anzeigt.
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
-
         # Füge die Handler dem Logger hinzu.
         logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+
+        # Erstelle einen Konsolen-Handler nur wenn DEBUG_MODE true ist.
+        if debug_mode:
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(level)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            file_handler.setFormatter(formatter)
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
+        else:
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            file_handler.setFormatter(formatter)
 
     return logger

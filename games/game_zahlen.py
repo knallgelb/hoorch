@@ -17,7 +17,7 @@ logger = get_logger(__name__, "logs/game_zahlen.log")
 
 
 def start():
-    defined_figures = file_lib.get_tags_by_type("figure")
+    defined_figures = file_lib.get_tags_by_type("figures")
     audio.espeaker("Spiel Zahlen legen")
     audio.espeaker(
         "Setze die Spielfiguren auf das Spielfeld. Mögliche Felder sind 1, 3, 5"
@@ -60,8 +60,10 @@ def start():
 def player_action(
     player: RFIDTag, rfidreaders, file_lib, rfid_position: List[int]
 ) -> bool:
-    expected_value = random.choice(list(file_lib.animal_numbers_db.values()))
-    audio.espeaker(expected_value.number)
+    numeric_tags = list(file_lib.get_tags_by_type("numeric").values())
+    logger.debug(f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}")
+    expected_value = random.choice(numeric_tags)
+    audio.espeaker(expected_value.name)
 
     total_wait_seconds = 6.0
     start_time = time.time()
@@ -70,11 +72,16 @@ def player_action(
     game_utils.leds_switch_on_with_color(player=player, color=(0, 255, 0))
 
     while time.time() - start_time < total_wait_seconds:
-        relevant_tags = [tag for tag in rfidreaders.tags if isinstance(tag, RFIDTag)]
+        relevant_tags = []
+        for tag in rfidreaders.tags:
+            if isinstance(tag, RFIDTag):
+                db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
+                if db_tags:
+                    relevant_tags.extend(db_tags)
 
         for tag in relevant_tags:
             # pdb.set_trace()
-            if tag.name is not None and int(tag.name) == expected_value.number:
+            if tag.name is not None and int(tag.name) == int(expected_value.name):
                 game_utils.announce(27)
                 return True
 
