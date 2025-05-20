@@ -155,7 +155,6 @@ def start():
                           or file_lib.check_tag_attribute(
                                 rfidreaders.tags, "ENDE", "name")):
                         audio.kill_sounds()
-                        audio.delete_story(figure=figure_id)
                         # new_recording = False
                         break
 
@@ -214,10 +213,7 @@ def start():
                         # elif rfidreaders.tags[i] == "NEIN" or "ENDE" in rfidreaders.tags:
                         audio.kill_sounds()
 
-                        audio_file = figure_dir / figure_id.rfid_tag
-
-                        if audio_file.exists():
-                            audio_file.unlink()
+                        audio.delete_story(figure=figure_id)
 
                         # Geschichte nicht gespeichert
                         game_utils.announce(83)
