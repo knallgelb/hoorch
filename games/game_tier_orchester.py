@@ -39,7 +39,7 @@ def start():
     leds.blinker()
     while True:
         animals = [tag for tag in copy.deepcopy(rfidreaders.tags) if
-                   isinstance(tag, models.RFIDTag) and tag.rfid_type == 'animal']
+                   isinstance(tag, models.RFIDTag) and tag.rfid_type == 'animals']
         logger.debug(f"Current animals on fields: {animals}")
 
         if check_end_tag():
