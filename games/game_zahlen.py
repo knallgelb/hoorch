@@ -81,7 +81,7 @@ def player_action(
 
         for tag in relevant_tags:
             # pdb.set_trace()
-            if tag.name is not None and int(tag.name) == int(expected_value.name):
+            if tag.name is not None and tag.name == int(expected_value.name):
                 game_utils.announce(27)
                 return True
 
