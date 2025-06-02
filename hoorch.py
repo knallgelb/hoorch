@@ -17,7 +17,7 @@ import database
 import env_tools
 import file_lib
 import games
-import leds  # <--- Client-gemoddetes leds.py!
+import leds
 import rfidreaders
 import tagwriter
 from logger_util import get_logger
@@ -80,7 +80,9 @@ def init():
         file_lib.load_all_tags()
 
     if integrity_check.any_missing_entries():
-        audio.espeaker("Unvollständige RFID Zuordnung. Fehlende Karten werden jetzt nachgezogen.")
+        audio.espeaker(
+            "Unvollständige RFID Zuordnung. Fehlende Karten werden jetzt nachgezogen."
+        )
         integrity_check.remap_missing_entries()
 
     # RFID-Reader initialisieren
@@ -164,7 +166,6 @@ def main():
 
         logger.info(rfidreaders.tags)
 
-
         # Get all tags of type "game" from the database
         game_tags_db = file_lib.get_tags_by_type("games")
 
@@ -202,7 +203,9 @@ def main():
         hoerspiele_list = [
             os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
         ]
-        detected_hoerspiel_card = [i for i in hoerspiele_list if i in rfidreaders.tags]
+        detected_hoerspiel_card = [
+            i for i in hoerspiele_list if i in rfidreaders.tags
+        ]
 
         figure_dir = "./data/figures/"
         figure_dirs = [
