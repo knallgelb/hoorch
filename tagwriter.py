@@ -167,10 +167,19 @@ def write_missing_entries_for_category(category, missing_names_with_ids, path="f
     Die Zuordnung erfolgt durch Neu-Lesen der RFID Tags.
     missing_names_with_ids is a list of tuples: (name, RFIDTag id)
     """
-    from crud import update_rfid_tag_by_id
+    from crud import update_rfid_tag_by_id, get_all_rfid_tags_by_tag_id
+    from models import RFIDTag
 
     rdr = get_reader()
     audio.espeaker(f"{category}")
+
+    assigned_rfids = set()
+    # Collect already assigned rfids for this category to avoid duplicates
+    all_tags_in_category = [tag for tag in get_all_rfid_tags_by_tag_id("") if tag.rfid_type == category]
+    for tag in all_tags_in_category:
+        if tag.rfid_tag:
+            assigned_rfids.add(tag.rfid_tag)
+
     for name, tag_id in missing_names_with_ids:
         audio.espeaker(f"{name}")
         print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
@@ -180,13 +189,33 @@ def write_missing_entries_for_category(category, missing_names_with_ids, path="f
             tag_uid = rdr.read_passive_target(timeout=1.0)
 
         tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+
+        # Check if this RFID tag is already assigned in this category
+        if tag_uid_readable in assigned_rfids:
+            print(
+                f"Fehler: Der Tag {tag_uid_readable} ist bereits in der Kategorie '{category}' vergeben. "
+                "Bitte benutze einen anderen Tag."
+            )
+            audio.espeaker(
+                "Der RFID Tag ist schon vergeben. Bitte einen anderen Tag verwenden."
+            )
+            # Wait a moment before retrying
+            time.sleep(2)
+            # Reset tag_uid to None to re-read the tag
+            tag_uid = None
+            continue
+
+        # If not duplicated, update DB
         if tag_id is not None:
-            from models import RFIDTag
-            # Update the record with the actual RFID tag read from the hardware
             updated_tag = RFIDTag(id=tag_id, rfid_tag=tag_uid_readable, name=name, rfid_type=category)
             success = update_rfid_tag_by_id(tag_id, updated_tag)
         else:
             success = update_rfid_in_db(tag_uid_readable, name, category)
+
+        if success:
+            assigned_rfids.add(tag_uid_readable)
+        else:
+            print(f"Fehler beim Aktualisieren der Datenbank für {name}.")
 
         time.sleep(1)
 
