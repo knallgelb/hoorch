@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # Beispielhafte Abfrage
     actions_db = get_tags_by_type("action")
     figures_db = get_tags_by_type("figure")
-    gamer_figures_db = get_tags_by_type("game")
+    gamer_figures_db = get_tags_by_type("games")
     animal_figures_db = get_tags_by_type("animal")
     animal_numbers_db = get_tags_by_type("numeric")
 
