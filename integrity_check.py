@@ -48,33 +48,41 @@ def find_missing_entries():
 
 def remap_missing_entries():
     from tagwriter import write_missing_entries_for_category
-    from crud import get_all_rfid_tags
+    from crud import get_tags_with_empty_rfid_tag, get_all_rfid_tags
 
-    missing_entries = find_missing_entries()
+    # Get all tags with empty rfid_tag from DB sorted by category and name separately
+    empty_tags = get_tags_with_empty_rfid_tag()
 
-    # Get all RFIDTag objects from DB
-    all_tags = get_all_rfid_tags()
+    for category in sorted(empty_tags.keys()):
+        names = empty_tags[category]
+        # Sort names alphabetically (numeric categories should be sorted numerically)
+        if category == "numeric":
+            try:
+                sorted_names = sorted(names, key=lambda x: int(x))
+            except ValueError:
+                sorted_names = sorted(names)
+        else:
+            sorted_names = sorted(names)
 
-    # Map name and category to RFIDTag object for quick lookup
-    tag_lookup = {}
-    for tag in all_tags:
-        tag_lookup[(tag.rfid_type, tag.name)] = tag
+        # Get all RFIDTag objects from DB for the category
+        all_tags_for_category = [tag for tag in get_all_rfid_tags() if tag.rfid_type == category]
 
-    for cat, missing_names in missing_entries.items():
-        if missing_names:
-            # Prepare list of tuples (name, RFIDTag ID) for missing
-            missing_with_ids = []
-            for name in missing_names:
-                tag_obj = tag_lookup.get((cat, name))
-                if tag_obj:
-                    missing_with_ids.append((name, tag_obj.id))
-                else:
-                    # If no tag found, append with None as id
-                    missing_with_ids.append((name, None))
+        # Map name to tag object for quick lookup
+        tag_lookup = {tag.name: tag for tag in all_tags_for_category}
 
-            write_missing_entries_for_category(cat, missing_with_ids)
-            # Reload from DB to update
-            file_lib.load_all_tags()
+        missing_with_ids = []
+        for name in sorted_names:
+            tag_obj = tag_lookup.get(name)
+            if tag_obj:
+                missing_with_ids.append((name, tag_obj.id))
+            else:
+                missing_with_ids.append((name, None))
+
+        if missing_with_ids:
+            write_missing_entries_for_category(category, missing_with_ids)
+
+    # Reload all tags from DB after processing
+    file_lib.load_all_tags()
 
 
 def any_missing_entries():

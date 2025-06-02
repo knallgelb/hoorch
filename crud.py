@@ -178,19 +178,19 @@ def delete_rfid_tag_by_id(rfid_tag_id: str, db: Session = next(get_db())) -> boo
     return True
 
 
-def get_tags_with_empty_rfid_tag(db: Session = next(get_db())) -> dict[str, list[str]]:
+def get_tags_with_empty_rfid_tag(db: Session = next(get_db())) -> dict[str, list[RFIDTag]]:
     """
-    Returns a dictionary mapping rfid_type to list of tag names where rfid_tag is empty or None.
+    Returns a dictionary mapping rfid_type to list of RFIDTag objects where rfid_tag is empty or None.
     """
     tags = db.exec(
         select(RFIDTag).where(
             (RFIDTag.rfid_tag == "") | (RFIDTag.rfid_tag == None)
-        ).order_by(RFIDTag.name)
+        ).order_by(RFIDTag.rfid_type, RFIDTag.name)
     ).all()
-    result: dict[str, list[str]] = {}
+    result: dict[str, list[RFIDTag]] = {}
     for tag in tags:
         if tag.rfid_type not in result:
             result[tag.rfid_type] = []
-        result[tag.rfid_type].append(tag.name)
-    logger.debug(f"Tags with empty rfid_tag: {result}")
+        result[tag.rfid_type].append(tag)
+    logger.debug(f"Tags with empty rfid_tag: { {k: [t.id for t in v] for k, v in result.items()} }")
     return result
