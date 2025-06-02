@@ -124,7 +124,7 @@ def get_rfid_tag_by_id(rfid_tag_id: str, db: Session = next(get_db())) -> RFIDTa
         if tag.name and combined_tag.name is None:
             combined_tag.name = tag.name
 
-    logger.debug(f"Found combined RFIDTag by id: {rfid_tag_id} with name: {combined_tag.name}, number: {combined_tag.number}")
+    logger.debug(f"Found combined RFIDTag by id: {rfid_tag_id} with name: {combined_tag.name}")
     return combined_tag
 
 
