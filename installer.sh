@@ -5,6 +5,7 @@
 set -e
 
 sudo apt full-upgrade -y
+sudo rpi-eeprom-update -a
 
 # 1. Update and upgrade system packages
 echo "Updating and upgrading system..."
