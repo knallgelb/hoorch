@@ -182,31 +182,31 @@ def write_missing_entries_for_category(category, missing_names_with_ids, path="f
 
     for name, tag_id in missing_names_with_ids:
         audio.espeaker(f"{name}")
-        print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
-
-        tag_uid = None
-        while not tag_uid:
-            tag_uid = rdr.read_passive_target(timeout=1.0)
-
-        tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
-
-        # Check if this RFID tag is already assigned in this category
-        if tag_uid_readable in assigned_rfids:
-            print(
-                f"Fehler: Der Tag {tag_uid_readable} ist bereits in der Kategorie '{category}' vergeben. "
-                "Bitte benutze einen anderen Tag."
-            )
-            audio.espeaker(
-                "Der RFID Tag ist schon vergeben. Bitte einen anderen Tag verwenden."
-            )
-            # Wait a moment before retrying
-            time.sleep(2)
-            # Reset tag_uid to None to re-read the tag
+        while True:
+            print(f"Bitte halte Tag für '{category}': {name} auf den Leser!")
             tag_uid = None
-            continue
+            while not tag_uid:
+                tag_uid = rdr.read_passive_target(timeout=1.0)
+            tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+
+            # Check if this RFID tag is already assigned in this category
+            if tag_uid_readable in assigned_rfids:
+                print(
+                    f"Fehler: Der Tag {tag_uid_readable} ist bereits in der Kategorie '{category}' vergeben. "
+                    "Bitte benutze einen anderen Tag."
+                )
+                audio.espeaker(
+                    "Der RFID Tag ist schon vergeben. Bitte einen anderen Tag verwenden."
+                )
+                time.sleep(2)
+                continue
+            else:
+                break
 
         # If not duplicated, update DB
         if tag_id is not None:
+            from models import RFIDTag
+            # Update the record with the actual RFID tag read from the hardware
             updated_tag = RFIDTag(id=tag_id, rfid_tag=tag_uid_readable, name=name, rfid_type=category)
             success = update_rfid_tag_by_id(tag_id, updated_tag)
         else:
