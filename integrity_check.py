@@ -28,8 +28,9 @@ def get_assigned_entries():
     """
     empty_tags = get_tags_with_empty_rfid_tag()
     result = {}
-    for category, names in empty_tags.items():
-        result[category] = set(names)
+    for category, tags in empty_tags.items():
+        # tags is now a list of RFIDTag objects
+        result[category] = set(tag.name for tag in tags if tag.name)
     return result
 
 
