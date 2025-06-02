@@ -54,29 +54,17 @@ def remap_missing_entries():
     empty_tags = get_tags_with_empty_rfid_tag()
 
     for category in sorted(empty_tags.keys()):
-        names = empty_tags[category]
-        # Sort names alphabetically (numeric categories should be sorted numerically)
+        tags = empty_tags[category]
+        # Sort tags alphabetically by name (numeric categories should be sorted numerically)
         if category == "numeric":
             try:
-                sorted_names = sorted(names, key=lambda x: int(x))
+                sorted_tags = sorted(tags, key=lambda t: int(t.name))
             except ValueError:
-                sorted_names = sorted(names)
+                sorted_tags = sorted(tags, key=lambda t: t.name)
         else:
-            sorted_names = sorted(names)
+            sorted_tags = sorted(tags, key=lambda t: t.name)
 
-        # Get all RFIDTag objects from DB for the category
-        all_tags_for_category = [tag for tag in get_all_rfid_tags() if tag.rfid_type == category]
-
-        # Map name to tag object for quick lookup
-        tag_lookup = {tag.name: tag for tag in all_tags_for_category}
-
-        missing_with_ids = []
-        for name in sorted_names:
-            tag_obj = tag_lookup.get(name)
-            if tag_obj:
-                missing_with_ids.append((name, tag_obj.id))
-            else:
-                missing_with_ids.append((name, None))
+        missing_with_ids = [(tag.name, tag.id) for tag in sorted_tags]
 
         if missing_with_ids:
             write_missing_entries_for_category(category, missing_with_ids)
