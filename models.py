@@ -21,7 +21,7 @@ class RFIDTag(SQLModel, table=True):
         return (self.id == other.id and
                 self.rfid_tag == other.rfid_tag and
                 self.name == other.name and
-                self.rfid_type == other.rfid_type and
+                self.rfid_type == other.rfid_type
                 )
 
     def __hash__(self):
