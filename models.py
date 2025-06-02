@@ -14,7 +14,6 @@ class RFIDTag(SQLModel, table=True):
     rfid_tag: str
     name: str
     rfid_type: str
-    number: int | None = None
 
     def __eq__(self, other):
         if not isinstance(other, RFIDTag):
@@ -23,10 +22,10 @@ class RFIDTag(SQLModel, table=True):
                 self.rfid_tag == other.rfid_tag and
                 self.name == other.name and
                 self.rfid_type == other.rfid_type and
-                self.number == other.number)
+                )
 
     def __hash__(self):
-        return hash((self.id, self.rfid_tag, self.name, self.rfid_type, self.number))
+        return hash((self.id, self.rfid_tag, self.name, self.rfid_type))
 
 
 class Usage(SQLModel, table=True):

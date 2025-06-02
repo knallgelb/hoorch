@@ -70,12 +70,6 @@ def initialize_rfid_tags():
             if category == "numeric":
                 # For numeric category, insert all entries including duplicates
                 for name in lines:
-                    number = None
-                    try:
-                        number = int(name)
-                    except ValueError:
-                        number = None
-
                     # Check how many tags with this number already exist
                     count_existing = session.exec(
                         select(RFIDTag).where(RFIDTag.name == name).order_by(RFIDTag.name)
@@ -87,7 +81,6 @@ def initialize_rfid_tags():
                             rfid_tag='',
                             name=name,
                             rfid_type=category,
-                            number=number,
                         )
                         session.add(new_tag)
             else:
@@ -102,12 +95,10 @@ def initialize_rfid_tags():
                     if existing:
                         continue
 
-                    number = None
                     new_tag = RFIDTag(
                         rfid_tag='',
                         name=name,
                         rfid_type=category,
-                        number=number,
                     )
                     session.add(new_tag)
         session.commit()
@@ -127,14 +118,11 @@ def get_rfid_tag_by_id(rfid_tag_id: str, db: Session = next(get_db())) -> RFIDTa
         rfid_tag=rfid_tag_id,
         name=None,
         rfid_type=tags[0].rfid_type if tags else '',
-        number=None
     )
 
     for tag in tags:
         if tag.name and combined_tag.name is None:
             combined_tag.name = tag.name
-        if tag.number is not None and combined_tag.number is None:
-            combined_tag.number = tag.number
 
     logger.debug(f"Found combined RFIDTag by id: {rfid_tag_id} with name: {combined_tag.name}, number: {combined_tag.number}")
     return combined_tag
@@ -172,7 +160,6 @@ def update_rfid_tag_by_id(record_id: int, updated_tag: RFIDTag, db: Session = ne
     tag.rfid_tag = updated_tag.rfid_tag
     tag.name = updated_tag.name
     tag.rfid_type = updated_tag.rfid_type
-    tag.number = updated_tag.number
     db.add(tag)
     db.commit()
     db.refresh(tag)

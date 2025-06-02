@@ -14,6 +14,5 @@ class RFIDTagSchema(BaseModel):
     rfid_tag: str
     name: str
     rfid_type: str
-    number: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

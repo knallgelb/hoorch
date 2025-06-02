@@ -76,7 +76,7 @@ def main():
 
         for tag_name in relevant_tags:
             try:
-                op = int(tag_name.number)
+                op = int(tag_name.name)
             except TypeError as e:
                 logger.debug(tag_name)
                 if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
