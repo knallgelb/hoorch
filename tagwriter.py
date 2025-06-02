@@ -158,11 +158,7 @@ def write_set_from_file(input_file: str, output_file: str, path: str) -> None:
                 # Update DB instead of writing CSV
                 category = Path(input_file).stem
                 success = update_rfid_in_db(tag_uid_readable, figure, category)
-#                if success:
-#                    audio.espeaker(f"Zuordnung für {figure} in DB gespeichert")
-#                else:
-#                    audio.espeaker(f"Fehler: Kein DB Eintrag für {figure} gefunden")
-                time.sleep(1.5)
+                time.sleep(1)
                 break
 
 def write_missing_entries_for_category(category, missing_names_with_ids, path="figures"):
@@ -192,11 +188,7 @@ def write_missing_entries_for_category(category, missing_names_with_ids, path="f
         else:
             success = update_rfid_in_db(tag_uid_readable, name, category)
 
-#        if success:
-#            audio.espeaker(f"Zuordnung für {name} in DB gespeichert")
-#        else:
-#            audio.espeaker(f"Fehler: Kein DB Eintrag für {name} gefunden")
-        time.sleep(1.5)
+        time.sleep(1)
 
     audio.espeaker(f"Alle fehlenden Tags für {category} fertig!")
 
