@@ -36,4 +36,4 @@ see [docs](docs)
 
 # License
 
-Licenced under the CC-BY-NC-SA 4.0 license
+Licenced under the  CC BY-SA 4.0 license
