@@ -53,21 +53,9 @@ def start():
 
     announce(5 + figure_count)  # "x figures are playing"
 
-    if check_end_tag():
-        leds.switch_all_on_with_color((0, 0, 255))
-        time.sleep(0.2)
-        leds.reset()
-        return
-
     rounds = 3
     announce(20 + rounds)  # "We will play x rounds"
     points = [0] * len(players)
-
-    if check_end_tag():
-        leds.switch_all_on_with_color((0, 0, 255))
-        time.sleep(0.2)
-        leds.reset()
-        return
 
     is_first_round = True
     for _ in range(rounds):
@@ -87,12 +75,6 @@ def start():
             else:
                 announce(48 + i)  # "The next figure on field x"
 
-            if check_end_tag():
-                leds.switch_all_on_with_color((0, 0, 255))
-                time.sleep(0.2)
-                leds.reset()
-                return
-
             # Generate and announce math problem
             num1, num2 = random.randint(1, 9), random.randint(1, 9)
             solution = num1 * num2
@@ -102,19 +84,7 @@ def start():
             announce(88)  # "times"
             announce(90 + num2)  # second number
 
-            if check_end_tag():
-                leds.switch_all_on_with_color((0, 0, 255))
-                time.sleep(0.2)
-                leds.reset()
-                return
-
             blink_led(i)
-
-            if check_end_tag():
-                leds.switch_all_on_with_color((0, 0, 255))
-                time.sleep(0.2)
-                leds.reset()
-                return
 
             # Check solution
             player_solution = get_solution_from_tags(i, players)
@@ -126,12 +96,6 @@ def start():
                 announce(26)
                 leds.switch_on_with_color(i, (255, 0, 0))
             time.sleep(0.3)
-
-            if check_end_tag():
-                leds.switch_all_on_with_color((0, 0, 255))
-                time.sleep(0.2)
-                leds.reset()
-                return
 
     # Announce scores
     announce(80)  # "I will now announce the scores"

@@ -1,3 +1,5 @@
+from crud import get_first_rfid_tag_by_id_and_type
+
 import time
 
 import audio
@@ -42,7 +44,7 @@ def wait_for_figure_placement(fields):
     """Ask players to place their figures on specified fields and wait."""
     leds.switch_on_with_color(fields)
     audio.play_file("sounds", "waiting.mp3")
-    time.sleep(6)
+    time.sleep(1)
 
 
 def filter_players_on_fields(players, valid_fields, defined_figures):
@@ -57,7 +59,7 @@ def filter_players_on_fields(players, valid_fields, defined_figures):
     return players
 
 
-def blink_led(field_index, times=10, on_time=0.5, off_time=0.5):
+def blink_led(field_index, times=5, on_time=0.5, off_time=0.5):
     """Blink LED at field_index."""
     for _ in range(times):
         leds.switch_on_with_color(field_index)
@@ -68,10 +70,17 @@ def blink_led(field_index, times=10, on_time=0.5, off_time=0.5):
 
 def get_solution_from_tags(i, players):
     """Calculate the solution from the tens and units tags."""
-    tens = rfidreaders.tags[(i + 1) % len(players)]
-    units = rfidreaders.tags[(i - 1) % len(players)]
-    tens_digit = int(tens.number) * 10 if tens else 0
-    unit_digit = int(units.number) if units else 0
+    tens_tag = rfidreaders.tags[i + 1]
+    units_tag = rfidreaders.tags[i - 1]
+
+    tens_digit = "0"
+    unit_digit = "0"
+
+    if tens_tag and get_first_rfid_tag_by_id_and_type(tens_tag.rfid_tag):
+        tens_digit = get_first_rfid_tag_by_id_and_type(tens_tag.rfid_tag).name
+    if units_tag and get_first_rfid_tag_by_id_and_type(units_tag.rfid_tag):
+        unit_digit = get_first_rfid_tag_by_id_and_type(units_tag.rfid_tag).name
+
     return tens_digit + unit_digit
 
 
@@ -102,10 +111,14 @@ def play_rounds(players, num_rounds, player_action) -> dict:
     return score_players
 
 
-def leds_switch_on_with_color(player: RFIDTag, color: tuple[int, int, int]) -> None:
+def leds_switch_on_with_color(
+    player: RFIDTag, color: tuple[int, int, int]
+) -> None:
     try:
         if rfidreaders.tags.index(player):
-            leds.switch_on_with_color(rfidreaders.tags.index(player), color=color)
+            leds.switch_on_with_color(
+                rfidreaders.tags.index(player), color=color
+            )
             return
     except ValueError:
         leds.blinker()
