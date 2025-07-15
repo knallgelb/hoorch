@@ -8,6 +8,7 @@ import leds
 import models
 import rfidreaders
 from logger_util import get_logger
+import time
 
 logger = get_logger(__name__, "logs/game_kakophonie.log")
 
@@ -36,12 +37,15 @@ def start():
 
     if not pygame.mixer.get_init():
         pygame.mixer.pre_init(frequency=22050, buffer=512)
+        time.sleep(1)
         pygame.mixer.init()
         # pygame.mixer.init(buffer=4096)
         pygame.mixer.set_num_channels(6)
 
         for s in range(0, 6):
-            phones.append(pygame.mixer.Sound("data/phonie/00" + str(s + 1) + ".ogg"))
+            phones.append(
+                pygame.mixer.Sound("data/phonie/00" + str(s + 1) + ".ogg")
+            )
             phones[s].set_volume(0)
     else:
         pygame.mixer.unpause()
@@ -54,11 +58,15 @@ def start():
         found_digits = []
         active_leds = []
         for i, tag in enumerate(rfidreaders.tags):
-            if tag is not None and tag.number is not None:
+            if tag is not None and tag.name is not None:
+                tag = crud.get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
                 active_leds.append(i)
-                found_digits.append(int(tag.number))
+                if tag:
+                    found_digits.append(int(tag.name))
 
-        leds.switch_on_with_color(active_leds)  # Beispiel: Grün für alle gefundenen
+        leds.switch_on_with_color(
+            active_leds
+        )  # Beispiel: Grün für alle gefundenen
 
         for i in range(0, 6):
             if i not in found_digits:
