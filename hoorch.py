@@ -193,7 +193,9 @@ def main():
             report_stats.send_and_update_stats()
             shutdown_counter = time.time() + shutdown_time
 
-        if "FRAGEZEICHEN" in rfidreaders.tags:
+        if file_lib.check_tag_attribute(
+            rfidreaders.tags, "FRAGEZEICHEN", "name"
+        ):
             logger.info("Hoorch Erklärung")
             # leds.blink = False
             leds.reset()
