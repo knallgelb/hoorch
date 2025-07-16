@@ -68,6 +68,7 @@ def wait_for_reader():
 def play_full(folder, audiofile):
     # Blocking play, mostly for TTS
     wait_for_reader()
+    load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "10"))
 
     file_path = data_path / folder / f"{audiofile:03d}.mp3"
@@ -78,12 +79,17 @@ def play_full(folder, audiofile):
             ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
         )
         waitingtime = (
-            float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+            float(waitingtime_output.stdout.decode("utf-8").strip())
+            + WAITTIME_OFFSET
         )
-        execute_play = f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null"
+        execute_play = (
+            f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null"
+        )
         logger.info(execute_play)
         subprocess.Popen(execute_play, shell=True, stdout=None, stderr=None)
-        logger.debug(f"Waiting time for audio file {file_path}: {waitingtime} seconds")
+        logger.debug(
+            f"Waiting time for audio file {file_path}: {waitingtime} seconds"
+        )
         time.sleep(waitingtime)
     except Exception as e:
         logger.error(f"Error playing audio file {file_path}: {e}")
@@ -100,7 +106,8 @@ def play_file(folder, audiofile):
         ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
     )
     waitingtime = (
-        float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+        float(waitingtime_output.stdout.decode("utf-8").strip())
+        + WAITTIME_OFFSET
     )
     logger.info(f"Playing audio file: {file_path}")
     logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
@@ -119,12 +126,15 @@ def play_story(figure_id):
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
-    file_path = data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    file_path = (
+        data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    )
     waitingtime_output = subprocess.run(
         ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
     )
     waitingtime = (
-        float(waitingtime_output.stdout.decode("utf-8").strip()) + WAITTIME_OFFSET
+        float(waitingtime_output.stdout.decode("utf-8").strip())
+        + WAITTIME_OFFSET
     )
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
     logger.info(f"Wating time: {waitingtime}")
@@ -144,7 +154,9 @@ def kill_sounds():
 
 
 def file_is_playing(audiofile):
-    output = subprocess.run(["ps", "ax"], stdout=subprocess.PIPE).stdout.decode("utf-8")
+    output = subprocess.run(["ps", "ax"], stdout=subprocess.PIPE).stdout.decode(
+        "utf-8"
+    )
     is_playing = audiofile in output
     logger.debug(f"File {audiofile} is playing: {is_playing}")
     return is_playing
@@ -154,7 +166,9 @@ def record_story(figure):
     # Switch off amp
     # global amp_sd
     # amp_sd.value = False
-    logger.info(f"Recording story for figure: {figure}. Amplifier switched off.")
+    logger.info(
+        f"Recording story for figure: {figure}. Amplifier switched off."
+    )
 
     figure_dir = data_path / "figures" / figure.rfid_tag
     figure_dir.mkdir(parents=True, exist_ok=True)
