@@ -57,34 +57,37 @@ def start():
     playing_animals = [None, None, None, None, None, None]
     leds.blinker()
 
-    found_animals = []
+    found_animals = [None, None, None, None, None, None]
 
     while True:
         for i, animal in enumerate(rfidreaders.tags):
+            if check_end_tag():
+                # pdb.set_trace()
+                for x in phones:
+                    x.set_volume(1.0)
+                    x.stop()
+                pygame.mixer.quit()
+                leds.blinker()
+                leds.reset()
+                return
+
             if not isinstance(animal, models.RFIDTag):
+                playing_animals[i] = False
                 continue
+
             if animal is not None:
+                playing_animals[i] = True
                 sound_path = f"data/animal_sounds/{animal.name}.mp3"
                 if sound_path not in found_animals:
-                    found_animals.append(sound_path)
+                    found_animals[i] = sound_path
                     phones[i] = pygame.mixer.Sound(sound_path)
-                    phones[i].set_volume(0.5)
-                    # pdb.set_trace()
-                    leds.switch_on_with_color(
-                        i, (255, 255, 0)
-                    )  # Gelb für aktuelles Tier
+                    phones[i].set_volume(0.05)
+                    leds.switch_on_with_color(i, (255, 255, 0))
 
-        if check_end_tag():
-            # pdb.set_trace()
-            for x in phones:
-                x.set_volume(1.0)
-                x.stop()
-            pygame.mixer.quit()
-            leds.blinker()
-            leds.reset()
-            return
-
-        for p in phones:
+        for i, p in enumerate(phones):
+            if not playing_animals[i]:
+                p.set_volume(0)
+                continue
             p.play()
 
     time.sleep(0.2)
