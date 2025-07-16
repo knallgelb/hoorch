@@ -32,7 +32,7 @@ def volume_down():
     print("volume down")
     load_dotenv(dotenv_path, override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
-    SPEAKER_VOLUME = max(SPEAKER_VOLUME - 10, 0)
+    SPEAKER_VOLUME = max(SPEAKER_VOLUME - 10, 10)
     os.environ["SPEAKER_VOLUME"] = str(SPEAKER_VOLUME)
     set_key(dotenv_path, "SPEAKER_VOLUME", SPEAKER_VOLUME, quote_mode="never")
     log_volume(SPEAKER_VOLUME)
