@@ -22,6 +22,8 @@ import crud
 from sqlmodel import Session
 from database import engine
 
+sleeping_time = 0.1
+
 # Create 'logs' directory if it doesn't exist
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -146,13 +148,14 @@ def continuous_read():
             tags[index] = tag_name
 
         # Sleep between readers to reduce power load
-        time.sleep(0.2)
+        r.power_down()
+        time.sleep(sleeping_time)
 
     # logger.debug("Current tags: %s", tags)
 
     if read_continuously:
         # Only read when not playing or recording audio
-        threading.Timer(0.02, continuous_read).start()
+        threading.Timer(sleeping_time, continuous_read).start()
     state.currently_reading = False
 
 
