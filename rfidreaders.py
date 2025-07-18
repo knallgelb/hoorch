@@ -45,7 +45,7 @@ reader_pins = [
     DigitalInOut(board.D4),
     DigitalInOut(board.D26),
     DigitalInOut(board.D27),
-    # reader6_pin = DigitalInOut(board.D16) # not working with Pi 5...
+    DigitalInOut(board.D5),
 ]
 
 
