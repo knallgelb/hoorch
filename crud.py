@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, and_
 from pathlib import Path
 
 from database import get_db, engine
@@ -185,7 +185,12 @@ def create_rfid_tag(
     tag: RFIDTag, db: Session = next(get_db())
 ) -> RFIDTag | None:
     existing = db.exec(
-        select(RFIDTag).where(RFIDTag.rfid_tag == tag.rfid_tag)
+        select(RFIDTag).where(
+            and_(
+                RFIDTag.rfid_tag == tag.rfid_tag,
+                RFIDTag.rfid_type == tag.rfid_type,
+            )
+        )
     ).first()
     if existing:
         logger.warning(

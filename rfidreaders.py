@@ -10,6 +10,7 @@ import board
 import busio
 import ndef
 from adafruit_pn532.spi import PN532_SPI
+from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 
 # import digitalio
 from digitalio import DigitalInOut
@@ -71,12 +72,16 @@ def init():
             reader = PN532_SPI(spi, reader_pin, debug=False)
             #            reader = PN532_SPI(spi, reader_pin, debug=True)
             ic, ver, rev, support = reader.firmware_version
-            logger.info("Found PN532 with firmware version: {0}.{1}".format(ver, rev))
+            logger.info(
+                "Found PN532 with firmware version: {0}.{1}".format(ver, rev)
+            )
             reader.SAM_configuration()
             readers.append(reader)
             tags.append(None)
             timer.append(0)
-            logger.info("Initialized and configured RFID/NFC reader %d", idx + 1)
+            logger.info(
+                "Initialized and configured RFID/NFC reader %d", idx + 1
+            )
         except Exception as e:
             logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
         time.sleep(0.03)
@@ -84,6 +89,31 @@ def init():
     logger.debug(tags)
 
     continuous_read()
+
+
+def extract_mifare_card(reader, tag_uid):
+    read_data = read_ndef_blocks(reader, tag_uid, start_block=4, num_blocks=4)
+    if read_data is None:
+        print("Failed to read NDEF data blocks.")
+        return
+
+    ndef_payload = extract_ndef_payload(read_data)
+
+    if ndef_payload is None:
+        print("No NDEF payload found in data.")
+        return None
+
+    try:
+        ndef_messages = list(ndef.message_decoder(ndef_payload))
+        text_messages = list(
+            map(
+                lambda x: x.text,
+                filter(lambda x: hasattr(x, "text"), ndef_messages),
+            )
+        )
+        return text_messages
+    except Exception as e:
+        print("Error decoding NDEF message:", e)
 
 
 def continuous_read():
@@ -103,13 +133,11 @@ def continuous_read():
             continue
 
         if tag_uid:
-            # logger.debug("Found card with UID: %s", "-".join([str(i) for i in tag_uid]))
-
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
 
             # Check if it's a MIFARE tag
-            if len(tag_uid) > 4:
+            if len(tag_uid) == 4:
                 mifare = True
 
             # Check if tag ID is in the figure database
@@ -133,7 +161,9 @@ def continuous_read():
                     )
             else:
                 logger.debug(
-                    "Tag ID %s found in figures_db with name %s", id_readable, tag_name
+                    "Tag ID %s found in figures_db with name %s",
+                    id_readable,
+                    tag_name,
                 )
         else:
             tag_name = None
@@ -171,19 +201,39 @@ def read_from_mifare(reader, tag_uid: str):
     if tag_uid_database:
         return tag_uid_database
 
+    data_list = extract_mifare_card(reader, tag_uid)
 
-    new_rfid_tag = models.RFIDTag(rfid_tag=tag_uid_readable, name=tag_uid_readable, rfid_type="unknown", number=99)
+    last_created = None
+
+    create_tags_list = []
+
+    if data_list:
+        for item in data_list:
+            splitted = item.split(":")
+            rfid_type = splitted[0]
+            rfid_name = splitted[1]
+
+            create_tags_list.append(
+                models.RFIDTag(
+                    rfid_tag=tag_uid_readable,
+                    name=rfid_name,
+                    rfid_type=rfid_type,
+                )
+            )
 
     with Session(engine) as session:
         # Persist the new RFID tag in the database
-        created_tag = crud.create_rfid_tag(new_rfid_tag, db=session)
-        if created_tag is None:
-            logger.warning(f"RFID read, but could not create new tag in DB: {tag_uid_readable}")
-            return None
-        else:
-            logger.info(f"New RFID tag created in DB: {created_tag}")
+        for tag in create_tags_list:
+            last_created = crud.create_rfid_tag(tag, db=session)
+            if last_created is None:
+                logger.warning(
+                    f"RFID read, but could not create new tag in DB: {tag_uid_readable}"
+                )
+                return None
+            else:
+                logger.info(f"New RFID tag created in DB: {last_created}")
 
-    return new_rfid_tag
+    return last_created
 
 
 def read_from_ntag2(reader):
@@ -212,6 +262,55 @@ def read_from_ntag2(reader):
     except ndef.record.DecodeError as e:
         logger.error("Error while decoding with ndeflib: %s", e)
         return "#error#"
+
+
+def extract_ndef_payload(data):
+    """
+    Parst die TLV-Struktur und extrahiert den NDEF Payload (Typ 0x03).
+    """
+    i = 0
+    while i < len(data):
+        tlv_type = data[i]
+        if tlv_type == 0x00:
+            # Null TLV, einfach überspringen
+            i += 1
+            continue
+        elif tlv_type == 0x03:
+            # NDEF Message TLV
+            length = data[i + 1]
+            payload_start = i + 2
+            payload_end = payload_start + length
+            return data[payload_start:payload_end]
+        elif tlv_type == 0xFE:
+            # Terminator TLV, Ende
+            break
+        else:
+            # Andere TLV-Typen, überspringen (Länge nach folgendem Byte)
+            return None
+            length = data[i + 1]
+            i += 2 + length
+    return None
+
+
+def read_ndef_blocks(reader, uid, start_block=4, num_blocks=4):
+    """
+    Liest num_blocks hintereinander ab start_block aus.
+    Authentifiziert vorher jeden Block.
+    """
+    data = bytearray()
+    for blk in range(start_block, start_block + num_blocks):
+        authenticated = reader.mifare_classic_authenticate_block(
+            uid, blk, MIFARE_CMD_AUTH_B, auth_key
+        )
+        if not authenticated:
+            print(f"Authentication failed for block {blk}")
+            return None
+        blk_data = reader.mifare_classic_read_block(blk)
+        if blk_data is None:
+            print(f"Reading block {blk} failed")
+            return None
+        data.extend(blk_data)
+    return data
 
 
 # Start the script
