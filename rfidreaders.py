@@ -123,6 +123,7 @@ def continuous_read():
 
     for index, r in enumerate(readers):
         mifare = False
+        ntag213 = False
 
         currently_reading = True
 
@@ -136,9 +137,13 @@ def continuous_read():
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
 
-            # Check if it's a MIFARE tag
+            # Check if it's a MIFARE tag (4 bytes UID)
             if len(tag_uid) == 4:
                 mifare = True
+
+            # Check if tag is NTAG213 (7 bytes typical UID length for NTAG213)
+            elif len(tag_uid) == 7:
+                ntag213 = True
 
             # Check if tag ID is in the figure database
             tag_name = file_lib.get_figure_from_database(id_readable)
@@ -147,6 +152,8 @@ def continuous_read():
                 logger.info("RFIDREADERS if not tag_name line called")
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
+                elif ntag213:
+                    tag_name = read_from_ntag213(r, tag_uid)
                 else:
                     tag_name = read_from_ntag2(r)
 
@@ -241,9 +248,8 @@ def read_from_ntag2(reader):
 
     logger.info("called read_from_ntag2 function")
 
-    # Read 4 bytes from blocks 4-11
+    # Read 4 bytes from blocks 0-11
     try:
-        # for i in range(4, 12):
         for i in range(0, 12):
             read_data.extend(reader.ntag2xx_read_block(i))
         to_decode = read_data[2 : read_data.find(b"\xfe")]
@@ -264,31 +270,110 @@ def read_from_ntag2(reader):
         return "#error#"
 
 
+def read_from_ntag213(reader, tag_uid: str):
+    read_data = bytearray(0)
+
+    tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
+
+    # Check if tag already exists in DB
+    tag_uid_database = file_lib.get_figure_from_database(tag_uid_readable)
+    if tag_uid_database:
+        return tag_uid_database
+
+    try:
+        for i in range(0, 24):
+            read_data.extend(reader.ntag2xx_read_block(i))
+    except Exception as e:
+        logger.error(f"Error reading NTAG213 blocks: {e}")
+        return None
+
+    create_tags_list = []
+
+    import pdb
+
+    ndef_payload = extract_ndef_payload(read_data)
+    pdb.set_trace()
+    if ndef_payload:
+        try:
+            ndef_messages = list(ndef.message_decoder(ndef_payload))
+            pdb.set_trace()
+            for msg in ndef_messages:
+                # Use text attributes if available, else skip
+                if hasattr(msg, "text"):
+                    splitted = msg.text.split(":")
+                    if len(splitted) < 2:
+                        continue
+                    rfid_type = splitted[0]
+                    rfid_name = splitted[1]
+                    create_tags_list.append(
+                        models.RFIDTag(
+                            rfid_tag=tag_uid_readable,
+                            name=rfid_name,
+                            rfid_type=rfid_type,
+                        )
+                    )
+        except Exception as e:
+            logger.error(f"Error decoding NDEF message for NTAG213: {e}")
+            return None
+    else:
+        logger.info("No NDEF payload found on NTAG213 tag")
+        return None
+
+    last_created = None
+    with Session(engine) as session:
+        for tag in create_tags_list:
+            last_created = crud.create_rfid_tag(tag, db=session)
+            if last_created is None:
+                logger.warning(
+                    f"NTAG213 read, but could not create new tag in DB: {tag_uid_readable}"
+                )
+                return None
+            else:
+                logger.info(
+                    f"New NTAG213 RFID tag created in DB: {last_created}"
+                )
+
+    return last_created
+
+
 def extract_ndef_payload(data):
     """
-    Parst die TLV-Struktur und extrahiert den NDEF Payload (Typ 0x03).
+    Parses the TLV structure and extracts the NDEF Payload (type 0x03).
+    This version is more robust against incomplete or irregular TLV data.
     """
     i = 0
     while i < len(data):
+        if i >= len(data):
+            break
         tlv_type = data[i]
         if tlv_type == 0x00:
-            # Null TLV, einfach überspringen
+            # Null TLV, simply skip
             i += 1
             continue
         elif tlv_type == 0x03:
             # NDEF Message TLV
+            if i + 1 >= len(data):
+                # No length byte available
+                break
             length = data[i + 1]
             payload_start = i + 2
             payload_end = payload_start + length
+            if payload_end > len(data):
+                # Payload goes beyond available data, truncate or skip
+                payload_end = len(data)
             return data[payload_start:payload_end]
         elif tlv_type == 0xFE:
-            # Terminator TLV, Ende
+            # Terminator TLV, end
             break
         else:
-            # Andere TLV-Typen, überspringen (Länge nach folgendem Byte)
-            return None
+            # Other TLV types, skip the length + value fields if possible
+            if i + 1 >= len(data):
+                # No length byte, can't proceed
+                break
             length = data[i + 1]
             i += 2 + length
+            continue
+        i += 1
     return None
 
 
