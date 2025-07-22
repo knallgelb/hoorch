@@ -289,14 +289,10 @@ def read_from_ntag213(reader, tag_uid: str):
 
     create_tags_list = []
 
-    import pdb
-
     ndef_payload = extract_ndef_payload(read_data)
-    pdb.set_trace()
     if ndef_payload:
         try:
             ndef_messages = list(ndef.message_decoder(ndef_payload))
-            pdb.set_trace()
             for msg in ndef_messages:
                 # Use text attributes if available, else skip
                 if hasattr(msg, "text"):
