@@ -1,10 +1,29 @@
 from typing import Dict, Optional
+from pathlib import Path
 
 from models import RFIDTag
-from crud import get_all_rfid_tags, get_rfid_tag_by_id, get_all_rfid_tags_by_tag_id
+from crud import (
+    get_all_rfid_tags,
+    get_rfid_tag_by_id,
+    get_all_rfid_tags_by_tag_id,
+)
 from logger_util import get_logger
 
 logger = get_logger(__name__, "logs/file_lib.log")
+
+
+def get_file_path(folder: str, filename: str) -> str:
+    """
+    Returns the full path of an audio file under ./data/<folder>/<filename>.
+
+    :param folder: Subfolder inside the data directory, e.g. 'animal_sounds'
+    :param filename: Audio filename, e.g. 'lion.mp3'
+    :return: Full path as string
+    """
+    base_path = Path("./data") / folder / filename
+    full_path = base_path.resolve()
+    logger.debug(f"Resolved file path for {folder}/{filename}: {full_path}")
+    return str(full_path)
 
 
 def load_all_tags() -> Dict[str, RFIDTag]:
@@ -18,8 +37,12 @@ def load_all_tags() -> Dict[str, RFIDTag]:
 def get_tags_by_type(rfid_type: str) -> Dict[str, RFIDTag]:
     """Return a dictionary of RFIDTag objects filtered by rfid_type."""
     tags = get_all_rfid_tags()
-    filtered_tags = {tag.rfid_tag: tag for tag in tags if tag.rfid_type == rfid_type}
-    logger.debug(f"Loaded {len(filtered_tags)} RFIDTag entries of type '{rfid_type}' from DB")
+    filtered_tags = {
+        tag.rfid_tag: tag for tag in tags if tag.rfid_type == rfid_type
+    }
+    logger.debug(
+        f"Loaded {len(filtered_tags)} RFIDTag entries of type '{rfid_type}' from DB"
+    )
     return filtered_tags
 
 
@@ -47,7 +70,7 @@ def get_all_figures_by_rfid_tag(rfid_tag: str) -> list[RFIDTag]:
     return tags
 
 
-def check_tag_attribute(tags, value, attribute='name'):
+def check_tag_attribute(tags, value, attribute="name"):
     """
     Checks if any RFIDTag in the tags list has a specific attribute value.
 
@@ -57,7 +80,8 @@ def check_tag_attribute(tags, value, attribute='name'):
     :return: True if any tag has the specified attribute value, False otherwise.
     """
     return any(
-        tag for tag in tags
+        tag
+        for tag in tags
         if tag is not None and getattr(tag, attribute, None) == value
     )
 
