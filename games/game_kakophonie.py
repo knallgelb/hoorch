@@ -60,7 +60,7 @@ def start():
         for i, tag in enumerate(rfidreaders.tags):
             if tag is not None and tag.name is not None:
                 tag = crud.get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
-                active_leds.append(i)
+                active_leds.append(i + 1)
                 if tag:
                     found_digits.append(int(tag.name))
 
