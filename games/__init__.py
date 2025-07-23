@@ -1,5 +1,4 @@
 from . import game_animals_english
-from . import game_aufnehmen
 from . import game_einmaleins
 from . import game_geschichten_aufnehmen
 from . import game_geschichten_abspielen
@@ -17,5 +16,5 @@ games = {
     "Kakophonie": game_kakophonie,
     "Einmaleins": game_einmaleins,
     "Animals": game_animals_english,
-    "Zahlen": game_zahlen
+    "Zahlen": game_zahlen,
 }
