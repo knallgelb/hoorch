@@ -77,7 +77,10 @@ def start():
         return
 
     # switch on leds at player field
-    leds.switch_on_with_color(players, (0, 255, 0))
+    player_positions = [
+        i + 1 for i, x in enumerate(rfidreaders.tags) if x is not None
+    ]
+    leds.switch_on_with_color(player_positions, (0, 255, 0))
 
     # TODO: x figuren haben eine geschichte gespeichert
     audio.play_full("TTS", 5 + figure_count)
@@ -90,12 +93,15 @@ def start():
 
     for i, player in enumerate(players):
         leds.reset()
-        leds.switch_on_with_color(i, (0, 255, 0))
+        player_position = i + 1
+        leds.switch_on_with_color(player_position, (0, 255, 0))
 
         if not isinstance(player, RFIDTag):
             continue
 
-        file_path = base_path / pathlib.Path(f"{player.rfid_tag}/{player.rfid_tag}.mp3")
+        file_path = base_path / pathlib.Path(
+            f"{player.rfid_tag}/{player.rfid_tag}.mp3"
+        )
         if file_path.exists():
             audio.play_story(player)
             audio.play_file("sounds", "page_turned_next_audio.mp3")
