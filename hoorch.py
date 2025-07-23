@@ -74,16 +74,13 @@ def init():
     # initialize leds (macht evtl. nichts, ist nur placeholder für zukünftige Logik)
     leds.reset()  # Setzt alle LEDs aus (wird vom Server umgesetzt)
 
-    all_tags = file_lib.load_all_tags()
-    if len(all_tags.values()) < 1:
-        tagwriter.write_all_sets()
-        file_lib.load_all_tags()
-
     if integrity_check.any_missing_entries():
         audio.espeaker(
             "Unvollständige RFID Zuordnung. Fehlende Karten werden jetzt nachgezogen."
         )
         integrity_check.remap_missing_entries()
+
+    file_lib.load_all_tags()
 
     # RFID-Reader initialisieren
     rfidreaders.init()
@@ -153,13 +150,6 @@ def main():
     report_stats.send_and_update_stats()
 
     while True:
-        # Statt: leds.blink = True
-        # => Falls dein Server Blinken unterstützt: Klasse:
-        # leds.blinker()  # (implementier evtl. als toggelnden Effekt)
-        pass
-        # Du kannst hier auch einfach per Timer die Farbe zufällig setzen etc.
-        # oder das blink-Pattern auf Server-Seite bauen und hier nur triggern.
-
         if greet_time < time.time():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
             greet_time = time.time() + 30
@@ -184,9 +174,6 @@ def main():
 
         if len(game_tags) > 0 and game_tags[0].name in games.games:
             logger.info(f"Game {game_tags[0].name} starten.")
-            # leds.blink = False
-            # => Stopp ggf. das Blinken per Server-Kommando, falls realisiert:
-            # leds.blinker()  # toggelt aus
             leds.reset()
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
@@ -242,9 +229,8 @@ def main():
     # Shutdown
     logger.info("Shutdown")
     audio.play_full("TTS", 196)
-    # leds.blink = False
     leds.reset()
-    # os.system("shutdown -P now")
+    os.system("shutdown -P now")
 
 
 if __name__ == "__main__":
