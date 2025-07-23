@@ -33,7 +33,7 @@ def start():
 
     # Prompt players
     announce(86)  # "Place your figures..."
-    wait_for_figure_placement((0, 2, 4))
+    wait_for_figure_placement((1, 3, 5))
 
     players = filter_players_on_fields(
         copy.deepcopy(rfidreaders.tags), [1, 3, 5], defined_figures
@@ -62,9 +62,9 @@ def start():
         for i, player in enumerate(players):
             if player is None:
                 continue
-
+            leds_position = i + 1
             leds.reset()
-            leds.switch_on_with_color(i, (0, 255, 0))
+            leds.switch_on_with_color(leds_position, (0, 255, 0))
 
             if is_first_round:
                 is_first_round = False
@@ -90,19 +90,20 @@ def start():
             player_solution = get_solution_from_tags(i, players)
             if player_solution == solution:
                 announce(27)
-                leds.switch_on_with_color(i, (50, 255, 50))
+                leds.switch_on_with_color(leds_position, (50, 255, 50))
                 points[i] += 1
             else:
                 announce(26)
-                leds.switch_on_with_color(i, (255, 0, 0))
+                leds.switch_on_with_color(leds_position, (255, 0, 0))
             time.sleep(0.3)
 
     # Announce scores
     announce(80)  # "I will now announce the scores"
     for i, player in enumerate(players):
+        leds_position = i + 1
         if player is not None:
             leds.reset()
-            leds.switch_on_with_color(i, (30, 144, 255))
+            leds.switch_on_with_color(leds_position, (30, 144, 255))
             announce(74 + i)  # "Figure on field x"
             announce(68 + points[i])  # "x points"
             time.sleep(1)
