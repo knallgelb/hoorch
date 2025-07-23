@@ -129,11 +129,11 @@ def play_story(figure_id):
     file_path = (
         data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
     )
-    waitingtime_output = subprocess.run(
-        ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
-    )
     waitingtime = (
-        float(waitingtime_output.stdout.decode("utf-8").strip())
+        get_audio_length(
+            data_path / "figures" / figure_id.rfid_tag,
+            f"{figure_id.rfid_tag}.mp3",
+        )
         + WAITTIME_OFFSET
     )
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
@@ -151,6 +151,24 @@ def play_story(figure_id):
 def kill_sounds():
     logger.info("Stopping all sounds.")
     subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
+
+
+def get_audio_length(folder, audiofile):
+    file_path = Path(data_path) / folder / audiofile
+
+    try:
+        completed_process = subprocess.run(
+            ["soxi", "-D", str(file_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        duration_str = completed_process.stdout.strip()
+        return float(duration_str)
+    except Exception as e:
+        logger.error(f"Error getting audio length for {file_path}: {e}")
+        return None
 
 
 def file_is_playing(audiofile):
