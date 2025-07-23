@@ -11,7 +11,7 @@ SOCK_FILE = "/tmp/hoorch_led.sock"
 
 # Hardware-Setup
 pixel_pin = board.D12
-num_pixels = 6
+num_pixels = 7
 ORDER = neopixel.GRB
 pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=0.9, auto_write=False, pixel_order=ORDER
