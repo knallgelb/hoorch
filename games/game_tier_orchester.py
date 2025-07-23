@@ -10,6 +10,7 @@ import leds
 import file_lib
 import models
 import crud
+import pathlib
 
 
 from .game_utils import (
@@ -77,12 +78,15 @@ def start():
 
             if animal is not None:
                 playing_animals[i] = True
-                sound_path = f"data/animal_sounds/{animal.name}.mp3"
-                if sound_path not in found_animals:
+                sound_path = pathlib.Path(
+                    f"data/animal_sounds/{animal.name}.mp3"
+                )
+                if sound_path not in found_animals and sound_path.exists():
                     found_animals[i] = sound_path
                     phones[i] = pygame.mixer.Sound(sound_path)
                     phones[i].set_volume(0.05)
-                    leds.switch_on_with_color(i, (255, 255, 0))
+                    leds_position = i + 1
+                    leds.switch_on_with_color(leds_position, (255, 255, 0))
 
         for i, p in enumerate(phones):
             if not playing_animals[i]:
