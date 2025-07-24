@@ -141,7 +141,7 @@ def initial_hardware_test():
 
 def main():
     logger.info("Starte Hauptschleife")
-    shutdown_time = 300  # seconds until shutdown if no interaction happened
+    shutdown_time = int(os.getenv("SHUTDOWN_TIMER", "300"))  # seconds until shutdown if no interaction happened
     shutdown_counter = time.time() + shutdown_time
 
     greet_time = time.time()
@@ -150,6 +150,13 @@ def main():
     report_stats.send_and_update_stats()
 
     while True:
+        if time.time() >= shutdown_counter:
+            logger.info("Shutdown Timer abgelaufen. System wird heruntergefahren.")
+            audio.play_full("TTS", 196)
+            leds.reset()
+            os.system("shutdown -P now")
+            break
+
         if greet_time < time.time():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
             greet_time = time.time() + 30
@@ -225,12 +232,6 @@ def main():
             shutdown_counter = time.time() + shutdown_time
 
         time.sleep(0.3)
-
-    # Shutdown
-    logger.info("Shutdown")
-    audio.play_full("TTS", 196)
-    leds.reset()
-    os.system("shutdown -P now")
 
 
 if __name__ == "__main__":
