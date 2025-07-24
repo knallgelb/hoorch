@@ -88,7 +88,7 @@ def start():
 
             # Check solution
             player_solution = get_solution_from_tags(i, players)
-            if player_solution == solution:
+            if int(player_solution) == solution:
                 announce(27)
                 leds.switch_on_with_color(leds_position, (50, 255, 50))
                 points[i] += 1
