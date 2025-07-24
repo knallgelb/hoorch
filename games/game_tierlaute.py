@@ -119,6 +119,7 @@ def player_action(
         for tag in rfidreaders.tags:
             if expected_value in rfidreaders.tags:
                 proc.terminate()
+                time.sleep(0.3)
                 return True
         time.sleep(0.1)
 
