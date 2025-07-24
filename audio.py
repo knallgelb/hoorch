@@ -95,7 +95,7 @@ def play_full(folder, audiofile):
         logger.error(f"Error playing audio file {file_path}: {e}")
 
 
-def play_file(folder, audiofile):
+def play_file(folder, audiofile, return_process=False):
     # Non-blocking play for sounds in /data and subfolders
     wait_for_reader()
     load_dotenv(override=True)
@@ -111,13 +111,15 @@ def play_file(folder, audiofile):
     )
     logger.info(f"Playing audio file: {file_path}")
     logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
-    subprocess.Popen(
-        f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null",
-        shell=True,
-        stdout=None,
-        stderr=None,
+    cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
-    time.sleep(waitingtime)
+
+    if return_process:
+        return process, waitingtime
+    else:
+        time.sleep(waitingtime)
 
 
 def play_story(figure_id):
