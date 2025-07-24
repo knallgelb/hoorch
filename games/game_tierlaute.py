@@ -64,7 +64,7 @@ def start():
     crud.add_game_entry(usage=u)
 
     def action_with_led(player):
-        idx = players.index(player)
+        idx = players.index(player) + 1
         leds.switch_on_with_color(idx, (0, 255, 0))  # grün für rate-Spielfigur
         result = player_action(
             player, rfidreaders, file_lib, rfid_position, animals_played
@@ -104,22 +104,22 @@ def player_action(
         return False
     expected_value = random.choice(available_animals)
     animals_played.append(expected_value)
-    game_utils.announce_file(f"{expected_value.name}.mp3", "animal_sounds")
 
-    relevant_tags = []
-    for tag in rfidreaders.tags:
-        if isinstance(tag, models.RFIDTag):
-            db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
-            if db_tags:
-                relevant_tags.extend(db_tags)
+    proc, duration = audio.play_file(
+        "animal_sounds", f"{expected_value.name}.mp3", return_process=True
+    )
 
-    for tag in relevant_tags:
-        # pdb.set_trace()
-        if tag.name is not None and tag.name == expected_value.name:
-            if tag == expected_value:
-                game_utils.announce(27)
+    start_time = time.time()
+    audio_duration = audio.get_audio_length(
+        "animal_sounds", f"{expected_value.name}.mp3"
+    )
+
+    while (time.time() - start_time) < audio_duration:
+        # Prüfe RFID-Tags
+        for tag in rfidreaders.tags:
+            if expected_value in rfidreaders.tags:
+                proc.terminate()
                 return True
-
-    time.sleep(0.3)
+        time.sleep(0.1)
 
     return False
