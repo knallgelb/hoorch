@@ -84,10 +84,10 @@ def start():
             announce(88)  # "times"
             announce(90 + num2)  # second number
 
-            blink_led(i)
+            blink_led(leds_position)
 
             # Check solution
-            player_solution = get_solution_from_tags(i, players)
+            player_solution = get_solution_from_tags(i, player)
             if int(player_solution) == solution:
                 announce(27)
                 leds.switch_on_with_color(leds_position, (50, 255, 50))
