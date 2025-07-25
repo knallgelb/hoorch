@@ -7,7 +7,7 @@ DefaultDependencies=false
 User=root
 Type=simple
 WorkingDirectory=/home/pi/hoorch/
-ExecStart=/home/pi/hoorch/venv/bin/python3 /home/pi/hoorch/server_fastapi.py
+ExecStart=/home/pi/hoorch/venv/bin/python3 /home/pi/hoorch/services/server_fastapi.py
 
 [Install]
 WantedBy=multi-user.target
