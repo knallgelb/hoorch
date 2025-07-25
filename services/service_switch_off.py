@@ -39,7 +39,9 @@ def wait_for_shutdown_button(
                     time.sleep(0.5)
                     leds.reset()
                     leds.switch_all_on_with_color((255, 0, 0))
-                    audio.play_full("TTS", 3)  # "Tschüss ich schalte mich jetzt aus"
+                    audio.play_full(
+                        "TTS", 3
+                    )  # "Tschüss ich schalte mich jetzt aus"
                     os.system("shutdown -P now")
             time.sleep(poll_interval)
     finally:
