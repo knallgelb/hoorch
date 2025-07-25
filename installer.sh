@@ -64,9 +64,9 @@ chown pi:pi "$ENV_PATH"
 
 # 7. Install first-boot hook for unique UUID
 echo "Installing first-boot hook..."
-sudo cp /home/pi/hoorch/hoorch-firstboot.sh /usr/local/bin/hoorch-firstboot.sh
+sudo cp /home/pi/hoorch/services/hoorch-firstboot.sh /usr/local/bin/hoorch-firstboot.sh
 sudo chmod +x /usr/local/bin/hoorch-firstboot.sh
-sudo cp /home/pi/hoorch/hoorch-firstboot.service /etc/systemd/system/hoorch-firstboot.service
+sudo cp /home/pi/hoorch/services/hoorch-firstboot.service /etc/systemd/system/hoorch-firstboot.service
 sudo systemctl enable hoorch-firstboot.service
 
 
@@ -128,8 +128,8 @@ sudo sed -i "s/# web_service:/web_service: hoorch-webserver.service/" /etc/comit
 
 # 13. Deploy HOORCH systemd services and shutdown script
 
-if [ -f "/home/pi/hoorch/leds_server.service" ]; then
-  sudo cp /home/pi/hoorch/leds_server.service /etc/systemd/system/
+if [ -f "/home/pi/hoorch/services/leds_server.service" ]; then
+  sudo cp /home/pi/hoorch/services/leds_server.service /etc/systemd/system/
   sudo systemctl enable leds_server.service
   sudo systemctl start leds_server.service
 else
@@ -137,7 +137,7 @@ else
 fi
 
 echo "Installing HOORCH systemd services..."
-sudo cp /home/pi/hoorch/*.service /etc/systemd/system/
+sudo cp /home/pi/hoorch/services/*.service /etc/systemd/system/
 sudo cp /home/pi/hoorch/gpio-shutoff.sh /lib/systemd/system-shutdown/
 sudo chmod +x /lib/systemd/system-shutdown/gpio-shutoff.sh
 
