@@ -69,7 +69,6 @@ def wait_for_reader():
 
 def play_full(folder, audiofile):
     # Blocking play, mostly for TTS
-    wait_for_reader()
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "10"))
 
@@ -99,7 +98,6 @@ def play_full(folder, audiofile):
 
 def play_file(folder, audiofile, return_process=False):
     # Non-blocking play for sounds in /data and subfolders
-    wait_for_reader()
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
@@ -126,7 +124,6 @@ def play_file(folder, audiofile, return_process=False):
 
 def play_story(figure_id):
     # Non-blocking play
-    wait_for_reader()
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
@@ -263,7 +260,6 @@ def stop_recording(figure_id):
 
 
 def espeaker(words):
-    wait_for_reader()
     load_dotenv(dotenv_path, override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "10"))
 
