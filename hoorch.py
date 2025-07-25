@@ -141,7 +141,9 @@ def initial_hardware_test():
 
 def main():
     logger.info("Starte Hauptschleife")
-    shutdown_time = int(os.getenv("SHUTDOWN_TIMER", "300"))  # seconds until shutdown if no interaction happened
+    shutdown_time = int(
+        os.getenv("SHUTDOWN_TIMER", "300")
+    )  # seconds until shutdown if no interaction happened
     shutdown_counter = time.time() + shutdown_time
 
     greet_time = time.time()
@@ -151,10 +153,12 @@ def main():
 
     while True:
         if time.time() >= shutdown_counter:
-            logger.info("Shutdown Timer abgelaufen. System wird heruntergefahren.")
+            logger.info(
+                "Shutdown Timer abgelaufen. System wird heruntergefahren."
+            )
             audio.play_full("TTS", 196)
             leds.reset()
-            os.system("shutdown -P now")
+            os.system("sudo shutdown -P now")
             break
 
         if greet_time < time.time():
