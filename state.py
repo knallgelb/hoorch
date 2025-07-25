@@ -1,1 +1,0 @@
-currently_reading = False

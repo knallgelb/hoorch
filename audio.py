@@ -7,8 +7,7 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-import state
+import env_tools
 
 # Load environment variables from .env file
 dotenv_path = "/home/pi/hoorch/.env"
@@ -61,7 +60,10 @@ def init():
 
 
 def wait_for_reader():
-    while state.currently_reading:
+    currently_reading = env_tools.str_to_bool(
+        os.getenv("CURRENTLY_READING", True)
+    )
+    while currently_reading:
         time.sleep(0.01)
 
 
