@@ -16,7 +16,6 @@ from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 from digitalio import DigitalInOut
 
 import file_lib
-import state
 from logger_util import get_logger
 import models
 import crud
@@ -117,7 +116,6 @@ def extract_mifare_card(reader, tag_uid):
 
 
 def continuous_read():
-    state.currently_reading = True
     # logger.info("Tags: %s", tags)
     # logger.info("... continuous read function")
 
@@ -193,7 +191,6 @@ def continuous_read():
     if read_continuously:
         # Only read when not playing or recording audio
         threading.Timer(sleeping_time, continuous_read).start()
-    state.currently_reading = False
 
 
 def read_from_mifare(reader, tag_uid: str):
