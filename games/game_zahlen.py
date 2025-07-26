@@ -20,6 +20,7 @@ def start():
     defined_figures = file_lib.get_tags_by_type("figures")
     game_utils.announce(202)
     game_utils.announce(86)
+    game_utils.wait_for_figure_placement((1, 3, 5))
     time.sleep(3.0)
 
     rfid_position = [1, 3, 5]
