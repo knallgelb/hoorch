@@ -32,6 +32,11 @@ de:
     should_turn_off: "Soll ich es ausschalten?"
   game:
     start_round: "Starte Runde {round_num}..."
+    start_round_1: "234.mp4"
+    start_round_2: "235.mp4"
+    start_round_3: "236.mp4"
+    start_round_4: "237.mp4"
+    start_round_5: "238.mp4"
     player_turn: "Jetzt ist {player.name} an der Reihe."
     round_complete: "Runde {round_num} abgeschlossen."
   tag_writer:
