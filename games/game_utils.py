@@ -115,11 +115,19 @@ def play_rounds(players, num_rounds, player_action) -> dict:
             if player is not None:
                 audio.play_file(
                     "TTS",
+                    translator.translate(f"game.player_turn_start"),
+                )
+                audio.play_file(
+                    "TTS",
                     translator.translate(
                         f"standard_tags.{player.name.lower()}"
                     ),
                 )
-                audio.espeaker(f"Jetzt ist {player.name} an der Reihe.")
+                audio.play_file(
+                    "TTS",
+                    translator.translate(f"game.player_turn_end"),
+                )
+                # audio.espeaker(f"Jetzt ist {player.name} an der Reihe.")
                 if player_action(player):
                     score_players[player] += 1
 
