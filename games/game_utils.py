@@ -34,6 +34,9 @@ def announce_file(msg_id, path="TTS"):
 
 def announce_score(score_players: dict):
     """Play a message by its ID from the given path and check for ENDE tag."""
+    translator = Translator(
+        locale="de"
+    )  # Initialisiere Übersetzer mit deutschem Locale
     audio.play_full("TTS", 80)
     for player, score in score_players.items():
         if not isinstance(player, RFIDTag):
@@ -44,7 +47,11 @@ def announce_score(score_players: dict):
             on_time=0.1,
             off_time=0.1,
         )
-        audio.espeaker(f"{player.name} hat {score} richtige Antworten.")
+        audio.play_file(
+            "TTS",
+            translator.translate(f"game.player_turn_end"),
+        )
+        announce(68 + score)
 
 
 def wait_for_figure_placement(fields):
