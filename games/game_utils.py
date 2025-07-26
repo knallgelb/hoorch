@@ -8,6 +8,7 @@ import leds
 import rfidreaders
 from logger_util import get_logger
 from models import RFIDTag
+from i18n import Translator
 
 logger = get_logger(__name__, "logs/game_utils.log")
 
@@ -100,9 +101,13 @@ def play_rounds(players, num_rounds, player_action) -> dict:
                           This function should take a single argument: the player.
     """
     score_players = {player: 0 for player in players}
+    translator = Translator(
+        locale="de"
+    )  # Initialisiere Übersetzer mit deutschem Locale
 
     for round_num in range(1, num_rounds + 1):
-        audio.espeaker(f"Starte Runde {round_num}...")
+        # audio.espeaker(f"Starte Runde {round_num}...")
+        audio.play_file("TTS", translator.translate(f"start_round{round_num}"))
 
         for player in players:
             if player is not None:
