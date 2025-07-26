@@ -47,7 +47,9 @@ def announce_score(score_players: dict):
             on_time=0.1,
             off_time=0.1,
         )
-        audio.play_file("TTS", f"standard_tags.{player.name.lower()}")
+        audio.play_file(
+            "TTS", translator.translate("standard_tags.{player.name.lower()}")
+        )
         announce(68 + score)
 
 
