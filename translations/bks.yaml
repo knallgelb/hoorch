@@ -32,6 +32,11 @@ bks:
     should_turn_off: "Da li da ga isključim?"
   game:
     start_round: "Započinjem rundu {round_num}..."
+    start_round_1: "234.mp4"
+    start_round_2: "235.mp4"
+    start_round_3: "236.mp4"
+    start_round_4: "237.mp4"
+    start_round_5: "238.mp4"
     player_turn: "Sada je red na {player.name}."
     round_complete: "Runda {round_num} je završena."
   tag_writer:

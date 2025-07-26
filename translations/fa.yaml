@@ -32,6 +32,11 @@ fa:
     should_turn_off: "آیا باید آن را خاموش کنم؟"
   game:
     start_round: "شروع دور {round_num}..."
+    start_round_1: "234.mp4"
+    start_round_2: "235.mp4"
+    start_round_3: "236.mp4"
+    start_round_4: "237.mp4"
+    start_round_5: "238.mp4"
     player_turn: "حال نوبت {player.name} است."
     round_complete: "دور {round_num} به پایان رسید."
   tag_writer:

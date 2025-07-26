@@ -32,6 +32,11 @@ tr:
     should_turn_off: "Kapatayım mı?"
   game:
     start_round: "{round_num} turu başlatılıyor..."
+    start_round_1: "234.mp4"
+    start_round_2: "235.mp4"
+    start_round_3: "236.mp4"
+    start_round_4: "237.mp4"
+    start_round_5: "238.mp4"
     player_turn: "Şimdi {player.name} sırası."
     round_complete: "{round_num} turu tamamlandı."
   tag_writer:
