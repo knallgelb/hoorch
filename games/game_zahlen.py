@@ -65,7 +65,7 @@ def player_action(
         f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}"
     )
     expected_value = random.choice(numeric_tags)
-    audio.espeaker(expected_value.name)
+    game_utils.announce(90 + int(expected_value.name))  # Zahlen
 
     total_wait_seconds = 6.0
     start_time = time.time()
