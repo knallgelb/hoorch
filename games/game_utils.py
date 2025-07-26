@@ -117,7 +117,7 @@ def leds_switch_on_with_color(
     try:
         if rfidreaders.tags.index(player):
             leds.switch_on_with_color(
-                rfidreaders.tags.index(player), color=color
+                rfidreaders.tags.index(player) + 1, color=color
             )
             return
     except ValueError:
