@@ -107,7 +107,9 @@ def play_rounds(players, num_rounds, player_action) -> dict:
 
     for round_num in range(1, num_rounds + 1):
         # audio.espeaker(f"Starte Runde {round_num}...")
-        audio.play_file("TTS", translator.translate(f"start_round{round_num}"))
+        audio.play_file(
+            "TTS", translator.translate(f"game.start_round_{round_num}")
+        )
 
         for player in players:
             if player is not None:

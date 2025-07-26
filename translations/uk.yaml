@@ -32,11 +32,11 @@ uk:
     should_turn_off: "Вимкнути його?"
   game:
     start_round: "Починається раунд {round_num}..."
-    start_round_1: "234.mp4"
-    start_round_2: "235.mp4"
-    start_round_3: "236.mp4"
-    start_round_4: "237.mp4"
-    start_round_5: "238.mp4"
+    start_round_1: "234.mp3"
+    start_round_2: "235.mp3"
+    start_round_3: "236.mp3"
+    start_round_4: "237.mp3"
+    start_round_5: "238.mp3"
     player_turn: "Зараз черга {player.name}."
     round_complete: "Раунд {round_num} завершено."
   tag_writer:
