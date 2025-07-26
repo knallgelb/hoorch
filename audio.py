@@ -18,7 +18,7 @@ HEADPHONES_VOLUME = int(os.getenv("HEADPHONES_VOLUME", "5"))
 MIC_VOLUME = int(os.getenv("MIC_VOLUME", "95"))
 STORY_VOLUME = int(os.getenv("STORY_VOLUME", "2"))
 STORY_VOLUME_FLOAT = float(STORY_VOLUME)
-WAITTIME_OFFSET = 0
+WAITTIME_OFFSET = float(os.getenv("WATINGTIME_OFFSET", 0.5))
 
 # Create 'logs' directory if it doesn't exist
 logs_dir = Path("logs")
