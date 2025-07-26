@@ -61,7 +61,9 @@ def player_action(
     player: RFIDTag, rfidreaders, file_lib, rfid_position: List[int]
 ) -> bool:
     numeric_tags = list(file_lib.get_tags_by_type("numeric").values())
-    logger.debug(f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}")
+    logger.debug(
+        f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}"
+    )
     expected_value = random.choice(numeric_tags)
     audio.espeaker(expected_value.name)
 
@@ -86,6 +88,7 @@ def player_action(
 
         time.sleep(0.3)
 
+    game_utils.announce(26)
     return False
 
 
