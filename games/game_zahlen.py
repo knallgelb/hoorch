@@ -37,8 +37,7 @@ def start():
     crud.add_game_entry(usage=u)
 
     def action_with_led(player):
-        idx = players.index(player)
-        leds.switch_on_with_color(idx, (0, 255, 0))
+        idx = players.index(player) + 1
         result = player_action(player, rfidreaders, file_lib, rfid_position)
         leds.switch_on_with_color(idx, (0, 0, 0))
         return result
