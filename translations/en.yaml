@@ -37,6 +37,11 @@ en:
     start_round_3: "236.mp3"
     start_round_4: "237.mp3"
     start_round_5: "238.mp3"
+    end_round_1: "229.mp3"
+    end_round_2: "230.mp3"
+    end_round_3: "231.mp3"
+    end_round_4: "232.mp3"
+    end_round_5: "233.mp3"
     player_turn: "Now it's {player.name}'s turn."
     round_complete: "Round {round_num} complete."
   tag_writer:

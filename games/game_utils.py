@@ -117,7 +117,9 @@ def play_rounds(players, num_rounds, player_action) -> dict:
                 if player_action(player):
                     score_players[player] += 1
 
-        audio.espeaker(f"Runde {round_num} abgeschlossen.")
+        audio.play_file(
+            "TTS", translator.translate(f"game.end_round_{round_num}")
+        )
 
     leds.blinker()
 
