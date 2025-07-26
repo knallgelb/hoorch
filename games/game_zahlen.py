@@ -18,10 +18,8 @@ logger = get_logger(__name__, "logs/game_zahlen.log")
 
 def start():
     defined_figures = file_lib.get_tags_by_type("figures")
-    audio.espeaker("Spiel Zahlen legen")
-    audio.espeaker(
-        "Setze die Spielfiguren auf das Spielfeld. Mögliche Felder sind 1, 3, 5"
-    )
+    game_utils.announce(202)
+    game_utils.announce(86)
     time.sleep(3.0)
 
     rfid_position = [1, 3, 5]
