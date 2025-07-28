@@ -41,12 +41,13 @@ def announce_score(score_players: dict):
     for player, score in score_players.items():
         if not isinstance(player, RFIDTag):
             continue
-        blink_led(
-            rfidreaders.tags.index(player) + 1,
-            times=5,
-            on_time=0.1,
-            off_time=0.1,
-        )
+        if player in rfidreaders.tags:
+            blink_led(
+                rfidreaders.tags.index(player) + 1,
+                times=5,
+                on_time=0.1,
+                off_time=0.1,
+            )
         audio.play_file(
             "TTS", translator.translate(f"standard_tags.{player.name.lower()}")
         )
