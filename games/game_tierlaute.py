@@ -70,6 +70,12 @@ def start():
             player, rfidreaders, file_lib, rfid_position, animals_played
         )
         leds.switch_on_with_color(idx, (0, 0, 0))
+        audio.kill_sounds()
+        time.sleep(1)
+        if result:
+            game_utils.announce(27)
+        else:
+            game_utils.announce(26)
         return result
 
     score_players = game_utils.play_rounds(
