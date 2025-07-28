@@ -78,6 +78,10 @@ def start():
             game_utils.announce(26)
         return result
 
+    if figure_count == 0:
+        game_utils.announce(59)
+        return None
+
     score_players = game_utils.play_rounds(
         players=players,
         num_rounds=3,  # Beispiel: 3 Runden
