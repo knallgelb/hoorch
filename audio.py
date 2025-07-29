@@ -132,8 +132,8 @@ def play_story(figure_id):
     )
     waitingtime = (
         get_audio_length(
-            data_path / "figures" / figure_id.rfid_tag,
-            f"{figure_id.rfid_tag}.mp3",
+            file_path.parent,
+            file_path.name,
         )
         + WAITTIME_OFFSET
     )
@@ -155,7 +155,10 @@ def kill_sounds():
 
 
 def get_audio_length(folder, audiofile):
-    file_path = Path(data_path) / folder / audiofile
+    if not str(folder).startswith("data"):
+        file_path = Path(data_path) / folder / audiofile
+    else:
+        file_path = Path(folder) / audiofile
 
     try:
         completed_process = subprocess.run(
