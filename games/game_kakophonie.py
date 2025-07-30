@@ -62,11 +62,13 @@ def start():
                 tag = crud.get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
                 active_leds.append(i + 1)
                 if tag:
-                    found_digits.append(int(tag.name))
+                    tag_number = int(tag.name)
+                    if 1 <= tag_number <= 6:
+                        found_digits.append(tag_number - 1)
 
         leds.switch_on_with_color(
             active_leds
-        )  # Beispiel: Grün für alle gefundenen
+        )
 
         for i in range(0, 6):
             if i not in found_digits:
@@ -75,7 +77,6 @@ def start():
                 phones[i].set_volume(0.5)
 
         if check_end_tag():
-            # pdb.set_trace()
             for x in phones:
                 x.set_volume(1.0)
                 x.stop()
