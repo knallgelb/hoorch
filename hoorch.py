@@ -161,6 +161,14 @@ def main():
             os.system("sudo shutdown -P now")
             break
 
+        if file_lib.check_tag_attribute(
+            rfidreaders.tags, "JA", "name"
+        ) and file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+            audio.play_full("TTS", 3)
+            leds.reset()
+            os.system("sudo shutdown -P now")
+            break
+
         if greet_time < time.time():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
             greet_time = time.time() + 30
