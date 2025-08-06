@@ -91,7 +91,7 @@ def start():
                     first_round = False
                 else:
                     # Die nächste Spielfigur steht auf Spielfeld x
-                    game_utils.announce(47 + i)
+                    game_utils.announce(47 + player_position)
 
             if game_utils.check_end_tag():
                 return
