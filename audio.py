@@ -140,11 +140,9 @@ def play_story(figure_id):
     logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
     logger.info(f"Wating time: {waitingtime}")
     # Increase volume by STORY_VOLUME_FLOAT for stories
-    subprocess.Popen(
-        f"play -v{SPEAKER_VOLUME} {file_path} 2>/dev/null",
-        shell=True,
-        stdout=None,
-        stderr=None,
+    cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     time.sleep(waitingtime)
 
@@ -204,38 +202,80 @@ def record_story(figure):
     logger.info(f"Started recording to {file_path}")
 
 
-def trim_audio_start(file_path: Path, trim_length: float = 0.2) -> None:
+def trim_normalize_clean_audio(
+    file_path: Path,
+    trim_length: float = 0.2,
+    loudness: int = -24,
+    bitrate: str = "192k",
+) -> None:
     """
-    Trims the start of an audio file by trim_length seconds using ffmpeg.
-    Overwrites the original file.
+    Trims the start of an audio file, applies a highpass filter, normalizes loudness, and overwrites the original file.
+
+    :param file_path: Path to the input MP3 file
+    :param trim_length: Time in seconds to trim from start
+    :param loudness: Target loudness in LUFS (e.g. -24 for speech)
+    :param bitrate: Audio bitrate for output MP3 (e.g. '192k')
     """
-    temp_file = file_path.with_suffix(".trimmed.mp3")
-    cmd = [
-        "ffmpeg",
-        "-y",  # overwrite output file if exists
-        "-i",
-        str(file_path),
-        "-ss",
-        str(trim_length),
-        "-c",
-        "copy",
-        str(temp_file),
-    ]
+    logger = logging.getLogger(__name__)
+
+    trimmed_file = file_path.with_suffix(".trimmed.mp3")
+    normalized_file = file_path.with_suffix(".normalized.mp3")
+
     try:
+        # Step 1: Trim the beginning
+        trim_cmd = [
+            "ffmpeg",
+            "-y",
+            "-ss",
+            str(trim_length),
+            "-i",
+            str(file_path),
+            "-c",
+            "copy",
+            str(trimmed_file),
+        ]
         subprocess.run(
-            cmd,
+            trim_cmd,
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        temp_file.replace(file_path)
-        logging.getLogger(__name__).info(
-            f"Trimmed first {trim_length} seconds of the audio file: {file_path}"
+
+        # Step 2: Apply highpass filter + normalize
+        # Chain: highpass -> loudnorm
+        audio_filter = f"highpass=f=80,loudnorm=I={loudness}:TP=-2.0:LRA=11"
+        normalize_cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(trimmed_file),
+            "-filter:a",
+            audio_filter,
+            "-c:a",
+            "libmp3lame",
+            "-b:a",
+            bitrate,
+            str(normalized_file),
+        ]
+        subprocess.run(
+            normalize_cmd,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
+
+        # Overwrite original
+        normalized_file.replace(file_path)
+        trimmed_file.unlink(missing_ok=True)
+
+        logger.info(
+            f"Trimmed {trim_length}s, highpass-filtered, normalized to {loudness} LUFS: {file_path}"
+        )
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"ffmpeg process failed: {e}")
     except Exception as e:
-        logging.getLogger(__name__).error(
-            f"Failed to trim audio file {file_path}: {e}"
-        )
+        logger.error(f"Error processing {file_path}: {e}")
 
 
 def stop_recording(figure_id):
@@ -253,7 +293,7 @@ def stop_recording(figure_id):
 
     # If file exists
     if mp3_file.is_file():
-        trim_audio_start(mp3_file)
+        trim_normalize_clean_audio(mp3_file)
         # If file is smaller than 50kB, delete it
         if mp3_file.stat().st_size < 50000:
             mp3_file.unlink()
