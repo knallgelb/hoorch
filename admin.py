@@ -89,16 +89,15 @@ def main():
 
         logger.debug(relevant_tags)
 
+        if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+            breaker = True
+            break
+
         for tag_name in relevant_tags:
             try:
                 op = int(tag_name.name)
             except TypeError as e:
                 logger.debug(tag_name)
-                if file_lib.check_tag_attribute(
-                    rfidreaders.tags, "ENDE", "name"
-                ):
-                    breaker = True
-                    break
                 continue
 
             if op == 1:
