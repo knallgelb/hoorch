@@ -196,12 +196,46 @@ def record_story(figure):
     figure_dir.mkdir(parents=True, exist_ok=True)
     file_path = figure_dir / f"{figure.rfid_tag}.mp3"
 
-    execute_record = f"AUDIODEV=plughw:0,0 rec -c 1 -r 44100 -b 16 --encoding signed-integer {file_path}"
+    execute_record = f"AUDIODEV=plughw:0,0 rec -c 1 -r 48000 -b 16 --encoding signed-integer {file_path}"
 
     logger.info(execute_record)
 
     subprocess.Popen(execute_record, shell=True, stdout=None, stderr=None)
     logger.info(f"Started recording to {file_path}")
+
+
+def trim_audio_start(file_path: Path, trim_length: float = 0.2) -> None:
+    """
+    Trims the start of an audio file by trim_length seconds using ffmpeg.
+    Overwrites the original file.
+    """
+    temp_file = file_path.with_suffix(".trimmed.mp3")
+    cmd = [
+        "ffmpeg",
+        "-y",  # overwrite output file if exists
+        "-i",
+        str(file_path),
+        "-ss",
+        str(trim_length),
+        "-c",
+        "copy",
+        str(temp_file),
+    ]
+    try:
+        subprocess.run(
+            cmd,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        temp_file.replace(file_path)
+        logging.getLogger(__name__).info(
+            f"Trimmed first {trim_length} seconds of the audio file: {file_path}"
+        )
+    except Exception as e:
+        logging.getLogger(__name__).error(
+            f"Failed to trim audio file {file_path}: {e}"
+        )
 
 
 def stop_recording(figure_id):
@@ -219,7 +253,7 @@ def stop_recording(figure_id):
 
     # If file exists
     if mp3_file.is_file():
-        # pdb.set_trace()
+        trim_audio_start(mp3_file)
         # If file is smaller than 50kB, delete it
         if mp3_file.stat().st_size < 50000:
             mp3_file.unlink()
