@@ -14,7 +14,7 @@ sudo apt update -y && sudo apt upgrade -y
 # 2. Install necessary packages
 echo "Installing required packages..."
 sudo apt install -y python3-full python3-pip sox libsox-fmt-mp3 espeak \
-  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime sqlite3
+  libsdl2-mixer-2.0-0 git vim python3-venv uuid-runtime sqlite3 ffmpeg
 
 # 3. Set hostname to HOORCH
 echo "Setting hostname to HOORCH"
