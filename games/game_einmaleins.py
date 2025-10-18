@@ -84,7 +84,7 @@ def start():
             announce(88)  # "times"
             announce(90 + num2)  # second number
 
-            blink_led(leds_position)
+            blink_led(leds_position, times=6, on_time=1.0, off_time=1.0)
 
             # Check solution
             player_solution = get_solution_from_tags(i, player)
