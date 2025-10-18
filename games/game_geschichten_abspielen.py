@@ -119,4 +119,4 @@ def start():
     leds.switch_all_on_with_color((0, 0, 255))
     time.sleep(0.2)
     leds.reset()
-    audio.play_file("sounds", translator.translate("story.finished"))
+    # audio.play_file("sounds", translator.translate("story.finished"))
