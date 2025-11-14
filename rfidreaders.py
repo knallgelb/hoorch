@@ -9,18 +9,18 @@ import time
 import board
 import busio
 import ndef
-from adafruit_pn532.spi import PN532_SPI
 from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
+from adafruit_pn532.spi import PN532_SPI
 
 # import digitalio
 from digitalio import DigitalInOut
-
-import file_lib
-from logger_util import get_logger
-import models
-import crud
 from sqlmodel import Session
+
+import crud
+import file_lib
+import models
 from database import engine
+from logger_util import get_logger
 
 sleeping_time = 0.1
 
@@ -126,7 +126,8 @@ def continuous_read():
         currently_reading = True
 
         try:
-            tag_uid = r.read_passive_target(timeout=0.2)
+            # Increase passive target timeout to give tag more time to settle
+            tag_uid = r.read_passive_target(timeout=0.5)
         except Exception as e:
             logger.error("Error reading from RFID reader %d: %s", index + 1, e)
             continue
@@ -277,12 +278,137 @@ def read_from_ntag213(reader, tag_uid: str):
     if tag_uid_database:
         return tag_uid_database
 
-    try:
-        for i in range(0, 24):
-            read_data.extend(reader.ntag2xx_read_block(i))
-    except Exception as e:
-        logger.error(f"Error reading NTAG213 blocks: {e}")
-        return None
+    # Before attempting to read blocks, behave like tagwriter: try to (re-)select the tag
+    # to make sure the tag is really present/stable. This mirrors the interactive readers
+    # that wait for a tag when writing/assigning missing tags.
+    preselect_attempts = 3
+    preselect_timeout = (
+        1.0  # seconds, similar to tagwriter's interactive timeouts
+    )
+    uid_match = False
+    for pre in range(preselect_attempts):
+        try:
+            uid_now = reader.read_passive_target(timeout=preselect_timeout)
+        except Exception as e:
+            logger.debug(f"Preselect attempt {pre + 1} failed: {e}")
+            uid_now = None
+        if uid_now is None:
+            logger.debug(f"Preselect attempt {pre + 1}: no tag detected")
+            continue
+        # Compare first 4 UID bytes (the readable id format used elsewhere)
+        try:
+            if uid_now[:4] == tag_uid[:4]:
+                uid_match = True
+                logger.debug(
+                    "Preselect matched tag UID before NTAG213 read (attempt %d)",
+                    pre + 1,
+                )
+                break
+            else:
+                logger.debug(
+                    "Preselect attempt %d: different tag detected (%s)",
+                    pre + 1,
+                    uid_now,
+                )
+                # Keep trying to allow the correct tag to be placed
+                continue
+        except Exception:
+            # If comparison fails for any reason, just continue trying
+            continue
+
+    if not uid_match:
+        logger.info(
+            "Proceeding to read NTAG213 blocks for %s without confirmed re-select (tag may be unstable)",
+            tag_uid_readable,
+        )
+
+    # Read NTAG213 blocks starting at user data area (block 4). Stop early when the
+    # TLV terminator (0xFE) is found or when an NDEF payload can be extracted.
+    # Keep retries/reselection and pad missing blocks with zeros so indices remain stable.
+    max_attempts = 3
+    retry_delay = 0.1  # seconds between retry attempts for the same block
+    per_block_delay = 0.03  # small pause after a successful block read
+    reselection_timeout = 0.3  # timeout for a quick re-check of tag presence
+    start_block = 4
+    end_block = 24
+
+    # flag to break outer loop when we've found payload/terminator
+    found_early_termination = False
+
+    for i in range(start_block, end_block):
+        success = False
+        for attempt in range(1, max_attempts + 1):
+            try:
+                blk = reader.ntag2xx_read_block(i)
+                if blk is None:
+                    # Treat None as a transient failure and retry
+                    raise RuntimeError("ntag2xx_read_block returned None")
+                # Ensure we got a bytes-like object
+                if not isinstance(blk, (bytes, bytearray)) or len(blk) < 1:
+                    raise RuntimeError(
+                        f"Unexpected block data for block {i}: {blk}"
+                    )
+                read_data.extend(blk)
+                success = True
+
+                # After adding this block, check if we already have a TLV terminator
+                # or can extract the NDEF payload. If so, stop reading further blocks.
+                try:
+                    if b"\xfe" in read_data:
+                        logger.debug(
+                            f"Found TLV terminator after reading block {i}; stopping early"
+                        )
+                        found_early_termination = True
+                    else:
+                        payload_now = extract_ndef_payload(read_data)
+                        if payload_now:
+                            logger.debug(
+                                f"Found NDEF payload after reading block {i}; stopping early"
+                            )
+                            found_early_termination = True
+                except Exception as _:
+                    # If extraction check fails, ignore and continue reading more blocks
+                    pass
+
+                break
+            except Exception as e:
+                logger.debug(
+                    f"Attempt {attempt} failed reading NTAG213 block {i}: {e}"
+                )
+                # On the first failure do a quick re-selection to ensure the tag is still present
+                if attempt == 1:
+                    try:
+                        uid_now = reader.read_passive_target(
+                            timeout=reselection_timeout
+                        )
+                        if uid_now is None:
+                            logger.debug(
+                                "Tag not present on re-check before retry; will pad this block and continue"
+                            )
+                            break  # leave attempt loop -> will pad below
+                        if uid_now != tag_uid:
+                            logger.debug(
+                                "Different tag detected on re-check; will pad this block and continue"
+                            )
+                            break
+                    except Exception as e2:
+                        logger.debug(f"Re-selection read failed: {e2}")
+                # small backoff before next attempt
+                if attempt < max_attempts:
+                    time.sleep(retry_delay)
+        if not success:
+            # Instead of aborting the whole read, pad missing/empty blocks with zeros
+            logger.warning(
+                f"Could not read NTAG213 block {i} after {max_attempts} attempts — padding with zeros and continuing"
+            )
+            # NTAG block size is 4 bytes; pad with zeros so parsing keeps indices stable
+            read_data.extend(b"\x00\x00\x00\x00")
+        # small pause between blocks to give the PN532 some settling time
+        time.sleep(per_block_delay)
+
+        # If we detected a terminator or payload above, break outer loop now.
+        if found_early_termination:
+            break
 
     create_tags_list = []
 
@@ -307,10 +433,27 @@ def read_from_ntag213(reader, tag_uid: str):
                     )
         except Exception as e:
             logger.error(f"Error decoding NDEF message for NTAG213: {e}")
-            return None
+            # Fall back to a default placeholder entry below instead of aborting
     else:
-        logger.info("No NDEF payload found on NTAG213 tag")
-        return None
+        logger.info(
+            "No NDEF payload found on NTAG213 tag — will create fallback DB entry"
+        )
+        # fall through to create a placeholder entry below
+
+    # If we couldn't extract any tag info (no payload or decode error), still create
+    # a fallback database entry so the tag is registered.
+    if not create_tags_list:
+        logger.info(
+            "Creating fallback RFID tag entry for NTAG213 tag %s (no NDEF text found)",
+            tag_uid_readable,
+        )
+        create_tags_list.append(
+            models.RFIDTag(
+                rfid_tag=tag_uid_readable,
+                name=tag_uid_readable,
+                rfid_type="ntag213",
+            )
+        )
 
     last_created = None
     with Session(engine) as session:
@@ -333,8 +476,15 @@ def extract_ndef_payload(data):
     """
     Parses the TLV structure and extracts the NDEF Payload (type 0x03).
     This version is more robust against incomplete or irregular TLV data.
+
+    Important: If an NDEF TLV is present but the length indicates more bytes
+    than are available in `data`, this function will now return None (treat as
+    incomplete) instead of returning a truncated payload. This avoids decode
+    errors like "buffer underflow" when downstream code attempts to parse
+    an incomplete NDEF record.
     """
     i = 0
+    logger.debug(f"extract_ndef_payload called with {len(data)} bytes")
     while i < len(data):
         if i >= len(data):
             break
@@ -347,13 +497,19 @@ def extract_ndef_payload(data):
             # NDEF Message TLV
             if i + 1 >= len(data):
                 # No length byte available
-                break
+                logger.debug(
+                    f"NDEF TLV at index {i} has no length byte (data length {len(data)})"
+                )
+                return None
             length = data[i + 1]
             payload_start = i + 2
             payload_end = payload_start + length
             if payload_end > len(data):
-                # Payload goes beyond available data, truncate or skip
-                payload_end = len(data)
+                # Payload goes beyond available data -> treat as incomplete
+                logger.debug(
+                    f"NDEF payload incomplete at index {i}: expected {length} bytes, have {len(data) - payload_start}"
+                )
+                return None
             return data[payload_start:payload_end]
         elif tlv_type == 0xFE:
             # Terminator TLV, end
@@ -362,6 +518,9 @@ def extract_ndef_payload(data):
             # Other TLV types, skip the length + value fields if possible
             if i + 1 >= len(data):
                 # No length byte, can't proceed
+                logger.debug(
+                    f"TLV type {tlv_type} at index {i} has no length byte"
+                )
                 break
             length = data[i + 1]
             i += 2 + length
