@@ -100,7 +100,7 @@ def extract_mifare_card(reader, tag_uid):
 
     if ndef_payload is None:
         print("No NDEF payload found in data.")
-        return None
+        # return None
 
     try:
         ndef_messages = list(ndef.message_decoder(ndef_payload))
@@ -435,6 +435,13 @@ def read_from_ntag213(reader, tag_uid: str):
             logger.error(f"Error decoding NDEF message for NTAG213: {e}")
             # Fall back to a default placeholder entry below instead of aborting
     else:
+        create_tags_list.append(
+            models.RFIDTag(
+                rfid_tag=tag_uid_readable,
+                name="Custom Tag",
+                rfid_type="custom_tag",
+            )
+        )
         logger.info(
             "No NDEF payload found on NTAG213 tag — will create fallback DB entry"
         )
