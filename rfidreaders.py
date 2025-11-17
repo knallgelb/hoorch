@@ -473,59 +473,64 @@ def read_from_ntag213(reader, tag_uid: str):
 
 
 def extract_ndef_payload(data):
-    """
-    Parses the TLV structure and extracts the NDEF Payload (type 0x03).
-    This version is more robust against incomplete or irregular TLV data.
-
-    Important: If an NDEF TLV is present but the length indicates more bytes
-    than are available in `data`, this function will now return None (treat as
-    incomplete) instead of returning a truncated payload. This avoids decode
-    errors like "buffer underflow" when downstream code attempts to parse
-    an incomplete NDEF record.
-    """
     i = 0
     logger.debug(f"extract_ndef_payload called with {len(data)} bytes")
     while i < len(data):
-        if i >= len(data):
-            break
-        tlv_type = data[i]
-        if tlv_type == 0x00:
-            # Null TLV, simply skip
+        b = data[i]
+
+        # skip null TLV bytes
+        if b == 0x00:
             i += 1
             continue
-        elif tlv_type == 0x03:
-            # NDEF Message TLV
+
+        # terminator TLV: stop scanning
+        if b == 0xFE:
+            logger.debug("Found TLV terminator at index %d", i)
+            break
+
+        # if this is the NDEF TLV, parse length and return payload if complete
+        if b == 0x03:
+            # need at least one length byte
             if i + 1 >= len(data):
-                # No length byte available
-                logger.debug(
-                    f"NDEF TLV at index {i} has no length byte (data length {len(data)})"
-                )
+                logger.debug("NDEF TLV at index %d has no length byte", i)
                 return None
             length = data[i + 1]
             payload_start = i + 2
+
+            # extended length form (0xFF) uses two subsequent bytes
+            if length == 0xFF:
+                if i + 3 >= len(data):
+                    logger.debug(
+                        "NDEF TLV at index %d uses extended length but length bytes missing",
+                        i,
+                    )
+                    return None
+                length = (data[i + 2] << 8) | data[i + 3]
+                payload_start = i + 4
+
             payload_end = payload_start + length
             if payload_end > len(data):
-                # Payload goes beyond available data -> treat as incomplete
                 logger.debug(
-                    f"NDEF payload incomplete at index {i}: expected {length} bytes, have {len(data) - payload_start}"
+                    "NDEF payload incomplete at index %d: expected %d bytes, have %d",
+                    i,
+                    length,
+                    max(0, len(data) - payload_start),
                 )
                 return None
+
+            logger.debug(
+                "Found NDEF TLV at index %d with length %d (payload %d..%d)",
+                i,
+                length,
+                payload_start,
+                payload_end,
+            )
             return data[payload_start:payload_end]
-        elif tlv_type == 0xFE:
-            # Terminator TLV, end
-            break
-        else:
-            # Other TLV types, skip the length + value fields if possible
-            if i + 1 >= len(data):
-                # No length byte, can't proceed
-                logger.debug(
-                    f"TLV type {tlv_type} at index {i} has no length byte"
-                )
-                break
-            length = data[i + 1]
-            i += 2 + length
-            continue
+
+        # otherwise, advance one byte and keep searching for 0x03 or 0xFE
         i += 1
+
+    # No complete NDEF payload found
     return None
 
 
