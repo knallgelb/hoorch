@@ -371,4 +371,5 @@ def wifi():
 
 
 if __name__ == "__main__":
+    # main loop, just a change to test the update mechanism
     main()
