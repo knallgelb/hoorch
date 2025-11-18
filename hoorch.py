@@ -17,13 +17,13 @@ import database
 import env_tools
 import file_lib
 import games
+import integrity_check
 import leds
 import rfidreaders
 import tagwriter
 from logger_util import get_logger
 from models import RFIDTag, Usage
 from utils import report_stats
-import integrity_check
 
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
@@ -141,10 +141,7 @@ def initial_hardware_test():
 
 def main():
     logger.info("Starte Hauptschleife")
-    shutdown_time = int(
-        os.getenv("SHUTDOWN_TIMER", "300")
-    )  # seconds until shutdown if no interaction happened
-    shutdown_counter = time.time() + shutdown_time
+    shutdown_counter = time.time() + int(os.getenv("SHUTDOWN_TIMER", "300"))
 
     greet_time = time.time()
 
@@ -197,7 +194,9 @@ def main():
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
             report_stats.send_and_update_stats()
-            shutdown_counter = time.time() + shutdown_time
+            shutdown_counter = time.time() + int(
+                os.getenv("SHUTDOWN_TIMER", "300")
+            )
 
         if file_lib.check_tag_attribute(
             rfidreaders.tags, "FRAGEZEICHEN", "name"
@@ -206,7 +205,9 @@ def main():
             # leds.blink = False
             leds.reset()
             audio.play_full("TTS", 65)  # Erklärung
-            shutdown_counter = time.time() + shutdown_time
+            shutdown_counter = time.time() + int(
+                os.getenv("SHUTDOWN_TIMER", "300")
+            )
 
         hoerspiele_list = [
             os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
@@ -241,7 +242,9 @@ def main():
             rfidreaders.tags, "JA", "name"
         ) and file_lib.check_tag_attribute(rfidreaders.tags, "NEIN", "name"):
             admin.main()
-            shutdown_counter = time.time() + shutdown_time
+            shutdown_counter = time.time() + int(
+                os.getenv("SHUTDOWN_TIMER", "300")
+            )
 
         time.sleep(0.3)
 
