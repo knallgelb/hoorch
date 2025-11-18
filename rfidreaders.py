@@ -18,6 +18,7 @@ from sqlmodel import Session
 
 import crud
 import file_lib
+import leds
 import models
 from database import engine
 from logger_util import get_logger
@@ -125,6 +126,8 @@ def continuous_read():
 
         currently_reading = True
 
+        leds.reset()
+
         try:
             # Increase passive target timeout to give tag more time to settle
             tag_uid = r.read_passive_target(timeout=0.5)
@@ -149,6 +152,7 @@ def continuous_read():
 
             if not tag_name:
                 logger.info("RFIDREADERS if not tag_name line called")
+                leds.switch_on_with_color([index + 1], (128, 255, 0))
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
                 elif ntag213:
@@ -192,6 +196,7 @@ def continuous_read():
     if read_continuously:
         # Only read when not playing or recording audio
         threading.Timer(sleeping_time, continuous_read).start()
+        leds.reset()
 
 
 def read_from_mifare(reader, tag_uid: str):
