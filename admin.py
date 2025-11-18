@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
-import time
-import os
-import subprocess
 import datetime
-import re
-import dbus
-import rfidreaders
-import audio
-import tagwriter
-from i18n import Translator
-import file_lib
-from models import RFIDTag
-from games.game_utils import check_end_tag
-import crud
-
 import logging
+import os
+import re
+import subprocess
+import time
+
+import dbus
+
+import audio
+import crud
+import file_lib
+import rfidreaders
+import tagwriter
+from games.game_utils import check_end_tag
+from i18n import Translator
+from models import RFIDTag
 
 # Erstelle das Verzeichnis 'logs', falls es nicht existiert
 if not os.path.exists("logs"):
@@ -153,6 +154,11 @@ def new_set():
 def git():
     translator = Translator(locale="de")
     print("git update, restart hoorch")
+    logger.info("Starting git update sequence")
+
+    # Run git commands in the repository directory (this file lives inside the repo)
+    repo_dir = os.path.dirname(os.path.abspath(__file__))
+
     bus = dbus.SystemBus()
     # get comitup dbus object - https://davesteele.github.io/comitup/man/comitup.8.html
     nm = bus.get_object(
@@ -170,21 +176,82 @@ def git():
 
     elif state == "CONNECTED":
         audio.espeaker(translator.translate("admin.updating"))
-        # Any local files that are not tracked by Git will not be affected:
-        # git fetch downloads the latest from remote without trying to merge or rebase anything.
-        # git reset resets the master branch to what you just fetched.
-        # The --hard option changes all the files in your working tree to match the files in origin/master.
-        subprocess.run(
-            ["git", "fetch", "--all"], stdout=subprocess.PIPE, check=False
-        )
-        # subprocess.run(['git', 'branch', 'backup-master'], stdout=subprocess.PIPE)
-        subprocess.run(
-            ["git", "reset", "--hard", "origin/master"],
-            stdout=subprocess.PIPE,
-            check=False,
+
+        # Execute git commands and capture output so we can log them.
+        try:
+            fetch_proc = subprocess.run(
+                ["git", "fetch", "--all"],
+                cwd=repo_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            logger.debug(
+                "git fetch stdout: %s",
+                fetch_proc.stdout.decode("utf-8", errors="ignore"),
+            )
+            logger.debug(
+                "git fetch stderr: %s",
+                fetch_proc.stderr.decode("utf-8", errors="ignore"),
+            )
+
+            reset_proc = subprocess.run(
+                ["git", "reset", "--hard", "origin/master"],
+                cwd=repo_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            logger.debug(
+                "git reset stdout: %s",
+                reset_proc.stdout.decode("utf-8", errors="ignore"),
+            )
+            logger.debug(
+                "git reset stderr: %s",
+                reset_proc.stderr.decode("utf-8", errors="ignore"),
+            )
+
+        except subprocess.CalledProcessError as e:
+            # Log details if something went wrong
+            logger.error("Git update failed: %s", e)
+            # Try to extract stdout/stderr from exception if available
+            out = getattr(e, "stdout", None)
+            err = getattr(e, "stderr", None)
+            if out:
+                logger.error(
+                    "Git failed stdout: %s",
+                    out.decode("utf-8", errors="ignore"),
+                )
+            if err:
+                logger.error(
+                    "Git failed stderr: %s",
+                    err.decode("utf-8", errors="ignore"),
+                )
+            # Inform the user via audio and return without rebooting
+            try:
+                audio.espeaker(translator.translate("admin.update_failed"))
+            except Exception:
+                # if translation key is missing, fallback to a simple message
+                audio.espeaker("Update fehlgeschlagen.")
+            return
+
+        # If we get here, the update succeeded
+        audio.espeaker(translator.translate("admin.update_complete"))
+        logger.info(
+            "Git update finished successfully. Waiting briefly before reboot."
         )
 
-        audio.espeaker(translator.translate("admin.update_complete"))
+        # Ensure filesystem is synced and give some time for operations to settle
+        try:
+            os.sync()
+        except AttributeError:
+            # os.sync may not exist on some platforms; fallback to explicit sync command
+            subprocess.run(["sync"])
+
+        # Wait a few seconds to ensure any pending IO is flushed and logs are written
+        time.sleep(5)
+
+        # Finally reboot
         os.system("sudo reboot")
 
 
