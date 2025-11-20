@@ -8,6 +8,7 @@ import subprocess
 import time
 
 import dbus
+from hoorch.utils.netutils import has_internet
 
 import audio
 import crud
@@ -159,100 +160,93 @@ def git():
     # Run git commands in the repository directory (this file lives inside the repo)
     repo_dir = os.path.dirname(os.path.abspath(__file__))
 
-    bus = dbus.SystemBus()
-    # get comitup dbus object - https://davesteele.github.io/comitup/man/comitup.8.html
-    nm = bus.get_object(
-        "com.github.davesteele.comitup", "/com/github/davesteele/comitup"
-    )
+    # use module-level has_internet()
 
-    tpl = nm.state()
-
-    # state is either 'HOTSPOT', 'CONNECTING', or 'CONNECTED'
-    state = str(tpl[0])
-
-    if state == "HOTSPOT":
+    if not has_internet():
+        # No general internet connectivity detected; inform user and don't attempt update.
         audio.espeaker(translator.translate("admin.wifi_disconnected"))
         audio.espeaker(translator.translate("admin.open_wifi_config"))
+        return
 
-    elif state == "CONNECTED":
-        audio.espeaker(translator.translate("admin.updating"))
+    # We have internet -> proceed with update
+    audio.espeaker(translator.translate("admin.updating"))
 
-        # Execute git commands and capture output so we can log them.
-        try:
-            fetch_proc = subprocess.run(
-                ["git", "fetch", "--all"],
-                cwd=repo_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
-            logger.debug(
-                "git fetch stdout: %s",
-                fetch_proc.stdout.decode("utf-8", errors="ignore"),
-            )
-            logger.debug(
-                "git fetch stderr: %s",
-                fetch_proc.stderr.decode("utf-8", errors="ignore"),
-            )
-
-            reset_proc = subprocess.run(
-                ["git", "reset", "--hard", "origin/master"],
-                cwd=repo_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
-            logger.debug(
-                "git reset stdout: %s",
-                reset_proc.stdout.decode("utf-8", errors="ignore"),
-            )
-            logger.debug(
-                "git reset stderr: %s",
-                reset_proc.stderr.decode("utf-8", errors="ignore"),
-            )
-
-        except subprocess.CalledProcessError as e:
-            # Log details if something went wrong
-            logger.error("Git update failed: %s", e)
-            # Try to extract stdout/stderr from exception if available
-            out = getattr(e, "stdout", None)
-            err = getattr(e, "stderr", None)
-            if out:
-                logger.error(
-                    "Git failed stdout: %s",
-                    out.decode("utf-8", errors="ignore"),
-                )
-            if err:
-                logger.error(
-                    "Git failed stderr: %s",
-                    err.decode("utf-8", errors="ignore"),
-                )
-            # Inform the user via audio and return without rebooting
-            try:
-                audio.espeaker(translator.translate("admin.update_failed"))
-            except Exception:
-                # if translation key is missing, fallback to a simple message
-                audio.espeaker("Update fehlgeschlagen.")
-            return
-
-        # If we get here, the update succeeded
-        audio.espeaker(translator.translate("admin.update_complete"))
-        logger.info(
-            "Git update finished successfully. Waiting briefly before reboot."
+    # Execute git commands and capture output so we can log them.
+    try:
+        fetch_proc = subprocess.run(
+            ["git", "fetch", "--all"],
+            cwd=repo_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        logger.debug(
+            "git fetch stdout: %s",
+            fetch_proc.stdout.decode("utf-8", errors="ignore"),
+        )
+        logger.debug(
+            "git fetch stderr: %s",
+            fetch_proc.stderr.decode("utf-8", errors="ignore"),
         )
 
-        # Ensure filesystem is synced and give some time for operations to settle
+        reset_proc = subprocess.run(
+            ["git", "reset", "--hard", "origin/master"],
+            cwd=repo_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        logger.debug(
+            "git reset stdout: %s",
+            reset_proc.stdout.decode("utf-8", errors="ignore"),
+        )
+        logger.debug(
+            "git reset stderr: %s",
+            reset_proc.stderr.decode("utf-8", errors="ignore"),
+        )
+
+    except subprocess.CalledProcessError as e:
+        # Log details if something went wrong
+        logger.error("Git update failed: %s", e)
+        # Try to extract stdout/stderr from exception if available
+        out = getattr(e, "stdout", None)
+        err = getattr(e, "stderr", None)
+        if out:
+            logger.error(
+                "Git failed stdout: %s",
+                out.decode("utf-8", errors="ignore"),
+            )
+        if err:
+            logger.error(
+                "Git failed stderr: %s",
+                err.decode("utf-8", errors="ignore"),
+            )
+        # Inform the user via audio and return without rebooting
         try:
-            os.sync()
-        except AttributeError:
-            # os.sync may not exist on some platforms; fallback to explicit sync command
-            subprocess.run(["sync"])
+            audio.espeaker(translator.translate("admin.update_failed"))
+        except Exception:
+            # if translation key is missing, fallback to a simple message
+            audio.espeaker("Update fehlgeschlagen.")
+        return
 
-        # Wait a few seconds to ensure any pending IO is flushed and logs are written
-        time.sleep(5)
+    # If we get here, the update succeeded
+    audio.espeaker(translator.translate("admin.update_complete"))
+    logger.info(
+        "Git update finished successfully. Waiting briefly before reboot."
+    )
 
-        # Finally reboot
-        os.system("sudo reboot")
+    # Ensure filesystem is synced and give some time for operations to settle
+    try:
+        os.sync()
+    except AttributeError:
+        # os.sync may not exist on some platforms; fallback to explicit sync command
+        subprocess.run(["sync"])
+
+    # Wait a few seconds to ensure any pending IO is flushed and logs are written
+    time.sleep(5)
+
+    # Finally reboot
+    os.system("sudo reboot")
 
 
 def get_ip_address():
