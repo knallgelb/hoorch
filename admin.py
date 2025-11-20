@@ -8,7 +8,6 @@ import subprocess
 import time
 
 import dbus
-from hoorch.utils.netutils import has_internet
 
 import audio
 import crud
@@ -18,6 +17,7 @@ import tagwriter
 from games.game_utils import check_end_tag
 from i18n import Translator
 from models import RFIDTag
+from utils.netutils import has_internet
 
 # Erstelle das Verzeichnis 'logs', falls es nicht existiert
 if not os.path.exists("logs"):
