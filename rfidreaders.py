@@ -130,7 +130,7 @@ def continuous_read():
 
         try:
             # Increase passive target timeout to give tag more time to settle
-            tag_uid = r.read_passive_target(timeout=0.5)
+            tag_uid = r.read_passive_target(timeout=0.1)
         except Exception as e:
             logger.error("Error reading from RFID reader %d: %s", index + 1, e)
             continue
