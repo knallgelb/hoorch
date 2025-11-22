@@ -126,7 +126,7 @@ def continuous_read():
 
         currently_reading = True
 
-        leds.reset()
+        # leds.reset()
 
         try:
             # Increase passive target timeout to give tag more time to settle
