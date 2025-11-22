@@ -187,10 +187,6 @@ def continuous_read():
             timer[index] = time.time() + 1
             tags[index] = tag_name
 
-        # Sleep between readers to reduce power load
-        r.power_down()
-        time.sleep(sleeping_time)
-
     # logger.debug("Current tags: %s", tags)
 
     if read_continuously:
