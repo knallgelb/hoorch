@@ -26,7 +26,7 @@ def start():
     rfid_position = [1, 3, 5]
 
     players = game_utils.filter_players_on_fields(
-        copy.deepcopy(rfidreaders.tags), rfid_position, defined_figures
+        rfidreaders.get_tags_snapshot(True), rfid_position, defined_figures
     )
 
     figure_count = sum(p is not None for p in players)
@@ -73,11 +73,24 @@ def player_action(
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = []
-        for tag in rfidreaders.tags:
-            if isinstance(tag, RFIDTag):
-                db_tags = file_lib.get_all_figures_by_rfid_tag(tag.rfid_tag)
-                if db_tags:
-                    relevant_tags.extend(db_tags)
+        # Request a fresh snapshot (synchronous scan) and flatten nested entries.
+        current_tags = rfidreaders.get_tags_snapshot(True)
+        flat_items = []
+        if current_tags:
+            for entry in current_tags:
+                if entry is None:
+                    continue
+                if isinstance(entry, (list, tuple)):
+                    for it in entry:
+                        if it is not None:
+                            flat_items.append(it)
+                else:
+                    flat_items.append(entry)
+
+        # Snapshot already contains RFIDTag objects (or None). Use them directly.
+        for item in flat_items:
+            if isinstance(item, RFIDTag):
+                relevant_tags.append(item)
 
         for tag in relevant_tags:
             if tag.name is not None and tag.name == expected_value.name:
