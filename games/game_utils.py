@@ -13,8 +13,33 @@ logger = get_logger(__name__, "logs/game_utils.log")
 
 
 def check_end_tag():
-    """Return True if the ENDE tag is detected, else False."""
-    return file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name")
+    """Return True if the ENDE tag is detected, else False.
+
+    This function requests a synchronous snapshot from the RFID readers and
+    flattens any nested slot entries (a slot may contain a single tag object
+    or a list/tuple of tag objects). It then checks whether any detected tag
+    has its `name` attribute equal to "ENDE".
+    """
+    snapshot = rfidreaders.get_tags_snapshot(True)
+
+    if not snapshot:
+        return False
+
+    for entry in snapshot:
+        if entry is None:
+            continue
+        # If a slot contains multiple items (list/tuple), inspect them
+        if isinstance(entry, (list, tuple)):
+            for it in entry:
+                if it is None:
+                    continue
+                if getattr(it, "name", None) == "ENDE":
+                    return True
+        else:
+            if getattr(entry, "name", None) == "ENDE":
+                return True
+
+    return False
 
 
 def announce(msg_id, path="TTS"):
