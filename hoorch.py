@@ -148,6 +148,9 @@ def main():
     # transfer data to Server
     # report_stats.send_and_update_stats()
 
+    # Get all tags of type "game" from the database
+    game_tags_db = file_lib.get_tags_by_type("games")
+
     while True:
         if time.time() >= shutdown_counter:
             logger.info(
@@ -171,9 +174,6 @@ def main():
             greet_time = time.time() + 30
 
         logger.info(rfidreaders.tags)
-
-        # Get all tags of type "game" from the database
-        game_tags_db = file_lib.get_tags_by_type("games")
 
         # Match the detected tags by their rfid_tag string with those in game_tags_db
         game_tags = []
@@ -224,33 +224,33 @@ def main():
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
 
-        hoerspiele_list = [
-            os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
-        ]
-        detected_hoerspiel_card = [
-            i for i in hoerspiele_list if i in rfidreaders.tags
-        ]
-
-        figure_dir = "./data/figures/"
-        figure_dirs = [
-            name
-            for name in os.listdir(figure_dir)
-            if os.path.isdir(os.path.join(figure_dir, name))
-        ]
-        figure_with_recording = [
-            k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)
-        ]
-        detected_figure_with_recording = [
-            j for j in figure_with_recording if j in rfidreaders.tags
-        ]
-
-        defined_figures = file_lib.get_tags_by_type("game")
-        figure_without_recording = [
-            i for i in defined_figures if i not in figure_with_recording
-        ]
-        detected_figure_without_recording = [
-            m for m in figure_without_recording if m in rfidreaders.tags
-        ]
+        #         hoerspiele_list = [
+        #             os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
+        #         ]
+        #         detected_hoerspiel_card = [
+        #             i for i in hoerspiele_list if i in rfidreaders.tags
+        #         ]
+        #
+        #         figure_dir = "./data/figures/"
+        #         figure_dirs = [
+        #             name
+        #             for name in os.listdir(figure_dir)
+        #             if os.path.isdir(os.path.join(figure_dir, name))
+        #         ]
+        #         figure_with_recording = [
+        #             k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)
+        #         ]
+        #         detected_figure_with_recording = [
+        #             j for j in figure_with_recording if j in rfidreaders.tags
+        #         ]
+        #
+        #         defined_figures = file_lib.get_tags_by_type("game")
+        #         figure_without_recording = [
+        #             i for i in defined_figures if i not in figure_with_recording
+        #         ]
+        #         detected_figure_without_recording = [
+        #             m for m in figure_without_recording if m in rfidreaders.tags
+        #         ]
 
         # Admin-Menü bei Erkennung von "JA" und "NEIN"
         if file_lib.check_tag_attribute(
