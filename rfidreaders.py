@@ -73,7 +73,7 @@ scan_lock = threading.Lock()
 
 endofmessage = "#"  # chr(35)
 
-read_continuously = True
+read_continuously = False
 
 # We allow multiple readers to report tags within the same round.
 # Individual reader validity is tracked per-reader using `timer` and `tags`.
