@@ -146,7 +146,7 @@ def main():
     greet_time = time.time()
 
     # transfer data to Server
-    report_stats.send_and_update_stats()
+    # report_stats.send_and_update_stats()
 
     while True:
         if time.time() >= shutdown_counter:
