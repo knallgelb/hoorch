@@ -1,4 +1,3 @@
-import pdb
 import time
 
 import audio
@@ -139,7 +138,6 @@ def filter_players_on_fields(players, valid_fields, defined_figures):
             result[i] = p
             continue
 
-    pdb.set_trace()
     return result
 
 
