@@ -21,7 +21,6 @@ logger = get_logger(__name__, "logs/game_tierlaute.log")
 
 def start():
     defined_figures = file_lib.get_tags_by_type("figures")
-    defined_animals = file_lib.get_tags_by_type("animals")
 
     animals_played = []  # store the already played animals to avoid repetition
 
@@ -53,8 +52,10 @@ def start():
         leds.reset()
         return
 
+    # take a synchronous snapshot from the readers, flattening will be handled by the filter function
+    snapshot = list(rfidreaders.get_tags_snapshot(True) or [])
     players = game_utils.filter_players_on_fields(
-        copy.deepcopy(rfidreaders.tags), rfid_position, defined_figures
+        copy.deepcopy(snapshot), rfid_position, defined_figures
     )
 
     figure_count = sum(p is not None for p in players)
@@ -120,14 +121,43 @@ def player_action(
     )
 
     start_time = time.time()
-    audio_duration = audio.get_audio_length(
-        "animal_sounds", f"{expected_value.name}.mp3"
-    )
+    # Ensure audio_duration is numeric. audio.get_audio_length may return None;
+    # coerce to float and fall back to a safe default timeout if necessary.
+    try:
+        audio_duration = float(
+            audio.get_audio_length(
+                "animal_sounds", f"{expected_value.name}.mp3"
+            )
+            or 0.0
+        )
+    except Exception:
+        audio_duration = 0.0
+
+    # If audio duration could not be determined, use a conservative fallback timeout.
+    if audio_duration <= 0:
+        audio_duration = 10.0
 
     while (time.time() - start_time) < audio_duration:
-        # Prüfe RFID-Tags
-        for tag in rfidreaders.tags:
-            if expected_value in rfidreaders.tags:
+        # Prüfe RFID-Tags mittels Snapshot; ein Slot kann None, ein Tag-Objekt oder eine Liste/Tuple sein.
+        snapshot = list(rfidreaders.get_tags_snapshot(True) or [])
+        for slot in snapshot:
+            if slot is None:
+                continue
+            tag_obj = None
+            if isinstance(slot, (list, tuple)):
+                # wähle das erste nicht-None Element im Slot
+                for el in slot:
+                    if el is not None:
+                        tag_obj = el
+                        break
+            else:
+                tag_obj = slot
+            # Vergleiche über das rfid_tag-Feld mit dem erwarteten Tier
+            if (
+                tag_obj
+                and getattr(tag_obj, "rfid_tag", None)
+                == expected_value.rfid_tag
+            ):
                 proc.terminate()
                 time.sleep(0.3)
                 return True
