@@ -157,8 +157,28 @@ def git():
     print("git update, restart hoorch")
     logger.info("Starting git update sequence")
 
-    # Run git commands in the repository directory (this file lives inside the repo)
-    repo_dir = os.path.dirname(os.path.abspath(__file__))
+    # Determine repository directory:
+    # - If HOORCH_REPO_DIR env var is set, use it (allows absolute path like /home/pi/hoorch)
+    # - Else, prefer /home/pi/hoorch if it exists
+    # - Otherwise fall back to the directory of this file
+    repo_dir = os.environ.get("HOORCH_REPO_DIR")
+    if repo_dir:
+        repo_dir = os.path.abspath(repo_dir)
+        logger.info("Using repository dir from HOORCH_REPO_DIR: %s", repo_dir)
+    else:
+        alt_path = "/home/pi/hoorch"
+        if os.path.isdir(alt_path):
+            repo_dir = alt_path
+            logger.info("Using repository dir from fallback path: %s", repo_dir)
+        else:
+            repo_dir = os.path.dirname(os.path.abspath(__file__))
+            logger.info("Using repository dir relative to file: %s", repo_dir)
+    # Warn if selected directory does not look like a git repository
+    if not os.path.isdir(os.path.join(repo_dir, ".git")):
+        logger.warning(
+            "Selected repository dir does not contain a .git directory: %s",
+            repo_dir,
+        )
 
     # use module-level has_internet()
 
