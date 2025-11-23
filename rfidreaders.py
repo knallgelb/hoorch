@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
+import logging
 import os
 import threading
 import time
+from contextlib import contextmanager
 
 # import unicodedata
 import board
@@ -13,7 +15,7 @@ from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
 from adafruit_pn532.spi import PN532_SPI
 
 # import digitalio
-from digitalio import DigitalInOut
+from digitalio import DigitalInOut, Direction
 from sqlmodel import Session
 
 import crud
@@ -29,8 +31,9 @@ sleeping_time = 0.1
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-# Configure logging
+# Configure logging (only critical and above)
 logger = get_logger(__name__, "logs/rfid.log")
+logger.setLevel(logging.CRITICAL)
 
 # GPIO pin assignments
 # Reader 1: Pin18 - GPIO24
@@ -40,54 +43,229 @@ logger = get_logger(__name__, "logs/rfid.log")
 # Reader 5: Pin13 - GPIO27
 # Reader 6: Pin36 - GPIO16
 
-reader_pins = [
-    DigitalInOut(board.D24),
-    DigitalInOut(board.D22),
-    DigitalInOut(board.D4),
-    DigitalInOut(board.D26),
-    DigitalInOut(board.D27),
-    DigitalInOut(board.D5),
-]
+reader_pins = []
+# Initialize CS pins as outputs and deselect them (active-low: True = deselected)
+for pin_board in (
+    board.D24,
+    board.D22,
+    board.D4,
+    board.D26,
+    board.D27,
+    board.D5,
+):
+    p = DigitalInOut(pin_board)
+    p.direction = Direction.OUTPUT
+    p.value = True
+    reader_pins.append(p)
 
 
-readers = []
-tags = []
-timer = []
+readers = [None] * len(reader_pins)
+tags = [None] * len(reader_pins)
+# Separate timers:
+# - tag_timer remembers a detected tag for games (longer retention)
+# - led_timer controls how long LEDs are shown for active readers (round window)
+tag_timer = [0] * len(reader_pins)
+led_timer = [0] * len(reader_pins)
+# Lock to protect concurrent access to tags and timers (reads/writes from other threads)
+tags_lock = threading.Lock()
+# Lock to serialize explicit scan cycles (used when a caller requests an immediate scan)
+scan_lock = threading.Lock()
 
 endofmessage = "#"  # chr(35)
 
 read_continuously = True
 
+# We allow multiple readers to report tags within the same round.
+# Individual reader validity is tracked per-reader using `timer` and `tags`.
+# (global active_reader/active_round_end logic removed so multiple cards can be detected)
 
 auth_key = b"\xff\xff\xff\xff\xff\xff"
 
+# Optional hardware power control pins. If you have hardware switches / MOSFETs
+# to cut VCC for each PN532, populate this list with DigitalInOut(board.DX)
+# objects in the same order as `reader_pins` and set `use_power_control = True`.
+power_pins = []  # e.g. [DigitalInOut(board.D6), DigitalInOut(board.D13), ...]
+use_power_control = False
+
+# Timing tuning
+power_on_delay = 0.12  # seconds to wait after powering a PN532 before init
+post_init_delay = 0.03  # small pause after SAM_configuration
+round_duration = 0.6  # seconds: requested max round duration
+# How long to remember a detected tag (seconds). Default value; games can override.
+tag_memory_seconds = 3.0
+
+
+# API to set/get and temporarily override tag memory per game.
+# Games can call `rfidreaders.set_tag_memory_seconds(...)` to set a global value,
+# or use the context manager `temporary_tag_memory(...)` to set it temporarily
+# for the duration of a `with` block.
+def set_tag_memory_seconds(seconds: float):
+    """Set the global default tag memory duration (seconds)."""
+    global tag_memory_seconds
+    tag_memory_seconds = float(seconds)
+
+
+def get_tag_memory_seconds() -> float:
+    """Return the current global tag memory duration (seconds)."""
+    return float(tag_memory_seconds)
+
+
+@contextmanager
+def temporary_tag_memory(seconds: float):
+    """Context manager to temporarily override tag memory for a block.
+
+    Usage:
+        with temporary_tag_memory(10.0):
+            # inside block tag memory is 10s
+            ...
+    """
+    global tag_memory_seconds
+    old = tag_memory_seconds
+    try:
+        tag_memory_seconds = float(seconds)
+        yield
+    finally:
+        tag_memory_seconds = old
+
+
+# Global shared round window end: when the first detection in a round occurs,
+# all subsequent detections in that same round use the same expiry time so
+# tags share a common validity window.
+round_window_end = 0.0
+
+# Ensure readers list exists and will be lazily initialized (None = not powered/created)
+
+
+def _power_set(index, enable: bool):
+    """Switch hardware power for a reader if power control is configured."""
+    if not use_power_control:
+        return
+    try:
+        p = power_pins[index]
+        # Assume active-high enable; adapt if your circuit is inverted.
+        p.value = bool(enable)
+    except Exception:
+        pass
+
+
+def init_reader(index):
+    """Power-on and initialize a single PN532 reader. Returns the reader or None."""
+    global spi
+    # Power on (if available) and give time for regulator/IC to stabilize
+    _power_set(index, True)
+    time.sleep(power_on_delay)
+
+    try:
+        # Ensure CS is deselected initially
+        reader_pins[index].value = True
+    except Exception:
+        pass
+
+    try:
+        # Create PN532 instance for this reader
+        reader = PN532_SPI(spi, reader_pins[index], debug=False)
+        # Access firmware_version to ensure device responds
+        _ = reader.firmware_version
+        reader.SAM_configuration()
+        time.sleep(post_init_delay)
+        readers[index] = reader
+        logger.info("Initialized and configured RFID/NFC reader %d", index + 1)
+        return reader
+    except Exception as e:
+        logger.error("Could not initialize RFID reader %d: %s", index + 1, e)
+        # If init failed, power off to avoid leaving it on in a bad state
+        _power_set(index, False)
+        readers[index] = None
+        return None
+
+
+def shutdown_reader(index):
+    """Shutdown a reader: deselect CS, delete reference and power off (if available)."""
+    try:
+        r = readers[index]
+        # Deselect CS
+        try:
+            reader_pins[index].value = True
+        except Exception:
+            pass
+        # Remove reference so object is freed
+        readers[index] = None
+    finally:
+        # Cut power if hardware control exists and give the board a moment to fully power down
+        _power_set(index, False)
+        time.sleep(0.02)
+
+
+def get_tags_snapshot(trigger_scan: bool = False):
+    """Return a shallow copy of the tags list in a thread-safe manner.
+
+    If `trigger_scan` is True, attempt to run a single synchronous scan cycle
+    before returning the snapshot so the caller gets an up-to-date view.
+    Scans are serialized with `scan_lock` to avoid concurrent scanning.
+    If a scan is already in progress, this function will wait for it to finish
+    (without starting a new one) and then return the snapshot.
+
+    Note: `do_scan_cycle()` may be defined later in the module; use a lookup
+    from globals() so calling this function before that definition does not
+    raise a NameError.
+    """
+    sc = globals().get("do_scan_cycle")
+    if trigger_scan and sc is not None:
+        # Try to start a scan if none is running; otherwise wait for the running one.
+        acquired = scan_lock.acquire(blocking=False)
+        if acquired:
+            try:
+                sc()
+            finally:
+                scan_lock.release()
+        else:
+            # Another scan is in progress; wait until it finishes
+            with scan_lock:
+                pass
+
+    with tags_lock:
+        return [t for t in tags]
+
 
 def init():
+    # Prepare internal tag database and start SPI bus only.
+    # We no longer instantiate all PN532 objects at startup. Each reader will be
+    # powered/initialized on demand per round (init_reader/shutdown_reader).
     file_lib.load_all_tags()
-    logger.info("Initializing the RFID readers")
+    logger.info("Initializing the RFID readers (lazy-per-reader init)")
+
+    # Expose spi as a module-global used by init_reader()
+    # Note: expose tag_timer and led_timer so init() can reset them as needed
+    global spi, tags, tag_timer, led_timer
     spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 
-    for idx, reader_pin in enumerate(reader_pins):
-        try:
-            reader = PN532_SPI(spi, reader_pin, debug=False)
-            #            reader = PN532_SPI(spi, reader_pin, debug=True)
-            ic, ver, rev, support = reader.firmware_version
-            logger.info(
-                "Found PN532 with firmware version: {0}.{1}".format(ver, rev)
-            )
-            reader.SAM_configuration()
-            readers.append(reader)
-            tags.append(None)
-            timer.append(0)
-            logger.info(
-                "Initialized and configured RFID/NFC reader %d", idx + 1
-            )
-        except Exception as e:
-            logger.error("Could not initialize RFID reader %d: %s", idx + 1, e)
-        time.sleep(0.03)
+    # Ensure tags and timers match the number of reader pins.
+    # Use slice assignment to preserve list identity for callers that keep references.
+    tags[:] = [None] * len(reader_pins)
+    tag_timer[:] = [0] * len(reader_pins)
+    led_timer[:] = [0] * len(reader_pins)
 
-    logger.debug(tags)
+    # Prepare hardware power control pins (if configured)
+    if use_power_control:
+        if len(power_pins) != len(reader_pins):
+            logger.warning(
+                "use_power_control is True but number of power_pins (%d) != number of reader_pins (%d).",
+                len(power_pins),
+                len(reader_pins),
+            )
+        for idx, p in enumerate(power_pins):
+            try:
+                p.direction = Direction.OUTPUT
+                # Start with power off to avoid interference until explicitly enabled
+                p.value = False
+            except Exception as e:
+                logger.debug("Could not configure power pin %d: %s", idx, e)
 
+    logger.debug(
+        "SPI initialized; readers will be initialized on-demand per round"
+    )
+
+    # Start the read loop
     continuous_read()
 
 
@@ -116,43 +294,63 @@ def extract_mifare_card(reader, tag_uid):
         print("Error decoding NDEF message:", e)
 
 
-def continuous_read():
-    # logger.info("Tags: %s", tags)
-    # logger.info("... continuous read function")
+def do_scan_cycle():
+    """Perform a single scan cycle: power-cycle each reader once and update tags/timers/LEDs.
 
-    for index, r in enumerate(readers):
+    This function is intended to be called either by the periodic `continuous_read()`
+    loop or synchronously by callers that request an immediate scan via
+    `get_tags_snapshot(trigger_scan=True)`. The caller is responsible for
+    serializing access with `scan_lock` if necessary.
+    """
+    # Poll readers by powering/initializing each one in turn, then shutting it down.
+    # Readers are allowed to report tags in the same round; we track validity per reader
+    # via `tag_timer` and `tags` rather than using a single global active reader lock.
+    now = time.time()
+
+    # Iterate over reader indices and perform a single power-cycle read per reader.
+    for index in range(len(reader_pins)):
+        # Clear stale tag for this reader if its tag memory expired
+        if tags[index] is not None and tag_timer[index] < time.time():
+            # Protect changes with the lock so readers/games seeing tags get a consistent view
+            with tags_lock:
+                tags[index] = None
+                # also clear associated timers to be explicit
+                tag_timer[index] = 0
+                led_timer[index] = 0
+
+        # Initialize (power on + create PN532 object) for this reader
+        r = init_reader(index)
+        if r is None:
+            # Could not initialize; skip and ensure it's powered down
+            shutdown_reader(index)
+            continue
+
         mifare = False
         ntag213 = False
-
-        currently_reading = True
-
-        # leds.reset()
+        tag_name = None
 
         try:
-            # Increase passive target timeout to give tag more time to settle
-            tag_uid = r.read_passive_target(timeout=0.1)
+            # Read tag with a slightly larger timeout to allow settling after power-on
+            tag_uid = r.read_passive_target(timeout=0.15)
         except Exception as e:
-            logger.error("Error reading from RFID reader %d: %s", index + 1, e)
+            # On read error skip this reader iteration
+            shutdown_reader(index)
             continue
 
         if tag_uid:
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
 
-            # Check if it's a MIFARE tag (4 bytes UID)
+            # Check type by UID length
             if len(tag_uid) == 4:
                 mifare = True
-
-            # Check if tag is NTAG213 (7 bytes typical UID length for NTAG213)
             elif len(tag_uid) == 7:
                 ntag213 = True
 
-            # Check if tag ID is in the figure database
-            tag_name = file_lib.get_figure_from_database(id_readable)
+            # Lookup in database
+            tag_name = file_lib.get_all_figures_by_rfid_tag(id_readable)
 
             if not tag_name:
-                logger.info("RFIDREADERS if not tag_name line called")
-                leds.switch_on_with_color([index + 1], (128, 255, 0))
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
                 elif ntag213:
@@ -161,38 +359,95 @@ def continuous_read():
                     tag_name = read_from_ntag2(r)
 
                 if tag_name == "#error#":
+                    # On error, do not set any timers; shutdown and continue
+                    shutdown_reader(index)
                     continue
 
-                currently_reading = False
-
-                if not tag_name:
-                    logger.info(
-                        "Added new unknown gamer figure to the temporary gamer_figure list"
-                    )
-            else:
-                logger.debug(
-                    "Tag ID %s found in figures_db with name %s",
-                    id_readable,
-                    tag_name,
-                )
-        else:
-            tag_name = None
-
-        # Keep tags in array for 1 second to even out reading errors
-        if tag_name is None and timer[index] < time.time():
-            tags[index] = tag_name  # None
-            timer[index] = 0  # Reset timer
+        # Update tag storage/timers. If no tag and previous tag_timer expired, clear.
+        if tag_name is None and tag_timer[index] < time.time():
+            with tags_lock:
+                tags[index] = None
+                tag_timer[index] = 0
 
         if tag_name is not None:
-            timer[index] = time.time() + 1
-            tags[index] = tag_name
+            # If this is the first detection in this loop, set the shared LED expiry window
+            global round_window_end
+            now = time.time()
+            if round_window_end < now:
+                round_window_end = now + round_duration
 
-    # logger.debug("Current tags: %s", tags)
+            # Store the tag in tags[] and keep it in memory for games for a longer duration
+            # so games that copy the tags list later still find the tag.
+            with tags_lock:
+                tag_timer[index] = time.time() + tag_memory_seconds
+                # For LED display, use the shared round window end so all LEDs for this pass
+                # have the same expiry and none expire before the loop completes.
+                led_timer[index] = round_window_end
+                tags[index] = tag_name
 
+            # Critical log for detection (only these are visible with current logger level)
+            logger.critical(
+                "Reader %d: detected tag '%s' — tag_timer until %.3f (memory %.3fs), led_timer until %.3f",
+                index + 1,
+                tag_name,
+                tag_timer[index],
+                tag_memory_seconds,
+                led_timer[index],
+            )
+
+        # Shutdown this reader (power off / remove object) to avoid interference.
+        shutdown_reader(index)
+
+    # After cycling all readers, update LEDs to reflect currently active tags
+    now = time.time()
+    # Use 0-based LED indices for the LED service (server expects 0..N-1).
+    # Select LEDs based on led_timer (the display window), not on tag memory.
+    active_leds = [
+        i
+        for i, t in enumerate(led_timer)
+        if t and t > now and tags[i] is not None
+    ]
+
+    if active_leds:
+        # light all currently active readers' LEDs with the chosen color
+        try:
+            leds.switch_on_with_color(active_leds, (255, 0, 0))
+        except Exception:
+            pass
+    else:
+        # no active tags -> switch LEDs off
+        try:
+            leds.reset()
+        except Exception:
+            pass
+
+    # Emit a concise snapshot log of current tags (critical so it is visible)
+    logger.critical("Current Tags %s", get_tags_snapshot())
+
+
+def continuous_read():
+    """Periodic driver that schedules a scan cycle.
+
+    The actual scanning logic lives in do_scan_cycle(); continuous_read simply
+    serializes access via `scan_lock` and reschedules itself.
+    """
+    # If another scan is currently running, do not start a new one.
+    acquired = scan_lock.acquire(blocking=False)
+    if not acquired:
+        # schedule next attempt and return
+        if read_continuously:
+            threading.Timer(sleeping_time, continuous_read).start()
+        return
+
+    try:
+        # perform exactly one scan cycle
+        do_scan_cycle()
+    finally:
+        scan_lock.release()
+
+    # schedule next poll
     if read_continuously:
-        # Only read when not playing or recording audio
         threading.Timer(sleeping_time, continuous_read).start()
-        leds.reset()
 
 
 def read_from_mifare(reader, tag_uid: str):
@@ -202,7 +457,7 @@ def read_from_mifare(reader, tag_uid: str):
 
     tag_uid_readable = "-".join(str(number) for number in tag_uid[:4])
 
-    tag_uid_database = file_lib.get_figure_from_database(tag_uid_readable)
+    tag_uid_database = file_lib.get_all_rfid_tags_by_tag_id(tag_uid_readable)
 
     if tag_uid_database:
         return tag_uid_database
