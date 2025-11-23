@@ -330,10 +330,41 @@ def do_scan_cycle():
         tag_name = None
 
         try:
-            # Read tag with a slightly larger timeout to allow settling after power-on
-            tag_uid = r.read_passive_target(timeout=0.15)
+            # Increase robustness: deselect other readers' CS, select this reader's CS,
+            # then perform a small retry loop to account for transient RF instability.
+            for j, p in enumerate(reader_pins):
+                try:
+                    if j != index:
+                        p.value = True
+                except Exception:
+                    pass
+
+            try:
+                reader_pins[index].value = False
+            except Exception:
+                pass
+
+            tag_uid = None
+            max_attempts = 3
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    tag_uid = r.read_passive_target(timeout=0.15)
+                except Exception:
+                    tag_uid = None
+                if tag_uid:
+                    break
+                # small backoff between attempts to allow tag/reader to settle
+                time.sleep(0.04)
+
+            # Deselect this reader's CS immediately after attempts to avoid leaving it active
+            try:
+                reader_pins[index].value = True
+            except Exception:
+                pass
+
+            # proceed — if no tag_uid was found, tag_uid will be None and the logic below handles that
         except Exception as e:
-            # On read error skip this reader iteration
+            # On read/setup error skip this reader iteration
             shutdown_reader(index)
             continue
 
