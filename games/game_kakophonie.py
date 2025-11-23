@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
+import time
+
 import pygame
 
 import crud
@@ -8,7 +10,6 @@ import leds
 import models
 import rfidreaders
 from logger_util import get_logger
-import time
 
 logger = get_logger(__name__, "logs/game_kakophonie.log")
 
@@ -57,18 +58,57 @@ def start():
     while True:
         found_digits = []
         active_leds = []
-        for i, tag in enumerate(rfidreaders.tags):
-            if tag is not None and tag.name is not None:
-                tag = crud.get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
-                active_leds.append(i + 1)
-                if tag:
-                    tag_number = int(tag.name)
+        end_found = False
+
+        # take a synchronous snapshot from the readers and normalize to a list
+        snapshot = list(rfidreaders.get_tags_snapshot(True) or [])
+
+        # iterate over slots (a slot may be None, a tag object, or a list/tuple of tag objects)
+        for i, slot in enumerate(snapshot):
+            tag = None
+            if slot is None:
+                continue
+            if isinstance(slot, (list, tuple)):
+                # pick first non-None entry from the slot
+                for el in slot:
+                    if el is None:
+                        continue
+                    tag = el
+                    break
+            else:
+                tag = slot
+
+            # check for ENDE directly inside the loop
+            if tag is not None and getattr(tag, "name", None) == "ENDE":
+                end_found = True
+                break
+
+            # lookup numeric definition from DB (prefer explicit numeric type)
+            if tag is not None and getattr(tag, "rfid_tag", None):
+                try:
+                    db_tag = crud.get_first_rfid_tag_by_id_and_type(
+                        tag.rfid_tag, "numeric"
+                    )
+                except TypeError:
+                    db_tag = crud.get_first_rfid_tag_by_id_and_type(
+                        tag.rfid_tag
+                    )
+                    if (
+                        db_tag
+                        and getattr(db_tag, "rfid_type", None) != "numeric"
+                    ):
+                        db_tag = None
+
+                if db_tag:
+                    active_leds.append(i + 1)
+                    try:
+                        tag_number = int(db_tag.name)
+                    except Exception:
+                        continue
                     if 1 <= tag_number <= 6:
                         found_digits.append(tag_number - 1)
 
-        leds.switch_on_with_color(
-            active_leds
-        )
+        leds.switch_on_with_color(active_leds)
 
         for i in range(0, 6):
             if i not in found_digits:
@@ -76,7 +116,8 @@ def start():
             else:
                 phones[i].set_volume(0.5)
 
-        if check_end_tag():
+        # handle end condition detected inside the loop
+        if end_found:
             for x in phones:
                 x.set_volume(1.0)
                 x.stop()
