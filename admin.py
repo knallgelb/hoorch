@@ -81,8 +81,10 @@ def main():
     audio.espeaker(translator.translate("admin.end_tag"))
 
     while admin_exit_counter > time.time():
+        # use a consistent snapshot of tags for this loop iteration
+        tags_snapshot = rfidreaders.get_tags_snapshot(True)
         relevant_tags = []
-        for tag in rfidreaders.tags:
+        for tag in tags_snapshot:
             if not isinstance(tag, RFIDTag):
                 continue
             numeric_tag = crud.get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
@@ -91,7 +93,7 @@ def main():
 
         logger.debug(relevant_tags)
 
-        if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+        if file_lib.check_tag_attribute(tags_snapshot, "ENDE", "name"):
             breaker = True
             break
 
@@ -113,7 +115,7 @@ def main():
             elif op == 4:
                 archive_stories()
                 admin_exit_counter = time.time() + 120
-            if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+            if file_lib.check_tag_attribute(tags_snapshot, "ENDE", "name"):
                 breaker = True
                 break
 
