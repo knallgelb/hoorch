@@ -1,14 +1,13 @@
-from crud import get_first_rfid_tag_by_id_and_type
-
 import time
 
 import audio
 import file_lib
 import leds
 import rfidreaders
+from crud import get_first_rfid_tag_by_id_and_type
+from i18n import Translator
 from logger_util import get_logger
 from models import RFIDTag
-from i18n import Translator
 
 logger = get_logger(__name__, "logs/game_utils.log")
 
@@ -62,15 +61,60 @@ def wait_for_figure_placement(fields):
 
 
 def filter_players_on_fields(players, valid_fields, defined_figures):
-    """Set players to None if they are not on the valid fields or not defined figures."""
-    for i in range(len(players)):
-        if (
-            i in valid_fields
-            or players[i] is None
-            or players[i].rfid_tag not in defined_figures
-        ):
-            players[i] = None
-    return players
+    """Return a new list of players where only players on valid fields and defined figures remain.
+
+    The `players` sequence may contain:
+    - None
+    - a string (rfid_tag)
+    - an RFIDTag instance (object with attribute `rfid_tag`)
+    - a list/tuple where the first element is the tag object/string (e.g. [tag_obj, ...])
+
+    This function normalizes each entry and returns a new list where positions not
+    matching `valid_fields` or not present in `defined_figures` are set to None.
+    The input `players` list is not modified.
+    """
+    # Normalize valid_fields to a set of zero-based indices
+    valid_set = set(valid_fields) if valid_fields is not None else set()
+    # Detect common 1-based input pattern: no 0 present and all values between 1..len(players)
+    if (
+        (0 not in valid_set)
+        and valid_set
+        and all(
+            isinstance(v, int) and 1 <= v <= len(players) for v in valid_set
+        )
+    ):
+        # Convert to 0-based
+        valid_set = set(v - 1 for v in valid_set)
+
+    # Prepare result list (same length as input)
+    result = [None] * len(players)
+
+    for i, p in enumerate(players):
+        # If there's nothing in the slot, leave None
+        if p is None:
+            result[i] = None
+            continue
+
+        # Normalize candidate: if the entry is a list/tuple, take its first element
+        if isinstance(p, (list, tuple)) and len(p) > 0:
+            candidate = p[0]
+        else:
+            candidate = p
+
+        # Extract rfid_tag string from candidate
+        if isinstance(candidate, str):
+            rfid_tag_str = candidate
+        else:
+            rfid_tag_str = getattr(candidate, "rfid_tag", None)
+
+        # Keep the player only if index is in valid_set and rfid_tag is recognized
+        if i in valid_set and rfid_tag_str in defined_figures:
+            # store normalized candidate
+            result[i] = candidate
+        else:
+            result[i] = None
+
+    return result
 
 
 def blink_led(field_index, times=5, on_time=0.5, off_time=0.5):
