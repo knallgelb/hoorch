@@ -177,14 +177,29 @@ def main():
 
         # Match the detected tags by their rfid_tag string with those in game_tags_db
         game_tags = []
-        for detected_tag in rfidreaders.tags:
+        # get_tags_snapshot(True) may return None or a list; normalize to a list
+        snapshot = rfidreaders.get_tags_snapshot(True)
+        if snapshot is None:
+            snapshot = []
+        # Iterate over the normalized snapshot
+        for detected_tag in snapshot:
             if detected_tag is None:
                 continue
-            rfid_tag_str = None
-            if hasattr(detected_tag, "rfid_tag"):
-                rfid_tag_str = detected_tag.rfid_tag
-            elif isinstance(detected_tag, str):
-                rfid_tag_str = detected_tag
+            # detected_tag can be a list/tuple (e.g. [tag_obj, ...]) or a single object/string.
+            # Normalize to the candidate element that contains the rfid_tag (usually first element).
+            candidate = None
+            if (
+                isinstance(detected_tag, (list, tuple))
+                and len(detected_tag) > 0
+            ):
+                candidate = detected_tag[0]
+            else:
+                candidate = detected_tag
+            # normalize to rfid_tag string
+            if isinstance(candidate, str):
+                rfid_tag_str = candidate
+            else:
+                rfid_tag_str = getattr(candidate, "rfid_tag", None)
             if rfid_tag_str and rfid_tag_str in game_tags_db:
                 game_tags.append(game_tags_db[rfid_tag_str])
 
@@ -193,7 +208,7 @@ def main():
             leds.reset()
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
-            report_stats.send_and_update_stats()
+            # report_stats.send_and_update_stats()
             shutdown_counter = time.time() + int(
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
