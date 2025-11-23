@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
+"""
+Audio utility module for HOORCH.
+
+Provides functions to play audio files (blocking and non-blocking), determine
+audio durations using external tools (soxi and ffprobe fallback), record and
+process story recordings, and helper utilities.
+
+This file is designed to be robust when `soxi -D` outputs non-trivial text or
+when the duration might appear on stderr. It attempts soxi first and falls back
+to ffprobe. If both fail, a sensible default wait time is used.
+"""
+
 import logging
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
+from typing import Optional, Tuple
 
 from dotenv import load_dotenv
+
 import env_tools
 
-# Load environment variables from .env file
+# Load environment variables from .env file (override defaults)
 dotenv_path = "/home/pi/hoorch/.env"
 load_dotenv(dotenv_path, override=True)
 
@@ -18,7 +33,8 @@ HEADPHONES_VOLUME = int(os.getenv("HEADPHONES_VOLUME", "5"))
 MIC_VOLUME = int(os.getenv("MIC_VOLUME", "95"))
 STORY_VOLUME = int(os.getenv("STORY_VOLUME", "2"))
 STORY_VOLUME_FLOAT = float(STORY_VOLUME)
-WAITTIME_OFFSET = float(os.getenv("WATINGTIME_OFFSET", 0.5))
+# Note: environment variable name kept as in existing codebase (may be misspelled)
+WAITTIME_OFFSET = float(os.getenv("WATINGTIME_OFFSET", "0.5"))
 
 # Create 'logs' directory if it doesn't exist
 logs_dir = Path("logs")
@@ -35,82 +51,178 @@ console_handler.setLevel(logging.INFO)
 file_handler = logging.FileHandler(logs_dir / "audio.log")
 file_handler.setLevel(logging.INFO)
 
-# Create formatter and add it to the handlers
+# Formatter
 formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-# Add handlers to the logger
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
+# Attach handlers if not already attached (avoid duplicate handlers on reload)
+if not logger.handlers:
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+else:
+    # Ensure our handlers are present (idempotent)
+    found_console = any(
+        isinstance(h, logging.StreamHandler) for h in logger.handlers
+    )
+    found_file = any(
+        isinstance(h, logging.FileHandler) for h in logger.handlers
+    )
+    if not found_console:
+        logger.addHandler(console_handler)
+    if not found_file:
+        logger.addHandler(file_handler)
 
 # Path to the data directory
 data_path = Path("./data")
 
 
-# SD pin of I2S amp, GPIO6
-# Default: switched on (3.3V), only switch off (0V) for recording (to avoid clicking)
-# amp_sd = digitalio.DigitalInOut(board.D6)
-# amp_sd.direction = digitalio.Direction.OUTPUT
-
-
 def init():
-    # Set environment variable for sox recording
+    """Initialize audio subsystem (placeholder)."""
     logger.info("Audio driver set to 'alsa' for sox recording.")
 
 
 def wait_for_reader():
     currently_reading = env_tools.str_to_bool(
-        os.getenv("CURRENTLY_READING", True)
+        os.getenv("CURRENTLY_READING", "True")
     )
     while currently_reading:
         time.sleep(0.01)
 
 
+def _get_duration_from_soxi_or_ffprobe(file_path: Path) -> Optional[float]:
+    """
+    Try to determine audio duration using `soxi -D`, fall back to `ffprobe`.
+
+    Returns duration in seconds as float, or None if detection failed.
+    """
+    try:
+        # First attempt: soxi -D
+        cp = subprocess.run(
+            ["soxi", "-D", str(file_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        stdout = (cp.stdout or "").strip()
+        stderr = (cp.stderr or "").strip()
+        combined = "\n".join([stdout, stderr]).strip()
+
+        # If stdout is a clean numeric string, try direct conversion
+        if stdout:
+            try:
+                return float(stdout.splitlines()[0].strip())
+            except Exception:
+                # continue to more robust parsing
+                pass
+
+        # Try to find the first numeric token in combined output (handles comma as decimal separator)
+        m = re.search(r"(\d+(?:[\.,]\d+)?)", combined)
+        if m:
+            num = m.group(1).replace(",", ".")
+            try:
+                return float(num)
+            except Exception:
+                pass
+
+        # Fallback: ffprobe
+        cp2 = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(file_path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        ffout = (cp2.stdout or "").strip()
+        if ffout:
+            try:
+                return float(ffout.splitlines()[0].strip())
+            except Exception:
+                m2 = re.search(r"(\d+(?:[\.,]\d+)?)", ffout)
+                if m2:
+                    return float(m2.group(1).replace(",", "."))
+
+    except Exception as e:
+        logger.debug("Duration detection exception for %s: %s", file_path, e)
+
+    logger.error("Could not determine duration for %s", file_path)
+    return None
+
+
+def get_audio_length(folder, audiofile) -> Optional[float]:
+    """
+    Determine audio length.
+
+    `folder` may be a Path-like relative to data/ or an absolute path starting with 'data'.
+    `audiofile` is the filename.
+    """
+    if not str(folder).startswith("data"):
+        file_path = Path(data_path) / folder / audiofile
+    else:
+        file_path = Path(folder) / audiofile
+
+    return _get_duration_from_soxi_or_ffprobe(file_path)
+
+
 def play_full(folder, audiofile):
-    # Blocking play, mostly for TTS
+    """
+    Blocking play of a numbered TTS file located at data/<folder>/<nnn>.mp3
+
+    `audiofile` expected to be an integer id for the filename formatting.
+    """
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "10"))
 
     file_path = data_path / folder / f"{audiofile:03d}.mp3"
-    logger.info(f"Playing full audio file: {file_path}")
+    logger.info("Playing full audio file: %s", file_path)
 
     try:
-        waitingtime_output = subprocess.run(
-            ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
-        )
+        duration = get_audio_length(file_path.parent, file_path.name)
         waitingtime = (
-            float(waitingtime_output.stdout.decode("utf-8").strip())
-            + WAITTIME_OFFSET
+            duration if duration is not None else 1.0
+        ) + WAITTIME_OFFSET
+
+        cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
+        logger.info("Executing: %s", " ".join(cmd))
+        subprocess.Popen(
+            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        execute_play = (
-            f"play {file_path} vol {SPEAKER_VOLUME / 100} 2>/dev/null"
-        )
-        logger.info(execute_play)
-        subprocess.Popen(execute_play, shell=True, stdout=None, stderr=None)
+
         logger.debug(
-            f"Waiting time for audio file {file_path}: {waitingtime} seconds"
+            "Waiting time for audio file %s: %s seconds", file_path, waitingtime
         )
         time.sleep(waitingtime)
     except Exception as e:
-        logger.error(f"Error playing audio file {file_path}: {e}")
+        logger.error("Error playing audio file %s: %s", file_path, e)
 
 
-def play_file(folder, audiofile, return_process=False):
-    # Non-blocking play for sounds in /data and subfolders
+def play_file(
+    folder, audiofile: str, return_process: bool = False
+) -> Optional[Tuple[subprocess.Popen, float]]:
+    """
+    Non-blocking play for sounds in data/<folder>/<audiofile>.
+
+    Returns either (process, waitingtime) if return_process=True, or None and sleeps for waitingtime.
+    """
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
     file_path = data_path / folder / audiofile
-    waitingtime_output = subprocess.run(
-        ["soxi", "-D", str(file_path)], stdout=subprocess.PIPE, check=False
-    )
-    waitingtime = (
-        float(waitingtime_output.stdout.decode("utf-8").strip())
-        + WAITTIME_OFFSET
-    )
-    logger.info(f"Playing audio file: {file_path}")
-    logger.info(f"SpeakerVol: {SPEAKER_VOLUME / 100}")
+    duration = get_audio_length(file_path.parent, file_path.name)
+    waitingtime = (duration if duration is not None else 1.0) + WAITTIME_OFFSET
+
+    logger.info("Playing audio file: %s", file_path)
+    logger.info("SpeakerVol: %s", SPEAKER_VOLUME / 100)
     cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
     process = subprocess.Popen(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -120,74 +232,55 @@ def play_file(folder, audiofile, return_process=False):
         return process, waitingtime
     else:
         time.sleep(waitingtime)
+        return None
 
 
 def play_story(figure_id):
-    # Non-blocking play
+    """
+    Play a story file for a given figure (non-blocking).
+
+    `figure_id` is expected to have attribute `rfid_tag`.
+    """
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
     file_path = (
         data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
     )
-    waitingtime = (
-        get_audio_length(
-            file_path.parent,
-            file_path.name,
-        )
-        + WAITTIME_OFFSET
-    )
-    logger.info(f"Playing story for figure: {figure_id.rfid_tag}")
-    logger.info(f"Wating time: {waitingtime}")
-    # Increase volume by STORY_VOLUME_FLOAT for stories
+    duration = get_audio_length(file_path.parent, file_path.name)
+    waitingtime = (duration if duration is not None else 1.0) + WAITTIME_OFFSET
+
+    logger.info("Playing story for figure: %s", figure_id.rfid_tag)
+    logger.info("Waiting time: %s", waitingtime)
+
     cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
     process = subprocess.Popen(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     time.sleep(waitingtime)
+    return process
 
 
 def kill_sounds():
+    """Stop all playing sounds by killing `play` processes."""
     logger.info("Stopping all sounds.")
     subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
 
 
-def get_audio_length(folder, audiofile):
-    if not str(folder).startswith("data"):
-        file_path = Path(data_path) / folder / audiofile
-    else:
-        file_path = Path(folder) / audiofile
-
-    try:
-        completed_process = subprocess.run(
-            ["soxi", "-D", str(file_path)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True,
-        )
-        duration_str = completed_process.stdout.strip()
-        return float(duration_str)
-    except Exception as e:
-        logger.error(f"Error getting audio length for {file_path}: {e}")
-        return None
-
-
-def file_is_playing(audiofile):
+def file_is_playing(audiofile: str) -> bool:
+    """Return True if `audiofile` appears in the current process list."""
     output = subprocess.run(["ps", "ax"], stdout=subprocess.PIPE).stdout.decode(
         "utf-8"
     )
     is_playing = audiofile in output
-    logger.debug(f"File {audiofile} is playing: {is_playing}")
+    logger.debug("File %s is playing: %s", audiofile, is_playing)
     return is_playing
 
 
 def record_story(figure):
-    # Switch off amp
-    # global amp_sd
-    # amp_sd.value = False
+    """Start recording a story into data/figures/<rfid_tag>/<rfid_tag>.mp3 (non-blocking)."""
     logger.info(
-        f"Recording story for figure: {figure}. Amplifier switched off."
+        "Recording story for figure: %s. Amplifier switched off.", figure
     )
 
     figure_dir = data_path / "figures" / figure.rfid_tag
@@ -195,11 +288,9 @@ def record_story(figure):
     file_path = figure_dir / f"{figure.rfid_tag}.mp3"
 
     execute_record = f"AUDIODEV=plughw:0,0 rec -c 1 -r 48000 -b 16 --encoding signed-integer {file_path}"
-
-    logger.info(execute_record)
-
+    logger.info("Starting record: %s", execute_record)
     subprocess.Popen(execute_record, shell=True, stdout=None, stderr=None)
-    logger.info(f"Started recording to {file_path}")
+    logger.info("Started recording to %s", file_path)
 
 
 def trim_normalize_clean_audio(
@@ -209,20 +300,16 @@ def trim_normalize_clean_audio(
     bitrate: str = "192k",
 ) -> None:
     """
-    Trims the start of an audio file, applies a highpass filter, normalizes loudness, and overwrites the original file.
-
-    :param file_path: Path to the input MP3 file
-    :param trim_length: Time in seconds to trim from start
-    :param loudness: Target loudness in LUFS (e.g. -24 for speech)
-    :param bitrate: Audio bitrate for output MP3 (e.g. '192k')
+    Trim the start of an MP3, apply a highpass filter and loudness normalization,
+    and overwrite the original file.
     """
-    logger = logging.getLogger(__name__)
+    logger_local = logging.getLogger(__name__)
 
     trimmed_file = file_path.with_suffix(".trimmed.mp3")
     normalized_file = file_path.with_suffix(".normalized.mp3")
 
     try:
-        # Step 1: Trim the beginning
+        # Trim beginning using ffmpeg (fast copy)
         trim_cmd = [
             "ffmpeg",
             "-y",
@@ -241,8 +328,7 @@ def trim_normalize_clean_audio(
             stderr=subprocess.DEVNULL,
         )
 
-        # Step 2: Apply highpass filter + normalize
-        # Chain: highpass -> loudnorm
+        # Apply highpass + loudnorm
         audio_filter = f"highpass=f=80,loudnorm=I={loudness}:TP=-2.0:LRA=11"
         normalize_cmd = [
             "ffmpeg",
@@ -264,104 +350,94 @@ def trim_normalize_clean_audio(
             stderr=subprocess.DEVNULL,
         )
 
-        # Overwrite original
+        # Replace original
         normalized_file.replace(file_path)
         trimmed_file.unlink(missing_ok=True)
 
-        logger.info(
-            f"Trimmed {trim_length}s, highpass-filtered, normalized to {loudness} LUFS: {file_path}"
+        logger_local.info(
+            "Processed audio: %s (trim=%ss, loudness=%s LUFS)",
+            file_path,
+            trim_length,
+            loudness,
         )
-
     except subprocess.CalledProcessError as e:
-        logger.error(f"ffmpeg process failed: {e}")
+        logger_local.error("ffmpeg process failed: %s", e)
     except Exception as e:
-        logger.error(f"Error processing {file_path}: {e}")
+        logger_local.error("Error processing %s: %s", file_path, e)
 
 
 def stop_recording(figure_id):
+    """Stop recording (kill rec) and post-process the latest recording for the given figure."""
     subprocess.Popen("killall rec", shell=True, stdout=None, stderr=None)
-    logger.info("Stopped recording.")
-
-    # global amp_sd
-
-    # Switch on amp
-    # amp_sd.value = True
-    # logger.info("Amplifier switched on.")
+    logger.info("Stopped recording for figure: %s", figure_id)
 
     figure_dir = data_path / "figures" / figure_id.rfid_tag
     mp3_file = figure_dir / f"{figure_id.rfid_tag}.mp3"
 
-    # If file exists
+    # If file exists, process and possibly prune
     if mp3_file.is_file():
         trim_normalize_clean_audio(mp3_file)
-        # If file is smaller than 50kB, delete it
+        # If file is smaller than 50kB, delete it and handle directory contents
         if mp3_file.stat().st_size < 50000:
             mp3_file.unlink()
-            logger.warning(f"Deleted small/incomplete recording: {mp3_file}")
-
+            logger.warning("Deleted small/incomplete recording: %s", mp3_file)
             files_in_dir = list(figure_dir.iterdir())
 
-            # If directory is empty
             if not files_in_dir:
-                # Delete the folder
                 figure_dir.rmdir()
-                logger.info(f"Deleted empty figure directory: {figure_dir}")
+                logger.info("Deleted empty figure directory: %s", figure_dir)
             else:
-                # Rename the latest file back to figure_id.mp3
                 sorted_files = sorted(
                     files_in_dir, key=lambda x: x.stat().st_mtime, reverse=True
                 )
                 latest_file = sorted_files[0]
                 latest_file.rename(mp3_file)
-                logger.info(f"Renamed latest file {latest_file} to {mp3_file}")
-
-            return True
+                logger.info(
+                    "Renamed latest file %s to %s", latest_file, mp3_file
+                )
+        return True
     else:
-        # pdb.set_trace()
-        files_in_dir = list(figure_dir.iterdir())
-
+        # No final mp3 file present yet; try to pick the latest temporary file
+        files_in_dir = list(figure_dir.iterdir()) if figure_dir.exists() else []
         if not files_in_dir:
-            # Delete the folder
-            figure_dir.rmdir()
-            logger.info(f"Deleted empty figure directory: {figure_dir}")
+            if figure_dir.exists():
+                figure_dir.rmdir()
+                logger.info("Deleted empty figure directory: %s", figure_dir)
+            return True
         else:
-            # Rename the latest file back to figure_id.mp3
             sorted_files = sorted(
                 files_in_dir, key=lambda x: x.stat().st_mtime, reverse=True
             )
             latest_file = sorted_files[0]
             latest_file.rename(mp3_file)
-            logger.info(f"Renamed latest file {latest_file} to {mp3_file}")
+            logger.info("Renamed latest file %s to %s", latest_file, mp3_file)
+            return True
 
-        return True
 
-
-def espeaker(words):
+def espeaker(words: str):
+    """Speak given words using espeak and aplay (blocking)."""
     load_dotenv(dotenv_path, override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "10"))
 
-    logger.info(f"Speaking words: {words}")
-
-    # -v language, -p pitch, -g word gap, -s speed, -a amplitude (volume)
-    execute_espeak = f"espeak -v de+f2 -p 30 -g 12 -s 170 -a {SPEAKER_VOLUME} --stdout \"{words}\" | aplay -D 'default'"
+    logger.info("Speaking words: %s", words)
+    execute_espeak = f'espeak -v de+f2 -p 30 -g 12 -s 170 -a {SPEAKER_VOLUME} --stdout "{words}" | aplay -D "default"'
     os.system(execute_espeak)
-    logger.info(execute_espeak)
-    logger.debug(f"Executed eSpeak command for words: {words}")
+    logger.debug("Executed eSpeak command for words: %s", words)
 
 
 def delete_story(figure):
+    """Delete stored story file for a figure."""
     figure_dir = data_path / "figures" / figure.rfid_tag
     mp3_file = figure_dir / f"{figure.rfid_tag}.mp3"
 
     if mp3_file.is_file():
         mp3_file.unlink()
-        logger.info(f"Deleted story file: {mp3_file}")
+        logger.info("Deleted story file: %s", mp3_file)
 
-        # If directory is empty after deletion, delete the directory
         if not any(figure_dir.iterdir()):
             figure_dir.rmdir()
-            logger.info(f"Deleted empty figure directory: {figure_dir}")
+            logger.info("Deleted empty figure directory: %s", figure_dir)
         return True
     else:
-        logger.warning(f"Story file not found for deletion: {mp3_file}")
+        logger.warning("Story file not found for deletion: %s", mp3_file)
         return False
