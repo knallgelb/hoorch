@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import os
 import copy
+import datetime
+import os
+import pathlib
 import subprocess
 import time
-import datetime
-import audio
-import rfidreaders
-import leds
-import file_lib
-import pathlib
-import models
-import crud
 
+import audio
+import crud
+import file_lib
+import leds
+import models
+import rfidreaders
 from logger_util import get_logger
 
 logger = get_logger(__name__, "logs/game_aufnehmen.log")
@@ -47,7 +47,9 @@ def start():
     leds.rotate_one_round(1.11)
 
     players = game_utils.filter_players_on_fields(
-        copy.deepcopy(rfidreaders.tags), rfid_position, defined_figures
+        copy.deepcopy(rfidreaders.get_tags_snapshot(True)),
+        rfid_position,
+        defined_figures,
     )
 
     figure_count = sum(x is not None for x in players)
@@ -65,14 +67,16 @@ def start():
 
     # switch on leds at player field
     player_positions = [
-        i + 1 for i, x in enumerate(rfidreaders.tags) if x is not None
+        i + 1
+        for i, x in enumerate(rfidreaders.get_tags_snapshot(True))
+        if x is not None
     ]
     leds.switch_on_with_color(player_positions, (100, 100, 100))
 
     game_utils.announce(5 + figure_count)  # Es spielen x Figuren mit
 
-    if game_utils.check_end_tag():
-        return
+    #     if game_utils.check_end_tag():
+    #         return
 
     first_round = True
     for i, figure_id in enumerate(players):
@@ -93,8 +97,8 @@ def start():
                     # Die nächste Spielfigur steht auf Spielfeld x
                     game_utils.announce(47 + player_position)
 
-            if game_utils.check_end_tag():
-                return
+            #             if game_utils.check_end_tag():
+            #                 return
 
             recordings_list = list(base_path.iterdir())
             figure_dir = base_path / figure_id.rfid_tag
@@ -131,7 +135,7 @@ def start():
 
                 while waitingtime > time.time():
                     if file_lib.check_tag_attribute(
-                        rfidreaders.tags, "JA", "name"
+                        rfidreaders.get_tags_snapshot(True), "JA", "name"
                     ):
                         # if rfidreaders.tags[i] == "JA":
                         audio.kill_sounds()
@@ -163,11 +167,12 @@ def start():
                             time.time() + 600
                         )  # 600 sekunden(60*10min) counter until stop
                         while True:
+                            current_tags = rfidreaders.get_tags_snapshot(True)
                             if (
-                                rfidreaders.tags[i] is None
+                                current_tags[i] is None
                                 or record_timer < time.time()
                                 or file_lib.check_tag_attribute(
-                                    rfidreaders.tags, "ENDE", "name"
+                                    current_tags, "ENDE", "name"
                                 )
                             ):
                                 error_recording = audio.stop_recording(
@@ -186,9 +191,9 @@ def start():
 
                     # elif rfidreaders.tags[i] == "NEIN" or "ENDE" in rfidreaders.tags:
                     elif file_lib.check_tag_attribute(
-                        rfidreaders.tags, "NEIN", "name"
+                        rfidreaders.get_tags_snapshot(True), "NEIN", "name"
                     ) or file_lib.check_tag_attribute(
-                        rfidreaders.tags, "ENDE", "name"
+                        rfidreaders.get_tags_snapshot(True), "ENDE", "name"
                     ):
                         audio.kill_sounds()
                         # new_recording = False
@@ -211,11 +216,12 @@ def start():
                     time.time() + 600
                 )  # 600 sec (=10min) counter until stop
                 while True:
+                    current_tags = rfidreaders.get_tags_snapshot(True)
                     if (
-                        rfidreaders.tags[i] is None
+                        current_tags[i] is None
                         or record_timer < time.time()
                         or file_lib.check_tag_attribute(
-                            rfidreaders.tags, "NEIN", "name"
+                            current_tags, "NEIN", "name"
                         )
                     ):
                         error_recording = audio.stop_recording(figure_id)
@@ -224,7 +230,7 @@ def start():
                         break
 
             if new_recording:
-                if error_recording:
+                if not error_recording:
                     print("error while recording!")
                     # Bei der Aufname ist ein Fehler passiert. Lass die Figur beim nächsten mal länger stehen
                     game_utils.announce(197)
@@ -259,16 +265,16 @@ def start():
                 while waitingtime > time.time():
                     # if rfidreaders.tags[i] == "JA":
                     if file_lib.check_tag_attribute(
-                        rfidreaders.tags, "JA", "name"
+                        rfidreaders.get_tags_snapshot(True), "JA", "name"
                     ):
                         audio.kill_sounds()
                         audio.play_full("TTS", 82)  # Geschichte gespeichert
                         break
 
                     elif file_lib.check_tag_attribute(
-                        rfidreaders.tags, "NEIN", "name"
+                        rfidreaders.get_tags_snapshot(True), "NEIN", "name"
                     ) or file_lib.check_tag_attribute(
-                        rfidreaders.tags, "ENDE", "name"
+                        rfidreaders.get_tags_snapshot(True), "ENDE", "name"
                     ):
                         # elif rfidreaders.tags[i] == "NEIN" or "ENDE" in rfidreaders.tags:
                         audio.kill_sounds()
