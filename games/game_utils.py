@@ -1,7 +1,6 @@
 import time
 
 import audio
-import file_lib
 import leds
 import rfidreaders
 from crud import get_first_rfid_tag_by_id_and_type
@@ -20,10 +19,7 @@ def check_end_tag():
     or a list/tuple of tag objects). It then checks whether any detected tag
     has its `name` attribute equal to "ENDE".
     """
-    snapshot = rfidreaders.get_tags_snapshot(True)
-
-    if not snapshot:
-        return False
+    snapshot: list = list(rfidreaders.get_tags_snapshot(True) or [])
 
     for entry in snapshot:
         if entry is None:
@@ -62,12 +58,32 @@ def announce_score(score_players: dict):
         locale="de"
     )  # Initialisiere Übersetzer mit deutschem Locale
     audio.play_full("TTS", 80)
+
+    # take a synchronous snapshot and search slots for the player object
+    snapshot: list = list(rfidreaders.get_tags_snapshot(True) or [])
+
+    def _find_player_slot_index(player_obj, snapshot_list):
+        """Return zero-based slot index where player_obj is present (first match), or None."""
+        # snapshot_list is normalized to a list (possibly empty)
+        for idx, slot in enumerate(snapshot_list):
+            if slot is None:
+                continue
+            if isinstance(slot, (list, tuple)):
+                for el in slot:
+                    if el is player_obj:
+                        return idx
+            else:
+                if slot is player_obj:
+                    return idx
+        return None
+
     for player, score in score_players.items():
         if not isinstance(player, RFIDTag):
             continue
-        if player in rfidreaders.tags:
+        slot_idx = _find_player_slot_index(player, snapshot)
+        if slot_idx is not None:
             blink_led(
-                rfidreaders.tags.index(player) + 1,
+                slot_idx + 1,
                 times=5,
                 on_time=0.1,
                 off_time=0.1,
@@ -151,17 +167,68 @@ def blink_led(field_index, times=5, on_time=0.5, off_time=0.5):
 
 
 def get_solution_from_tags(i, players):
-    """Calculate the solution from the tens and units tags."""
-    tens_tag = rfidreaders.tags[i + 1]
-    units_tag = rfidreaders.tags[i - 1]
+    """Calculate the solution from the tens and units tags.
+
+    This implementation:
+    - uses a synchronous snapshot from the readers via get_tags_snapshot(True)
+    - flattens a slot entry one level (a slot may contain a single tag or a list/tuple)
+    - only accepts tag records that are of rfid_type 'numeric' (uses the helper
+      get_first_rfid_tag_by_id_and_type and prefers to pass a type filter when possible)
+    """
+    snapshot: list = list(rfidreaders.get_tags_snapshot(True) or [])
+
+    # safe access helpers
+    def _first_tag_in_slot(slot):
+        """Return the first non-None tag object from a slot entry which may be
+        None, a tag object, or a list/tuple of tag objects."""
+        if slot is None:
+            return None
+        if isinstance(slot, (list, tuple)):
+            for el in slot:
+                if el is not None:
+                    return el
+            return None
+        return slot
+
+    # get slot entries for tens and units (guarding index errors)
+    tens_slot = snapshot[i + 1] if snapshot and len(snapshot) > i + 1 else None
+    units_slot = snapshot[i - 1] if snapshot and len(snapshot) > i - 1 else None
+
+    tens_tag = _first_tag_in_slot(tens_slot)
+    units_tag = _first_tag_in_slot(units_slot)
 
     tens_digit = "0"
     unit_digit = "0"
 
-    if tens_tag and get_first_rfid_tag_by_id_and_type(tens_tag.rfid_tag):
-        tens_digit = get_first_rfid_tag_by_id_and_type(tens_tag.rfid_tag).name
-    if units_tag and get_first_rfid_tag_by_id_and_type(units_tag.rfid_tag):
-        unit_digit = get_first_rfid_tag_by_id_and_type(units_tag.rfid_tag).name
+    # Try to obtain a database record that is of type 'numeric'.
+    # The helper may or may not accept a type parameter; handle TypeError and
+    # fallback to checking the returned record's rfid_type.
+    def _numeric_name_for_tag(tag):
+        if not tag or not getattr(tag, "rfid_tag", None):
+            return None
+        try:
+            # prefer to ask for numeric type explicitly if helper supports it
+            record = get_first_rfid_tag_by_id_and_type(tag.rfid_tag, "numeric")
+        except TypeError:
+            # helper doesn't accept a type argument; call without and check type
+            record = get_first_rfid_tag_by_id_and_type(tag.rfid_tag)
+            if record and getattr(record, "rfid_type", None) != "numeric":
+                return None
+        if (
+            record
+            and getattr(record, "rfid_type", None) == "numeric"
+            and getattr(record, "name", None) is not None
+        ):
+            return record.name
+        return None
+
+    tname = _numeric_name_for_tag(tens_tag)
+    uname = _numeric_name_for_tag(units_tag)
+
+    if tname:
+        tens_digit = tname
+    if uname:
+        unit_digit = uname
 
     return tens_digit + unit_digit
 
@@ -208,10 +275,26 @@ def leds_switch_on_with_color(
     player: RFIDTag, color: tuple[int, int, int]
 ) -> None:
     try:
-        if rfidreaders.tags.index(player):
-            leds.switch_on_with_color(
-                rfidreaders.tags.index(player) + 1, color=color
-            )
+        snapshot: list = list(rfidreaders.get_tags_snapshot(True) or [])
+        # find first slot index that contains the player object
+        slot_index = None
+        for idx, slot in enumerate(snapshot):
+            if slot is None:
+                continue
+            if isinstance(slot, (list, tuple)):
+                for el in slot:
+                    if el is player:
+                        slot_index = idx
+                        break
+                if slot_index is not None:
+                    break
+            else:
+                if slot is player:
+                    slot_index = idx
+                    break
+        if slot_index is not None:
+            leds.switch_on_with_color(slot_index + 1, color=color)
             return
-    except ValueError:
+    except Exception:
+        # fall back to a visible error pattern if lookup fails
         leds.blinker()
