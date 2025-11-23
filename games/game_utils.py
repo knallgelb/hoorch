@@ -1,3 +1,4 @@
+import pdb
 import time
 
 import audio
@@ -97,7 +98,26 @@ def filter_players_on_fields(players, valid_fields, defined_figures):
     This function normalizes each entry and returns a new list where positions not
     matching `valid_fields` or not present in `defined_figures` are set to None.
     The input `players` list is not modified.
+
+    NOTE: At the start we flatten the incoming `players` list:
+    - Remove None entries
+    - If an entry is a list/tuple, extract its elements (ignoring None)
+    After flattening the local `players` variable is replaced with the flattened list.
     """
+    # First: flatten the players sequence by removing None and unpacking lists/tuples
+    flat_players = []
+    for entry in players:
+        if entry is None:
+            flat_players.append(None)
+            continue
+        if isinstance(entry, (list, tuple)):
+            # extend with non-None elements from the nested sequence
+            flat_players.extend(it for it in entry if it is not None)
+        else:
+            flat_players.append(entry)
+
+    # Replace the local players variable with the flattened list
+
     # Normalize valid_fields to a set of zero-based indices
     valid_set = set(valid_fields) if valid_fields is not None else set()
     # Detect common 1-based input pattern: no 0 present and all values between 1..len(players)
@@ -111,34 +131,15 @@ def filter_players_on_fields(players, valid_fields, defined_figures):
         # Convert to 0-based
         valid_set = set(v - 1 for v in valid_set)
 
-    # Prepare result list (same length as input)
+    # Prepare result list (same length as (flattened) input)
     result = [None] * len(players)
 
-    for i, p in enumerate(players):
-        # If there's nothing in the slot, leave None
-        if p is None:
-            result[i] = None
+    for i, p in enumerate(flat_players):
+        if p in defined_figures.values():
+            result[i] = p
             continue
 
-        # Normalize candidate: if the entry is a list/tuple, take its first element
-        if isinstance(p, (list, tuple)) and len(p) > 0:
-            candidate = p[0]
-        else:
-            candidate = p
-
-        # Extract rfid_tag string from candidate
-        if isinstance(candidate, str):
-            rfid_tag_str = candidate
-        else:
-            rfid_tag_str = getattr(candidate, "rfid_tag", None)
-
-        # Keep the player only if index is in valid_set and rfid_tag is recognized
-        if i in valid_set and rfid_tag_str in defined_figures:
-            # store normalized candidate
-            result[i] = candidate
-        else:
-            result[i] = None
-
+    pdb.set_trace()
     return result
 
 
