@@ -35,7 +35,9 @@ def start():
     audio.play_file("sounds", "waiting.mp3")  # play wait sound
     leds.rotate_one_round(0.55)
 
-    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+    if file_lib.check_tag_attribute(
+        rfidreaders.get_tags_snapshot(True), "ENDE", "name"
+    ):
         leds.switch_all_on_with_color((0, 0, 255))
         time.sleep(0.2)
         leds.reset()
@@ -44,7 +46,9 @@ def start():
     rfid_position = []
 
     players = game_utils.filter_players_on_fields(
-        copy.deepcopy(rfidreaders.tags), rfid_position, defined_figures
+        copy.deepcopy(rfidreaders.get_tags_snapshot(True)),
+        rfid_position,
+        defined_figures,
     )
 
     figure_count = sum(x is not None for x in players)
@@ -61,7 +65,9 @@ def start():
         leds.reset()
         return
 
-    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+    if file_lib.check_tag_attribute(
+        rfidreaders.get_tags_snapshot(True), "ENDE", "name"
+    ):
         leds.switch_all_on_with_color((0, 0, 255))
         time.sleep(0.2)
         leds.reset()
@@ -78,14 +84,18 @@ def start():
 
     # switch on leds at player field
     player_positions = [
-        i + 1 for i, x in enumerate(rfidreaders.tags) if x is not None
+        i + 1
+        for i, x in enumerate(rfidreaders.get_tags_snapshot(True))
+        if x is not None
     ]
     leds.switch_on_with_color(player_positions, (0, 255, 0))
 
     # TODO: x figuren haben eine geschichte gespeichert
     audio.play_full("TTS", 5 + figure_count)
 
-    if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+    if file_lib.check_tag_attribute(
+        rfidreaders.get_tags_snapshot(True), "ENDE", "name"
+    ):
         leds.switch_all_on_with_color((0, 0, 255))
         time.sleep(0.2)
         leds.reset()
@@ -110,7 +120,9 @@ def start():
             audio.play_full("TTS", 62)
             continue
 
-        if file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+        if file_lib.check_tag_attribute(
+            rfidreaders.get_tags_snapshot(True), "ENDE", "name"
+        ):
             leds.switch_all_on_with_color((0, 0, 255))
             time.sleep(0.2)
             leds.reset()
