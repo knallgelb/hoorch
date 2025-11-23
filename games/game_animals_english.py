@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: UTF8 -*-
 
-import os
-import time
 import random
-import copy
+import time
+
 import audio
-import rfidreaders
-import leds
-import file_lib
-import models
 import crud
-
-from .game_utils import check_end_tag, announce, filter_players_on_fields
-
+import file_lib
+import leds
+import models
+import rfidreaders
 from logger_util import get_logger
+
+from .game_utils import announce, check_end_tag, filter_players_on_fields
 
 logger = get_logger(__name__, "logs/game_animals.log")
 
@@ -23,6 +21,7 @@ def start():
     defined_figures = file_lib.get_tags_by_type("figures")
     defined_animals = file_lib.get_tags_by_type("animals")
     animals_played = []
+    points = []
 
     announce(192)  # "Wir lernen jetzt Tiernamen auf Englisch."
     leds.reset()
@@ -43,7 +42,19 @@ def start():
     audio.play_file("sounds", "waiting.mp3")
     leds.rotate_one_round(1.11)
 
-    players = copy.deepcopy(rfidreaders.tags)
+    current_tags = rfidreaders.get_tags_snapshot(True)
+    # Normalize per-slot entries: if an entry is a list/tuple, keep the first element
+    # This preserves the reader/LED slot alignment while allowing callers that use
+    # get_tags_snapshot(True) which might return nested entries.
+    players = []
+    if current_tags:
+        for entry in current_tags:
+            if entry is None:
+                players.append(None)
+            elif isinstance(entry, (list, tuple)) and len(entry) > 0:
+                players.append(entry[0])
+            else:
+                players.append(entry)
 
     isthefirst = True
 
@@ -66,11 +77,25 @@ def start():
                 leds.reset()
                 break
 
-            figures_on_board = copy.deepcopy(rfidreaders.tags)
+            figures_on_board = rfidreaders.get_tags_snapshot(True) or []
+            # Normalize each slot to its primary tag object (preserve positions)
+            normalized_figures = []
+            for entry in figures_on_board:
+                if entry is None:
+                    normalized_figures.append(None)
+                elif isinstance(entry, (list, tuple)) and len(entry) > 0:
+                    normalized_figures.extend(entry)
+                else:
+                    normalized_figures.append(entry)
+            figures_on_board = normalized_figures
 
             for i, tag_obj in enumerate(figures_on_board):
                 leds_position = i + 1
-                if tag_obj and tag_obj.rfid_tag in defined_animals:
+                if (
+                    tag_obj
+                    and tag_obj.rfid_type == "animals"
+                    and tag_obj.rfid_tag in defined_animals
+                ):
                     leds.switch_on_with_color(leds_position, (0, 255, 0))
                     animal_file = tag_obj.name + ".mp3"
                     if not audio.file_is_playing(animal_file):
@@ -80,7 +105,7 @@ def start():
     # Spielmodus (kein FRAGEZEICHEN)
     else:
         players = filter_players_on_fields(
-            copy.deepcopy(rfidreaders.tags), [], defined_figures
+            rfidreaders.get_tags_snapshot(True), [], defined_figures
         )
         figure_count = sum(x is not None for x in players)
 
@@ -164,7 +189,14 @@ def start():
                         audio.play_file("TTS/animals_en", animal_tag + ".mp3")
                         time.sleep(3)
 
-                    figure_on_field = copy.deepcopy(rfidreaders.tags[i])
+                    current_snapshot = rfidreaders.get_tags_snapshot(True) or []
+                    figure_on_field = None
+                    if i < len(current_snapshot):
+                        entry = current_snapshot[i]
+                        if isinstance(entry, (list, tuple)) and len(entry) > 0:
+                            figure_on_field = entry[0]
+                        else:
+                            figure_on_field = entry
                     if figure_on_field:
                         field_name = figure_on_field.name
                         # Bedingungen: korrekter Tierstein
