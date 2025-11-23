@@ -1,13 +1,13 @@
-from typing import Dict, Optional
 from pathlib import Path
+from typing import Dict, Optional
 
-from models import RFIDTag
 from crud import (
     get_all_rfid_tags,
-    get_rfid_tag_by_id,
     get_all_rfid_tags_by_tag_id,
+    get_rfid_tag_by_id,
 )
 from logger_util import get_logger
+from models import RFIDTag
 
 logger = get_logger(__name__, "logs/file_lib.log")
 
@@ -74,16 +74,46 @@ def check_tag_attribute(tags, value, attribute="name"):
     """
     Checks if any RFIDTag in the tags list has a specific attribute value.
 
-    :param tags: List of RFIDTag instances.
+    This function is robust against nested lists inside the provided `tags`
+    list. If an element within `tags` is itself a list or tuple, that inner
+    sequence will be flattened one level so all tag entries are checked.
+
+    :param tags: Iterable (usually a list) of RFIDTag instances. May contain
+                 nested lists/tuples which will be flattened one level.
     :param value: The value to check for (e.g., "ENDE", "JA", "NEIN").
     :param attribute: The attribute of RFIDTag to check (default is 'name').
     :return: True if any tag has the specified attribute value, False otherwise.
     """
-    return any(
-        tag
-        for tag in tags
-        if tag is not None and getattr(tag, attribute, None) == value
-    )
+    if not tags:
+        return False
+
+    # If a dict was passed (some callers might pass a dict), check its values.
+    if isinstance(tags, dict):
+        iterable = list(tags.values())
+    else:
+        # Protect against strings/bytes being treated as iterables of chars
+        if isinstance(tags, (str, bytes)):
+            iterable = [tags]
+        else:
+            try:
+                iterable = list(tags)
+            except TypeError:
+                # Not iterable, treat as single element
+                iterable = [tags]
+
+    # Flatten one level of nested lists/tuples so callers can pass
+    # structures like [None, [tag1, tag2], tag3]
+    flattened = []
+    for item in iterable:
+        if isinstance(item, (list, tuple)):
+            flattened.extend(item)
+        else:
+            flattened.append(item)
+
+    for tag in flattened:
+        if tag is not None and getattr(tag, attribute, None) == value:
+            return True
+    return False
 
 
 if __name__ == "__main__":
