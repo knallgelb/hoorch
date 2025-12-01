@@ -73,7 +73,7 @@ scan_lock = threading.Lock()
 
 endofmessage = "#"  # chr(35)
 
-read_continuously = False
+read_continuously = True
 
 # We allow multiple readers to report tags within the same round.
 # Individual reader validity is tracked per-reader using `timer` and `tags`.
@@ -90,9 +90,10 @@ use_power_control = False
 # Timing tuning
 power_on_delay = 0.12  # seconds to wait after powering a PN532 before init
 post_init_delay = 0.03  # small pause after SAM_configuration
-round_duration = 0.6  # seconds: requested max round duration
+round_duration = 0.3  # seconds: requested max round duration
 # How long to remember a detected tag (seconds). Default value; games can override.
-tag_memory_seconds = 3.0
+tag_memory_seconds = 6.5
+last_update = None
 
 
 # API to set/get and temporarily override tag memory per game.
@@ -210,6 +211,9 @@ def get_tags_snapshot(trigger_scan: bool = False):
     raise a NameError.
     """
     sc = globals().get("do_scan_cycle")
+    global last_update
+    if last_update + tag_memory_seconds > time.time():
+        return [t for t in tags]
     if trigger_scan and sc is not None:
         # Try to start a scan if none is running; otherwise wait for the running one.
         acquired = scan_lock.acquire(blocking=False)
@@ -222,7 +226,6 @@ def get_tags_snapshot(trigger_scan: bool = False):
             # Another scan is in progress; wait until it finishes
             with scan_lock:
                 pass
-
     with tags_lock:
         return [t for t in tags]
 
@@ -232,6 +235,8 @@ def init():
     # We no longer instantiate all PN532 objects at startup. Each reader will be
     # powered/initialized on demand per round (init_reader/shutdown_reader).
     file_lib.load_all_tags()
+    global last_update
+    last_update = time.time()
     logger.info("Initializing the RFID readers (lazy-per-reader init)")
 
     # Expose spi as a module-global used by init_reader()
@@ -306,6 +311,7 @@ def do_scan_cycle():
     # Readers are allowed to report tags in the same round; we track validity per reader
     # via `tag_timer` and `tags` rather than using a single global active reader lock.
     now = time.time()
+    global last_update
 
     # Iterate over reader indices and perform a single power-cycle read per reader.
     for index in range(len(reader_pins)):
@@ -372,6 +378,8 @@ def do_scan_cycle():
             # Convert tag_uid (bytearray) to a readable ID string (e.g., "4-7-26-160")
             id_readable = "-".join(str(number) for number in tag_uid[:4])
 
+            tags[index] = id_readable
+
             # Check type by UID length
             if len(tag_uid) == 4:
                 mifare = True
@@ -399,6 +407,12 @@ def do_scan_cycle():
             with tags_lock:
                 tags[index] = None
                 tag_timer[index] = 0
+
+        active_leds = [i + 1 for i, t in enumerate(tags) if t is not None]
+        if len(active_leds) > 0:
+            leds.switch_on_with_color(active_leds, (0, 255, 0))
+        else:
+            leds.reset()
 
         if tag_name is not None:
             # If this is the first detection in this loop, set the shared LED expiry window
@@ -429,31 +443,9 @@ def do_scan_cycle():
         # Shutdown this reader (power off / remove object) to avoid interference.
         shutdown_reader(index)
 
-    # After cycling all readers, update LEDs to reflect currently active tags
-    now = time.time()
-    # Use 0-based LED indices for the LED service (server expects 0..N-1).
-    # Select LEDs based on led_timer (the display window), not on tag memory.
-    active_leds = [
-        i
-        for i, t in enumerate(led_timer)
-        if t and t > now and tags[i] is not None
-    ]
-
-    if active_leds:
-        # light all currently active readers' LEDs with the chosen color
-        try:
-            leds.switch_on_with_color(active_leds, (255, 0, 0))
-        except Exception:
-            pass
-    else:
-        # no active tags -> switch LEDs off
-        try:
-            leds.reset()
-        except Exception:
-            pass
-
     # Emit a concise snapshot log of current tags (critical so it is visible)
     logger.critical("Current Tags %s", get_tags_snapshot())
+    last_update = time.time()
 
 
 def continuous_read():
@@ -681,8 +673,8 @@ def read_from_ntag213(reader, tag_uid: str):
                     except Exception as e2:
                         logger.debug(f"Re-selection read failed: {e2}")
                 # small backoff before next attempt
-                if attempt < max_attempts:
-                    time.sleep(retry_delay)
+            #  if attempt < max_attempts:
+            #      time.sleep(retry_delay)
         if not success:
             # Instead of aborting the whole read, pad missing/empty blocks with zeros
             logger.warning(
@@ -691,7 +683,7 @@ def read_from_ntag213(reader, tag_uid: str):
             # NTAG block size is 4 bytes; pad with zeros so parsing keeps indices stable
             read_data.extend(b"\x00\x00\x00\x00")
         # small pause between blocks to give the PN532 some settling time
-        time.sleep(per_block_delay)
+        # time.sleep(per_block_delay)
 
         # If we detected a terminator or payload above, break outer loop now.
         if found_early_termination:
