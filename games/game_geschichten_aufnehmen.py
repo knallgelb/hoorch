@@ -20,6 +20,8 @@ logger = get_logger(__name__, "logs/game_aufnehmen.log")
 
 from . import game_utils
 
+reader = None
+
 
 def init_recording(mp3_path: pathlib.Path):
     if not mp3_path.is_dir():
@@ -215,19 +217,28 @@ def start():
                 record_timer = (
                     time.time() + 600
                 )  # 600 sec (=10min) counter until stop
+                current_time = time.time()
+                waiting_time = 3.0
                 while True:
-                    current_tags = rfidreaders.get_tags_snapshot(True)
-                    if (
-                        current_tags[i] is None
-                        or record_timer < time.time()
-                        or file_lib.check_tag_attribute(
-                            current_tags, "NEIN", "name"
-                        )
-                    ):
-                        error_recording = audio.stop_recording(figure_id)
-                        game_utils.announce(57)  # Aufnahme ist zu Ende"
-                        new_recording = True
-                        break
+                    reader = rfidreaders.init_reader(i)
+                    if reader is None:
+                        rfidreaders.shutdown_reader(i)
+                        continue
+                    current_tag_value = reader.read_passive_target(timeout=0.25)
+                    if current_time + waiting_time < time.time():
+                        if (
+                            current_tag_value is None
+                            or record_timer < time.time()
+                            or file_lib.check_tag_attribute(
+                                rfidreaders.tags, "NEIN", "name"
+                            )
+                        ):
+                            error_recording = audio.stop_recording(figure_id)
+                            game_utils.announce(57)  # Aufnahme ist zu Ende"
+                            new_recording = True
+                            break
+                    if current_tag_value is not None:
+                        current_time = time.time()
 
             if new_recording:
                 if not error_recording:
