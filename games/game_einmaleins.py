@@ -94,6 +94,10 @@ def start():
                 points[i] += 1
             else:
                 announce(26)
+                announce(267)
+                announce(90 + solution)
+                announce(268)
+                announce(90 + int(player_solution))
                 leds.switch_on_with_color(leds_position, (255, 0, 0))
             time.sleep(0.3)
 
