@@ -83,9 +83,12 @@ def player_action(
                     continue
                 if isinstance(entry, (list, tuple)):
                     for it in entry:
-                        if it is not None:
-                            flat_items.append(it)
+                        if it is not None and not it.rfid_type == "numeric":
+                            continue
+                        flat_items.append(it)
                 else:
+                    if not it.rfid_type == "numeric":
+                        continue
                     flat_items.append(entry)
 
         # Snapshot already contains RFIDTag objects (or None). Use them directly.
@@ -99,8 +102,32 @@ def player_action(
                 return True
 
         time.sleep(0.3)
-
+    # Wrong answer
     game_utils.announce(26)
+    # your solution is
+    game_utils.announce(268)
+
+    found_numbers = set()
+
+    for entry in rfidreaders.get_tags_snapshot(True):
+        if entry is None:
+            continue
+        if isinstance(entry, (list, tuple)):
+            for it in entry:
+                if it is not None and not it.rfid_type == "numeric":
+                    continue
+                found_numbers.add(it)
+            continue
+        if entry is not None:
+            found_numbers.add(entry)
+
+    if len(found_numbers) == 0:
+        game_utils.announce(191)
+
+    for tag in set(found_numbers):
+        # for each numeric tag, say number
+        game_utils.announce(90 + int(tag.name))
+
     return False
 
 
