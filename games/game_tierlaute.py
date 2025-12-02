@@ -26,6 +26,7 @@ def start():
 
     rfid_position = []
 
+    rfidreaders.display_active_leds = False
     audio.play_full("TTS", 4)  # Ihr spielt das Spiel Tierlaute erraten.
     leds.reset()  # reset leds
 
