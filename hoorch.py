@@ -265,5 +265,61 @@ def main():
 
 
 if __name__ == "__main__":
-    init()
-    main()
+    try:
+        init()
+        main()
+    except games.game_utils.RestartRequested:
+        logger.info(
+            "Restart requested: performing cleanup and exiting to allow supervisor restart"
+        )
+
+        # Best effort cleanup: stop readers, stop audio, reset LEDs.
+        try:
+            # Stop continuous reading loop if running
+            try:
+                rfidreaders.read_continuously = False
+            except Exception:
+                pass
+
+            # Shutdown each reader (powers down hardware where applicable)
+            try:
+                # rfidreaders.readers is a list; iterate by index to call shutdown_reader
+                for i in range(len(rfidreaders.readers)):
+                    try:
+                        rfidreaders.shutdown_reader(i)
+                    except Exception:
+                        # continue shutting down remaining readers
+                        pass
+            except Exception:
+                pass
+
+            # Kill any playing sounds
+            try:
+                audio.kill_sounds()
+            except Exception:
+                pass
+
+            # Reset LEDs to a safe state
+            try:
+                leds.reset()
+            except Exception:
+                pass
+
+        except Exception as e:
+            logger.exception("Exception during restart cleanup: %s", e)
+
+        # Exit process so systemd / supervisor with Restart=always will restart the service.
+        import sys
+
+        sys.exit(0)
+    except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt received, shutting down")
+        try:
+            leds.reset()
+        except Exception:
+            pass
+        try:
+            audio.kill_sounds()
+        except Exception:
+            pass
+        raise

@@ -11,6 +11,17 @@ from models import RFIDTag
 logger = get_logger(__name__, "logs/game_utils.log")
 
 
+class RestartRequested(Exception):
+    """Raised to request a full program restart (caught by the main entrypoint)."""
+
+    pass
+
+
+def request_restart():
+    """Convenience helper to request a restart from anywhere in the code."""
+    raise RestartRequested()
+
+
 def check_end_tag():
     """Return True if the ENDE tag is detected, else False.
 
@@ -42,14 +53,16 @@ def announce(msg_id, path="TTS"):
     """Play a message by its ID from the given path and check for ENDE tag."""
     audio.play_full(path, msg_id)
     if check_end_tag():
-        raise SystemExit
+        audio.play_file(path, "054.mp3")
+        request_restart()
 
 
 def announce_file(msg_id, path="TTS"):
     """Play a message by its ID from the given path and check for ENDE tag."""
     audio.play_file(path, msg_id)
     if check_end_tag():
-        raise SystemExit
+        audio.play_file(path, "054.mp3")
+        request_restart()
 
 
 def announce_score(score_players: dict):

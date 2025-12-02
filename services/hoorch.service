@@ -9,7 +9,8 @@ User=root
 Type=simple
 Environment="PATH=/home/pi/hoorch/venv/bin:/usr/bin"
 Environment="VIRTUAL_ENV=/home/pi/hoorch/venv"
-Restart=on-failure
+Restart=always
+RestartSec=2
 WorkingDirectory=/home/pi/hoorch/
 ExecStart=/home/pi/hoorch/venv/bin/python3 /home/pi/hoorch/hoorch.py
 
