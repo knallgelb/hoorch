@@ -33,6 +33,8 @@ def start():
     u = models.Usage(game="tier_orchester", players=1)
     crud.add_game_entry(usage=u)
 
+    rfidreaders.display_active_leds = False
+
     announce(63)
     leds.reset()  # Reset LEDs
 
