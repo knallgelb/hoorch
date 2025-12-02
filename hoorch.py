@@ -323,3 +323,5 @@ if __name__ == "__main__":
         except Exception:
             pass
         raise
+
+# small change to test update - use `sudo git config --system --add safe.directory /home/pi/hoorch` to except git updates
