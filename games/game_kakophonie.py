@@ -34,6 +34,7 @@ def start():
 
     # Wir spielen Kakophonie. Stelle die Zahlen 1 bis 6 auf die Spielfelder!
     announce(64)
+    rfidreaders.display_active_leds = False
     leds.reset()  # reset leds
 
     if not pygame.mixer.get_init():
