@@ -201,6 +201,10 @@ def start():
                                 time.sleep(0.2)
                                 announce(26)  # "Falsch!"
                                 audio.play_file("sounds", "loser.mp3")
+                                announce(268)
+                                audio.play_file(
+                                    "TTS/animals_en", field_name + ".mp3"
+                                )
                                 leds.switch_on_with_color(
                                     leds_position, (255, 0, 0)
                                 )  # Rot für falsch
