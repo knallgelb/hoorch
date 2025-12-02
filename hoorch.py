@@ -325,3 +325,10 @@ if __name__ == "__main__":
         raise
 
 # small change to test update - use `sudo git config --system --add safe.directory /home/pi/hoorch` to except git updates
+# Update guide: add git command to except updates
+# git pull
+# edit hoorch.service `sudo vim /etc/systemd/system/hoorch.service`
+# add the following lines
+# Restart=always
+# RestartSec=2
+# Restart Service `sudo systemctl restart hoorch`
