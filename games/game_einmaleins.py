@@ -27,6 +27,7 @@ logger = get_logger(__name__, "logs/game_einmaleins.log")
 def start():
     defined_figures = file_lib.get_tags_by_type("figures")
     all_tags = file_lib.load_all_tags()
+    rfidreaders.display_active_leds = False
 
     announce(85)  # "We are now practicing multiplication."
     leds.reset()
