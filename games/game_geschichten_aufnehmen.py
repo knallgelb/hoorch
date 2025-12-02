@@ -37,6 +37,7 @@ def start():
 
     # Wir nehmen eine Geschichte für deine Figur auf
     audio.play_full("TTS", 55)
+    rfidreaders.display_active_leds = False
     print("Wir nehmen eine Geschichte für deine Figur auf")
 
     leds.reset()  # reset leds
