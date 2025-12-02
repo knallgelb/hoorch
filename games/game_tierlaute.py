@@ -12,11 +12,14 @@ import file_lib
 import leds
 import models
 import rfidreaders
+from i18n import Translator
 from logger_util import get_logger
 
 from . import game_utils
 
 logger = get_logger(__name__, "logs/game_tierlaute.log")
+
+translator = None
 
 
 def start():
@@ -27,6 +30,7 @@ def start():
     rfid_position = []
 
     rfidreaders.display_active_leds = False
+
     audio.play_full("TTS", 4)  # Ihr spielt das Spiel Tierlaute erraten.
     leds.reset()  # reset leds
 
@@ -77,7 +81,7 @@ def start():
         if result:
             game_utils.announce(27)
         else:
-            game_utils.announce(26)
+            pass  # leider falsch schon in player_action abgespielt
         return result
 
     if figure_count == 0:
@@ -116,6 +120,8 @@ def player_action(
         return False
     expected_value = random.choice(available_animals)
     animals_played.append(expected_value)
+
+    translator = Translator(locale="de")
 
     proc, duration = audio.play_file(
         "animal_sounds", f"{expected_value.name}.mp3", return_process=True
@@ -163,5 +169,12 @@ def player_action(
                 time.sleep(0.3)
                 return True
         time.sleep(0.1)
+    # erwarteter Wert
+    game_utils.announce(26)
+    audio.play_file("TTS", "267.mp3")
+    audio.play_file(
+        "TTS",
+        translator.translate(f"standard_tags.{expected_value.name.lower()}"),
+    )
 
     return False
