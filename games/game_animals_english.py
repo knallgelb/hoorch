@@ -74,6 +74,8 @@ def start():
                             continue
                         normalized_figures.append(e)
                 else:
+                    if not isinstance(entry, models.RFIDTag):
+                        continue
                     if not entry.rfid_type == "animals":
                         continue
                     normalized_figures.append(entry)
