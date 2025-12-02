@@ -94,6 +94,7 @@ round_duration = 0.3  # seconds: requested max round duration
 # How long to remember a detected tag (seconds). Default value; games can override.
 tag_memory_seconds = 6.5
 last_update = None
+display_active_leds = True
 
 
 # API to set/get and temporarily override tag memory per game.
@@ -408,12 +409,6 @@ def do_scan_cycle():
                 tags[index] = None
                 tag_timer[index] = 0
 
-        active_leds = [i + 1 for i, t in enumerate(tags) if t is not None]
-        if len(active_leds) > 0:
-            leds.switch_on_with_color(active_leds, (0, 255, 0))
-        else:
-            leds.reset()
-
         if tag_name is not None:
             # If this is the first detection in this loop, set the shared LED expiry window
             global round_window_end
@@ -439,6 +434,16 @@ def do_scan_cycle():
                 tag_memory_seconds,
                 led_timer[index],
             )
+
+        active_leds = [i + 1 for i, t in enumerate(tags) if t is not None]
+        # Nur die LEDs durch das Lese-Modul steuern, wenn display_active_leds True ist.
+        if display_active_leds:
+            if len(active_leds) > 0:
+                leds.switch_on_with_color(active_leds, (0, 255, 0))
+            else:
+                leds.reset()
+        # Wenn display_active_leds False ist, machen wir keine LED-Aktionen,
+        # fahren aber normal fort (z. B. shutdown_reader wird trotzdem ausgeführt).
 
         # Shutdown this reader (power off / remove object) to avoid interference.
         shutdown_reader(index)
