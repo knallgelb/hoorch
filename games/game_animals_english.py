@@ -22,6 +22,7 @@ def start():
     defined_animals = file_lib.get_tags_by_type("animals")
     animals_played = []
     points = []
+    rfidreaders.display_active_leds = False
 
     announce(192)  # "Wir lernen jetzt Tiernamen auf Englisch."
     leds.reset()
