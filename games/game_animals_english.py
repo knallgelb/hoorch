@@ -12,7 +12,12 @@ import models
 import rfidreaders
 from logger_util import get_logger
 
-from .game_utils import announce, check_end_tag, filter_players_on_fields
+from .game_utils import (
+    announce,
+    check_end_tag,
+    filter_players_on_fields,
+    request_restart,
+)
 
 logger = get_logger(__name__, "logs/game_animals.log")
 
@@ -27,18 +32,7 @@ def start():
     announce(192)  # "Wir lernen jetzt Tiernamen auf Englisch."
     leds.reset()
 
-    # if check_end_tag():
-    #     leds.switch_all_on_with_color((0, 0, 255))
-    #     time.sleep(0.2)
-    #     leds.reset()
-    #     return
-
     announce(193)  # Hinweise für das Aufstellen der Figuren
-    # if check_end_tag():
-    #     leds.switch_all_on_with_color((0, 0, 255))
-    #     time.sleep(0.2)
-    #     leds.reset()
-    #     return
 
     audio.play_file("sounds", "waiting.mp3")
     leds.rotate_one_round(1.11)
@@ -59,11 +53,8 @@ def start():
 
     isthefirst = True
 
-    # if check_end_tag():
-    #     leds.switch_all_on_with_color((0, 0, 255))
-    #     time.sleep(0.2)
-    #     leds.reset()
-    #     return
+    if check_end_tag():
+        request_restart()
 
     # Lehrmodus (FRAGEZEICHEN-Figur vorhanden)
     if any(p is not None and p.name == "FRAGEZEICHEN" for p in players):
@@ -71,13 +62,6 @@ def start():
         announce(195)  # "Stelle einen Tier-Spielstein auf..."
 
         while True:
-            # if check_end_tag():
-            #     audio.kill_sounds()
-            #     leds.switch_all_on_with_color((0, 0, 255))
-            #     time.sleep(0.2)
-            #     leds.reset()
-            #     break
-
             figures_on_board = rfidreaders.get_tags_snapshot(True) or []
             # Normalize each slot to its primary tag object (preserve positions)
             normalized_figures = []
@@ -85,13 +69,21 @@ def start():
                 if entry is None:
                     normalized_figures.append(None)
                 elif isinstance(entry, (list, tuple)) and len(entry) > 0:
-                    normalized_figures.extend(entry)
+                    for e in entry:
+                        if not e.rfid_type == "animals":
+                            continue
+                        normalized_figures.append(e)
                 else:
+                    if not entry.rfid_type == "animals":
+                        continue
                     normalized_figures.append(entry)
             figures_on_board = normalized_figures
+            if check_end_tag():
+                request_restart()
 
             for i, tag_obj in enumerate(figures_on_board):
                 leds_position = i + 1
+
                 if (
                     tag_obj
                     and tag_obj.rfid_type == "animals"
@@ -152,12 +144,6 @@ def start():
                 else:
                     announce(48 + i)
 
-                # if check_end_tag():
-                #     leds.switch_all_on_with_color((0, 0, 255))
-                #     time.sleep(0.2)
-                #     leds.reset()
-                #     return
-
                 # Tierauswahl
                 if len(animals_played) == 20:
                     animals_played = animals_played[-1:]
@@ -173,18 +159,9 @@ def start():
                 audio.play_file("TTS/animals_en", animal_tag + ".mp3")
                 time.sleep(2)
 
-                # if check_end_tag():
-                #     leds.switch_all_on_with_color((0, 0, 255))
-                #     time.sleep(0.2)
-                #     leds.reset()
-                #     return
-
                 while True:
-                    # if check_end_tag():
-                    #     leds.switch_all_on_with_color((0, 0, 255))
-                    #     time.sleep(0.2)
-                    #     leds.reset()
-                    #     return
+                    if check_end_tag():
+                        request_restart()
 
                     if not audio.file_is_playing(animal_tag + ".mp3"):
                         audio.play_file("TTS/animals_en", animal_tag + ".mp3")
