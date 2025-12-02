@@ -141,9 +141,11 @@ def initial_hardware_test():
 
 def main():
     logger.info("Starte Hauptschleife")
-    shutdown_counter = time.time() + int(os.getenv("SHUTDOWN_TIMER", "300"))
+    shutdown_counter = time.monotonic() + int(
+        os.getenv("SHUTDOWN_TIMER", "300")
+    )
 
-    greet_time = time.time()
+    greet_time = time.monotonic()
 
     # transfer data to Server
     # report_stats.send_and_update_stats()
@@ -152,7 +154,7 @@ def main():
     game_tags_db = file_lib.get_tags_by_type("games")
 
     while True:
-        if time.time() >= shutdown_counter:
+        if time.monotonic() >= shutdown_counter:
             logger.info(
                 "Shutdown Timer abgelaufen. System wird heruntergefahren."
             )
@@ -169,9 +171,9 @@ def main():
             os.system("sudo shutdown -P now")
             break
 
-        if greet_time < time.time():
+        if greet_time < time.monotonic():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
-            greet_time = time.time() + 30
+            greet_time = time.monotonic() + 30
 
         logger.info(rfidreaders.tags)
 
@@ -209,7 +211,7 @@ def main():
             games.games[game_tags[0].name].start()
             audio.play_full("TTS", 54)  # Das Spiel ist zu Ende
             # report_stats.send_and_update_stats()
-            shutdown_counter = time.time() + int(
+            shutdown_counter = time.monotonic() + int(
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
 
@@ -220,44 +222,16 @@ def main():
             # leds.blink = False
             leds.reset()
             audio.play_full("TTS", 65)  # Erklärung
-            shutdown_counter = time.time() + int(
+            shutdown_counter = time.monotonic() + int(
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
-
-        #         hoerspiele_list = [
-        #             os.path.splitext(h)[0] for h in os.listdir("./data/hoerspiele/")
-        #         ]
-        #         detected_hoerspiel_card = [
-        #             i for i in hoerspiele_list if i in rfidreaders.tags
-        #         ]
-        #
-        #         figure_dir = "./data/figures/"
-        #         figure_dirs = [
-        #             name
-        #             for name in os.listdir(figure_dir)
-        #             if os.path.isdir(os.path.join(figure_dir, name))
-        #         ]
-        #         figure_with_recording = [
-        #             k for k in figure_dirs if f"{k}.mp3" in os.listdir(figure_dir + k)
-        #         ]
-        #         detected_figure_with_recording = [
-        #             j for j in figure_with_recording if j in rfidreaders.tags
-        #         ]
-        #
-        #         defined_figures = file_lib.get_tags_by_type("game")
-        #         figure_without_recording = [
-        #             i for i in defined_figures if i not in figure_with_recording
-        #         ]
-        #         detected_figure_without_recording = [
-        #             m for m in figure_without_recording if m in rfidreaders.tags
-        #         ]
 
         # Admin-Menü bei Erkennung von "JA" und "NEIN"
         if file_lib.check_tag_attribute(
             rfidreaders.tags, "JA", "name"
         ) and file_lib.check_tag_attribute(rfidreaders.tags, "NEIN", "name"):
             admin.main()
-            shutdown_counter = time.time() + int(
+            shutdown_counter = time.monotonic() + int(
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
 
