@@ -27,6 +27,7 @@ def start():
     base_path = pathlib.Path("data") / "figures"
     defined_figures = file_lib.load_all_tags()
     audio.play_full("TTS", 60)  # Wir spielen die Geschichte für deine Figur ab
+    rfidreaders.display_active_leds = False
 
     leds.reset()  # reset leds
 
