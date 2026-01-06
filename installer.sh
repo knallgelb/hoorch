@@ -42,6 +42,7 @@ sudo usermod -a -G gpio,i2c,spi,audio pi
 echo "Cloning the HOORCH repository..."
 if [ ! -d "/home/pi/hoorch" ]; then
   sudo -u pi git clone https://github.com/knallgelb/hoorch.git /home/pi/hoorch
+  sudo git config --system --add safe.directory /home/pi/hoorch
 else
   echo "Repository already exists, skipping clone."
 fi
