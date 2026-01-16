@@ -109,7 +109,7 @@ def player_action(
 
     found_numbers = set()
 
-    for entry in rfidreaders.get_tags_snapshot(True):
+    for entry in current_tags:
         if entry is None:
             continue
         if isinstance(entry, (list, tuple)):
