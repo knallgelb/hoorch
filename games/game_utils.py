@@ -70,7 +70,8 @@ def announce_score(score_players: dict):
     translator = Translator(
         locale="de"
     )  # Initialisiere Übersetzer mit deutschem Locale
-    audio.play_full("TTS", 80)
+    if len(score_players.values()) > 0:
+        audio.play_full("TTS", 80)
 
     # take a synchronous snapshot and search slots for the player object
     snapshot: list = list(rfidreaders.get_tags_snapshot(True) or [])
@@ -259,6 +260,12 @@ def play_rounds(players, num_rounds, player_action) -> dict:
     translator = Translator(
         locale="de"
     )  # Initialisiere Übersetzer mit deutschem Locale
+    players_length = len([x for x in players if x is not None])
+    if players_length == 0:
+        audio.play_file("TTS", "059.mp3")
+        return dict()
+
+    audio.play_file("TTS", f"00{5 + players_length}.mp3")
 
     for round_num in range(1, num_rounds + 1):
         # audio.espeaker(f"Starte Runde {round_num}...")
