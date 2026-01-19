@@ -141,9 +141,7 @@ def initial_hardware_test():
 
 def main():
     logger.info("Starte Hauptschleife")
-    shutdown_counter = time.monotonic() + int(
-        os.getenv("SHUTDOWN_TIMER", "300")
-    )
+    shutdown_counter = time.monotonic() + int(os.getenv("SHUTDOWN_TIMER", "300"))
 
     greet_time = time.monotonic()
 
@@ -155,9 +153,7 @@ def main():
 
     while True:
         if time.monotonic() >= shutdown_counter:
-            logger.info(
-                "Shutdown Timer abgelaufen. System wird heruntergefahren."
-            )
+            logger.info("Shutdown Timer abgelaufen. System wird heruntergefahren.")
             audio.play_full("TTS", 196)
             leds.reset()
             os.system("sudo shutdown -P now")
@@ -175,7 +171,7 @@ def main():
             audio.play_full("TTS", 2)  # Welches Spiel wollt ihr spielen?
             greet_time = time.monotonic() + 30
 
-        logger.info(rfidreaders.tags)
+        # logger.info(rfidreaders.tags)
 
         # Match the detected tags by their rfid_tag string with those in game_tags_db
         game_tags = []
@@ -190,10 +186,7 @@ def main():
             # detected_tag can be a list/tuple (e.g. [tag_obj, ...]) or a single object/string.
             # Normalize to the candidate element that contains the rfid_tag (usually first element).
             candidate = None
-            if (
-                isinstance(detected_tag, (list, tuple))
-                and len(detected_tag) > 0
-            ):
+            if isinstance(detected_tag, (list, tuple)) and len(detected_tag) > 0:
                 candidate = detected_tag[0]
             else:
                 candidate = detected_tag
@@ -215,9 +208,7 @@ def main():
                 os.getenv("SHUTDOWN_TIMER", "300")
             )
 
-        if file_lib.check_tag_attribute(
-            rfidreaders.tags, "FRAGEZEICHEN", "name"
-        ):
+        if file_lib.check_tag_attribute(rfidreaders.tags, "FRAGEZEICHEN", "name"):
             logger.info("Hoorch Erklärung")
             # leds.blink = False
             leds.reset()
