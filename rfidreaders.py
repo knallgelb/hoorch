@@ -267,9 +267,7 @@ def init():
             except Exception as e:
                 logger.debug("Could not configure power pin %d: %s", idx, e)
 
-    logger.debug(
-        "SPI initialized; readers will be initialized on-demand per round"
-    )
+    logger.debug("SPI initialized; readers will be initialized on-demand per round")
 
     # Start the read loop
     continuous_read()
@@ -426,7 +424,7 @@ def do_scan_cycle():
                 tags[index] = tag_name
 
             # Critical log for detection (only these are visible with current logger level)
-            logger.critical(
+            logger.debug(
                 "Reader %d: detected tag '%s' — tag_timer until %.3f (memory %.3fs), led_timer until %.3f",
                 index + 1,
                 tag_name,
@@ -449,7 +447,7 @@ def do_scan_cycle():
         shutdown_reader(index)
 
     # Emit a concise snapshot log of current tags (critical so it is visible)
-    logger.critical("Current Tags %s", get_tags_snapshot())
+    # logger.critical("Current Tags %s", get_tags_snapshot())
     last_update = time.time()
 
 
@@ -566,9 +564,7 @@ def read_from_ntag213(reader, tag_uid: str):
     # to make sure the tag is really present/stable. This mirrors the interactive readers
     # that wait for a tag when writing/assigning missing tags.
     preselect_attempts = 3
-    preselect_timeout = (
-        1.0  # seconds, similar to tagwriter's interactive timeouts
-    )
+    preselect_timeout = 1.0  # seconds, similar to tagwriter's interactive timeouts
     uid_match = False
     for pre in range(preselect_attempts):
         try:
@@ -629,9 +625,7 @@ def read_from_ntag213(reader, tag_uid: str):
                     raise RuntimeError("ntag2xx_read_block returned None")
                 # Ensure we got a bytes-like object
                 if not isinstance(blk, (bytes, bytearray)) or len(blk) < 1:
-                    raise RuntimeError(
-                        f"Unexpected block data for block {i}: {blk}"
-                    )
+                    raise RuntimeError(f"Unexpected block data for block {i}: {blk}")
                 read_data.extend(blk)
                 success = True
 
@@ -656,9 +650,7 @@ def read_from_ntag213(reader, tag_uid: str):
 
                 break
             except Exception as e:
-                logger.debug(
-                    f"Attempt {attempt} failed reading NTAG213 block {i}: {e}"
-                )
+                logger.debug(f"Attempt {attempt} failed reading NTAG213 block {i}: {e}")
                 # On the first failure do a quick re-selection to ensure the tag is still present
                 if attempt == 1:
                     try:
@@ -756,9 +748,7 @@ def read_from_ntag213(reader, tag_uid: str):
                 )
                 return None
             else:
-                logger.info(
-                    f"New NTAG213 RFID tag created in DB: {last_created}"
-                )
+                logger.info(f"New NTAG213 RFID tag created in DB: {last_created}")
 
     return last_created
 
