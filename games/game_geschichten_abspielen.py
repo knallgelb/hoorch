@@ -110,12 +110,10 @@ def start():
         if not isinstance(player, RFIDTag):
             continue
 
-        file_path = base_path / pathlib.Path(
-            f"{player.rfid_tag}/{player.rfid_tag}.mp3"
-        )
+        file_path = base_path / pathlib.Path(f"{player.rfid_tag}/{player.rfid_tag}.mp3")
         if file_path.exists():
             audio.play_story(player)
-            audio.play_file("sounds", "page_turned_next_audio.mp3")
+            # audio.play_file("sounds", "page_turned_next_audio.mp3")
         else:
             # Du hast noch keine Geschichte aufgenommen!
             audio.play_full("TTS", 62)
