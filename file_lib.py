@@ -37,22 +37,20 @@ def load_all_tags() -> Dict[str, RFIDTag]:
 def get_tags_by_type(rfid_type: str) -> Dict[str, RFIDTag]:
     """Return a dictionary of RFIDTag objects filtered by rfid_type."""
     tags = get_all_rfid_tags()
-    filtered_tags = {
-        tag.rfid_tag: tag for tag in tags if tag.rfid_type == rfid_type
-    }
-    logger.debug(
-        f"Loaded {len(filtered_tags)} RFIDTag entries of type '{rfid_type}' from DB"
-    )
+    filtered_tags = {tag.rfid_tag: tag for tag in tags if tag.rfid_type == rfid_type}
+    # logger.debug(
+    #     f"Loaded {len(filtered_tags)} RFIDTag entries of type '{rfid_type}' from DB"
+    # )
     return filtered_tags
 
 
 def get_figure_from_database(rfid_tag: str) -> Optional[RFIDTag]:
     """Get RFIDTag by rfid_tag value."""
     tag = get_rfid_tag_by_id(rfid_tag)
-    if tag:
-        logger.debug(f"Found tag for RFID {rfid_tag}")
-    else:
-        logger.debug(f"No tag found for RFID {rfid_tag}")
+    # if tag:
+    #     logger.debug(f"Found tag for RFID {rfid_tag}")
+    # else:
+    #     logger.debug(f"No tag found for RFID {rfid_tag}")
     return tag
 
 
@@ -63,10 +61,10 @@ def get_all_figures_by_rfid_tag(rfid_tag: str) -> list[RFIDTag]:
     """
     # This requires a new CRUD function, e.g. get_all_rfid_tags_by_tag_id to fetch multiple entries
     tags = get_all_rfid_tags_by_tag_id(rfid_tag)
-    if tags:
-        logger.debug(f"Found {len(tags)} entries for RFID {rfid_tag}")
-    else:
-        logger.debug(f"No entries found for RFID {rfid_tag}")
+    # if tags:
+    #     logger.debug(f"Found {len(tags)} entries for RFID {rfid_tag}")
+    # else:
+    #     logger.debug(f"No entries found for RFID {rfid_tag}")
     return tags
 
 
