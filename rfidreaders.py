@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import board
 import busio
 import ndef
-from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_B
+from adafruit_pn532.adafruit_pn532 import MIFARE_CMD_AUTH_A, MIFARE_CMD_AUTH_B
 from adafruit_pn532.spi import PN532_SPI
 
 # import digitalio
@@ -79,7 +79,15 @@ read_continuously = True
 # Individual reader validity is tracked per-reader using `timer` and `tags`.
 # (global active_reader/active_round_end logic removed so multiple cards can be detected)
 
-auth_key = b"\xff\xff\xff\xff\xff\xff"
+KEY_CANDIDATES = [
+    (
+        MIFARE_CMD_AUTH_A,
+        b"\xd3\xf7\xd3\xf7\xd3\xf7",
+    ),  # oft NDEF auf Mifare Classic
+    (MIFARE_CMD_AUTH_A, b"\xff\xff\xff\xff\xff\xff"),
+    (MIFARE_CMD_AUTH_B, b"\xff\xff\xff\xff\xff\xff"),
+]
+
 
 # Optional hardware power control pins. If you have hardware switches / MOSFETs
 # to cut VCC for each PN532, populate this list with DigitalInOut(board.DX)
@@ -134,6 +142,11 @@ def temporary_tag_memory(seconds: float):
 # all subsequent detections in that same round use the same expiry time so
 # tags share a common validity window.
 round_window_end = 0.0
+
+# Wenn eine Mifare-Karte auf einem Reader erkannt wurde, fokussieren wir
+# weitere Leseversuche auf genau diesen Reader, bis die Karte erfolgreich
+# eingelesen wurde oder nicht mehr präsent ist.
+focused_reader_index = None
 
 # Ensure readers list exists and will be lazily initialized (None = not powered/created)
 
@@ -267,35 +280,37 @@ def init():
             except Exception as e:
                 logger.debug("Could not configure power pin %d: %s", idx, e)
 
-    logger.debug("SPI initialized; readers will be initialized on-demand per round")
+    logger.debug(
+        "SPI initialized; readers will be initialized on-demand per round"
+    )
 
     # Start the read loop
     continuous_read()
 
 
 def extract_mifare_card(reader, tag_uid):
-    read_data = read_ndef_blocks(reader, tag_uid, start_block=4, num_blocks=4)
-    if read_data is None:
-        print("Failed to read NDEF data blocks.")
-        return
+    for attempt in range(3):
+        read_data = read_ndef_blocks(reader, tag_uid, start_block=4)
+        if read_data is not None:
+            ndef_payload = extract_ndef_payload(read_data)
+            if ndef_payload is None:
+                print("No NDEF payload found in data.")
+                return None
 
-    ndef_payload = extract_ndef_payload(read_data)
+            try:
+                ndef_messages = list(ndef.message_decoder(ndef_payload))
+                text_messages = [
+                    msg.text for msg in ndef_messages if hasattr(msg, "text")
+                ]
+                return text_messages
+            except Exception as e:
+                print("Error decoding NDEF message:", e)
+                return None
 
-    if ndef_payload is None:
-        print("No NDEF payload found in data.")
-        # return None
+        time.sleep(0.05)
 
-    try:
-        ndef_messages = list(ndef.message_decoder(ndef_payload))
-        text_messages = list(
-            map(
-                lambda x: x.text,
-                filter(lambda x: hasattr(x, "text"), ndef_messages),
-            )
-        )
-        return text_messages
-    except Exception as e:
-        print("Error decoding NDEF message:", e)
+    print("Failed to read NDEF data blocks after retries.")
+    return None
 
 
 def do_scan_cycle():
@@ -310,10 +325,20 @@ def do_scan_cycle():
     # Readers are allowed to report tags in the same round; we track validity per reader
     # via `tag_timer` and `tags` rather than using a single global active reader lock.
     now = time.time()
-    global last_update
+    global last_update, focused_reader_index
+
+    if focused_reader_index is not None and (
+        focused_reader_index < 0 or focused_reader_index >= len(reader_pins)
+    ):
+        focused_reader_index = None
+
+    if focused_reader_index is not None:
+        reader_indices = [focused_reader_index]
+    else:
+        reader_indices = list(range(len(reader_pins)))
 
     # Iterate over reader indices and perform a single power-cycle read per reader.
-    for index in range(len(reader_pins)):
+    for index in reader_indices:
         # Clear stale tag for this reader if its tag memory expired
         if tags[index] is not None and tag_timer[index] < time.time():
             # Protect changes with the lock so readers/games seeing tags get a consistent view
@@ -328,11 +353,14 @@ def do_scan_cycle():
         if r is None:
             # Could not initialize; skip and ensure it's powered down
             shutdown_reader(index)
+            if focused_reader_index == index:
+                focused_reader_index = None
             continue
 
         mifare = False
         ntag213 = False
         tag_name = None
+        tag_uid = None
 
         try:
             # Increase robustness: deselect other readers' CS, select this reader's CS,
@@ -349,7 +377,6 @@ def do_scan_cycle():
             except Exception:
                 pass
 
-            tag_uid = None
             max_attempts = 3
             for attempt in range(1, max_attempts + 1):
                 try:
@@ -371,6 +398,8 @@ def do_scan_cycle():
         except Exception as e:
             # On read/setup error skip this reader iteration
             shutdown_reader(index)
+            if focused_reader_index == index:
+                focused_reader_index = None
             continue
 
         if tag_uid:
@@ -388,6 +417,11 @@ def do_scan_cycle():
             # Lookup in database
             tag_name = file_lib.get_all_figures_by_rfid_tag(id_readable)
 
+            # Nur neue Mifare-Karten ohne DB-Eintrag auf diesen Reader fokussieren,
+            # bis das eigentliche Einlesen erfolgreich war oder die Karte entfernt wurde.
+            if mifare and not tag_name:
+                focused_reader_index = index
+
             if not tag_name:
                 if mifare:
                     tag_name = read_from_mifare(r, tag_uid)
@@ -399,7 +433,15 @@ def do_scan_cycle():
                 if tag_name == "#error#":
                     # On error, do not set any timers; shutdown and continue
                     shutdown_reader(index)
+                    if focused_reader_index == index:
+                        focused_reader_index = None
                     continue
+
+            if mifare and tag_name is not None:
+                focused_reader_index = None
+        else:
+            if focused_reader_index == index:
+                focused_reader_index = None
 
         # Update tag storage/timers. If no tag and previous tag_timer expired, clear.
         if tag_name is None and tag_timer[index] < time.time():
@@ -564,7 +606,9 @@ def read_from_ntag213(reader, tag_uid: str):
     # to make sure the tag is really present/stable. This mirrors the interactive readers
     # that wait for a tag when writing/assigning missing tags.
     preselect_attempts = 3
-    preselect_timeout = 1.0  # seconds, similar to tagwriter's interactive timeouts
+    preselect_timeout = (
+        1.0  # seconds, similar to tagwriter's interactive timeouts
+    )
     uid_match = False
     for pre in range(preselect_attempts):
         try:
@@ -625,7 +669,9 @@ def read_from_ntag213(reader, tag_uid: str):
                     raise RuntimeError("ntag2xx_read_block returned None")
                 # Ensure we got a bytes-like object
                 if not isinstance(blk, (bytes, bytearray)) or len(blk) < 1:
-                    raise RuntimeError(f"Unexpected block data for block {i}: {blk}")
+                    raise RuntimeError(
+                        f"Unexpected block data for block {i}: {blk}"
+                    )
                 read_data.extend(blk)
                 success = True
 
@@ -650,7 +696,9 @@ def read_from_ntag213(reader, tag_uid: str):
 
                 break
             except Exception as e:
-                logger.debug(f"Attempt {attempt} failed reading NTAG213 block {i}: {e}")
+                logger.debug(
+                    f"Attempt {attempt} failed reading NTAG213 block {i}: {e}"
+                )
                 # On the first failure do a quick re-selection to ensure the tag is still present
                 if attempt == 1:
                     try:
@@ -748,7 +796,9 @@ def read_from_ntag213(reader, tag_uid: str):
                 )
                 return None
             else:
-                logger.info(f"New NTAG213 RFID tag created in DB: {last_created}")
+                logger.info(
+                    f"New NTAG213 RFID tag created in DB: {last_created}"
+                )
 
     return last_created
 
@@ -815,24 +865,47 @@ def extract_ndef_payload(data):
     return None
 
 
-def read_ndef_blocks(reader, uid, start_block=4, num_blocks=4):
+def authenticate_sector(reader, uid, block_in_sector):
+    for auth_cmd, key in KEY_CANDIDATES:
+        try:
+            if reader.mifare_classic_authenticate_block(
+                uid, block_in_sector, auth_cmd, key
+            ):
+                return auth_cmd, key
+        except Exception:
+            pass
+        time.sleep(0.02)
+    return None, None
+
+
+def read_ndef_blocks(reader, uid, start_block=4):
     """
-    Liest num_blocks hintereinander ab start_block aus.
-    Authentifiziert vorher jeden Block.
+    Liest nur die Datenblöcke des Sektors (4,5,6), nicht den Trailer 7.
     """
-    data = bytearray()
-    for blk in range(start_block, start_block + num_blocks):
-        authenticated = reader.mifare_classic_authenticate_block(
-            uid, blk, MIFARE_CMD_AUTH_B, auth_key
+    time.sleep(0.03)  # kleine Pause nach read_passive_target()
+
+    auth_cmd, key = authenticate_sector(reader, uid, start_block)
+    if key is None:
+        print(
+            f"Authentication failed for sector starting at block {start_block}"
         )
-        if not authenticated:
-            print(f"Authentication failed for block {blk}")
-            return None
+        return None
+
+    data = bytearray()
+
+    for blk in (4, 5, 6):
         blk_data = reader.mifare_classic_read_block(blk)
         if blk_data is None:
             print(f"Reading block {blk} failed")
             return None
+
         data.extend(blk_data)
+
+        if 0xFE in blk_data:
+            break
+
+        time.sleep(0.01)
+
     return data
 
 
