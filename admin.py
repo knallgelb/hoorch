@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import re
+import shutil
 import subprocess
 import time
 
@@ -165,11 +166,11 @@ def archive_stories():
         if os.path.isdir(figure_dir + folder):
             if folder + ".mp3" in os.listdir(figure_dir + folder + "/"):
                 now = datetime.datetime.now()
-                os.rename(
+                shutil.copy2(
                     f"{figure_dir}{folder}/{folder}.mp3",
                     f"{figure_dir}{folder}/{folder}-{now:%Y-%m-%d-%H-%M}.mp3",
                 )
-                print(folder + ".mp3 put into archive")
+                print(folder + ".mp3 copied into archive")
             else:
                 print(folder + "-stories already in archive")
 
