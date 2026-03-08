@@ -1,9 +1,10 @@
-from sqlmodel import Session, select, and_
 from pathlib import Path
 
-from database import get_db, engine
-from models import Usage, RFIDTag
+from sqlmodel import Session, and_, select
+
+from database import engine, get_db
 from logger_util import get_logger
+from models import RFIDTag, Usage
 
 logger = get_logger(__name__, "logs/crud.log")
 
@@ -233,6 +234,15 @@ def delete_rfid_tag_by_id(
     db.delete(tag)
     db.commit()
     logger.debug(f"Deleted RFIDTag: {rfid_tag_id}")
+    return True
+
+
+def delete_all_rfid_tags(db: Session = next(get_db())) -> bool:
+    tags = db.exec(select(RFIDTag)).all()
+    for tag in tags:
+        db.delete(tag)
+    db.commit()
+    logger.debug(f"Deleted RFIDTags")
     return True
 
 

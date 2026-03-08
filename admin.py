@@ -36,7 +36,9 @@ file_handler = logging.FileHandler("logs/admin.log")
 file_handler.setLevel(logging.DEBUG)
 
 # Formatter erstellen und zu den Handlern hinzufügen
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
@@ -62,7 +64,9 @@ def main():
     ip_adress = get_ip_address()
     audio.espeaker(ip_adress)
 
-    subprocess.run(["git", "remote", "update"], stdout=subprocess.PIPE, check=False)
+    subprocess.run(
+        ["git", "remote", "update"], stdout=subprocess.PIPE, check=False
+    )
     git_status = subprocess.run(
         ["git", "status", "-uno"], stdout=subprocess.PIPE, check=False
     ).stdout.decode("utf-8")
@@ -176,6 +180,7 @@ def new_set():
     translator = Translator(locale="de")
     print("delete figure_db.txt, restart hoorch")
     tagwriter.delete_all_sets()
+    crud.delete_all_rfid_tags()
     audio.espeaker(translator.translate("admin.db_deleted"))
     os.system("reboot")
 
@@ -279,7 +284,9 @@ def git():
 
     # If we get here, the update succeeded
     audio.espeaker(translator.translate("admin.update_complete"))
-    logger.info("Git update finished successfully. Waiting briefly before reboot.")
+    logger.info(
+        "Git update finished successfully. Waiting briefly before reboot."
+    )
 
     # Ensure filesystem is synced and give some time for operations to settle
     try:
@@ -365,14 +372,18 @@ def wifi():
         if state == "HOTSPOT":
             audio.espeaker(translator.translate("admin.no_internet"))
             audio.espeaker(
-                translator.translate("admin.hotspot_instructions", hostname=hostname)
+                translator.translate(
+                    "admin.hotspot_instructions", hostname=hostname
+                )
             )
             audio.espeaker(translator.translate("admin.set_wifi_password"))
 
         # connected to a wifi
         elif state == "CONNECTED":
             audio.espeaker(
-                translator.translate("admin.wifi_connected", connection=connection)
+                translator.translate(
+                    "admin.wifi_connected", connection=connection
+                )
             )
             ip_adress = get_ip_address()
             print(ip_adress)
@@ -393,7 +404,9 @@ def wifi():
 
                 elif file_lib.check_tag_attribute(
                     rfidreaders.tags, "NEIN", "name"
-                ) or file_lib.check_tag_attribute(rfidreaders.tags, "ENDE", "name"):
+                ) or file_lib.check_tag_attribute(
+                    rfidreaders.tags, "ENDE", "name"
+                ):
                     break
 
         # connecting
