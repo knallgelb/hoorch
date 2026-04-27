@@ -6,6 +6,7 @@ import os
 import threading
 import time
 from contextlib import contextmanager
+from enum import Enum
 
 # import unicodedata
 import board
@@ -105,6 +106,33 @@ last_update = None
 display_active_leds = True
 
 
+class ReaderInitLedColor(Enum):
+    INITIALIZING = (0, 0, 255)  # Blau
+    OK = (0, 255, 0)  # Grün
+    ERROR = (255, 0, 0)  # Rot
+
+
+reader_init_status = ["unknown"] * len(reader_pins)
+display_reader_init_status = True
+reader_init_status_already_shown = [False] * len(reader_pins)
+
+READER_INIT_LED_DELAY = 0.15
+
+
+def _show_reader_init_status(index, color: ReaderInitLedColor):
+    """Show LED status for the first initialization/self-test of a reader."""
+    if not display_reader_init_status:
+        return
+
+    led_number = index + 1
+
+    try:
+        leds.switch_on_with_color(led_number, color.value)
+        time.sleep(READER_INIT_LED_DELAY)
+    except Exception as e:
+        logger.debug("Could not show init LED status for reader %d: %s", index + 1, e)
+
+
 # API to set/get and temporarily override tag memory per game.
 # Games can call `rfidreaders.set_tag_memory_seconds(...)` to set a global value,
 # or use the context manager `temporary_tag_memory(...)` to set it temporarily
@@ -166,29 +194,43 @@ def _power_set(index, enable: bool):
 def init_reader(index):
     """Power-on and initialize a single PN532 reader. Returns the reader or None."""
     global spi
-    # Power on (if available) and give time for regulator/IC to stabilize
+
+    show_first_init_status = not reader_init_status_already_shown[index]
+
+    if show_first_init_status:
+        reader_init_status[index] = "initializing"
+        _show_reader_init_status(index, ReaderInitLedColor.INITIALIZING)
+
     _power_set(index, True)
     time.sleep(power_on_delay)
 
     try:
-        # Ensure CS is deselected initially
         reader_pins[index].value = True
     except Exception:
         pass
 
     try:
-        # Create PN532 instance for this reader
         reader = PN532_SPI(spi, reader_pins[index], debug=False)
-        # Access firmware_version to ensure device responds
         _ = reader.firmware_version
         reader.SAM_configuration()
         time.sleep(post_init_delay)
         readers[index] = reader
+
+        reader_init_status[index] = "ok"
+        if show_first_init_status:
+            _show_reader_init_status(index, ReaderInitLedColor.OK)
+            reader_init_status_already_shown[index] = True
+
         logger.info("Initialized and configured RFID/NFC reader %d", index + 1)
         return reader
+
     except Exception as e:
+        reader_init_status[index] = "error"
+        if show_first_init_status:
+            _show_reader_init_status(index, ReaderInitLedColor.ERROR)
+            reader_init_status_already_shown[index] = True
+
         logger.error("Could not initialize RFID reader %d: %s", index + 1, e)
-        # If init failed, power off to avoid leaving it on in a bad state
         _power_set(index, False)
         readers[index] = None
         return None
@@ -280,9 +322,7 @@ def init():
             except Exception as e:
                 logger.debug("Could not configure power pin %d: %s", idx, e)
 
-    logger.debug(
-        "SPI initialized; readers will be initialized on-demand per round"
-    )
+    logger.debug("SPI initialized; readers will be initialized on-demand per round")
 
     # Start the read loop
     continuous_read()
@@ -606,9 +646,7 @@ def read_from_ntag213(reader, tag_uid: str):
     # to make sure the tag is really present/stable. This mirrors the interactive readers
     # that wait for a tag when writing/assigning missing tags.
     preselect_attempts = 3
-    preselect_timeout = (
-        1.0  # seconds, similar to tagwriter's interactive timeouts
-    )
+    preselect_timeout = 1.0  # seconds, similar to tagwriter's interactive timeouts
     uid_match = False
     for pre in range(preselect_attempts):
         try:
@@ -669,9 +707,7 @@ def read_from_ntag213(reader, tag_uid: str):
                     raise RuntimeError("ntag2xx_read_block returned None")
                 # Ensure we got a bytes-like object
                 if not isinstance(blk, (bytes, bytearray)) or len(blk) < 1:
-                    raise RuntimeError(
-                        f"Unexpected block data for block {i}: {blk}"
-                    )
+                    raise RuntimeError(f"Unexpected block data for block {i}: {blk}")
                 read_data.extend(blk)
                 success = True
 
@@ -696,9 +732,7 @@ def read_from_ntag213(reader, tag_uid: str):
 
                 break
             except Exception as e:
-                logger.debug(
-                    f"Attempt {attempt} failed reading NTAG213 block {i}: {e}"
-                )
+                logger.debug(f"Attempt {attempt} failed reading NTAG213 block {i}: {e}")
                 # On the first failure do a quick re-selection to ensure the tag is still present
                 if attempt == 1:
                     try:
@@ -796,9 +830,7 @@ def read_from_ntag213(reader, tag_uid: str):
                 )
                 return None
             else:
-                logger.info(
-                    f"New NTAG213 RFID tag created in DB: {last_created}"
-                )
+                logger.info(f"New NTAG213 RFID tag created in DB: {last_created}")
 
     return last_created
 
@@ -886,9 +918,7 @@ def read_ndef_blocks(reader, uid, start_block=4):
 
     auth_cmd, key = authenticate_sector(reader, uid, start_block)
     if key is None:
-        print(
-            f"Authentication failed for sector starting at block {start_block}"
-        )
+        print(f"Authentication failed for sector starting at block {start_block}")
         return None
 
     data = bytearray()
