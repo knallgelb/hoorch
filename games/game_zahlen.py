@@ -63,6 +63,7 @@ def player_action(
     logger.debug(
         f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}"
     )
+    rfidreaders.reset_tags()
     expected_value = random.choice(numeric_tags)
     game_utils.announce(90 + int(expected_value.name))  # Zahlen
 

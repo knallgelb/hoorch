@@ -909,6 +909,22 @@ def read_ndef_blocks(reader, uid, start_block=4):
     return data
 
 
+def reset_tags():
+    """Clear all remembered RFID tags and tag memory timers."""
+    global last_update, round_window_end, focused_reader_index
+
+    with tags_lock:
+        tags[:] = [None] * len(reader_pins)
+        tag_timer[:] = [0] * len(reader_pins)
+        led_timer[:] = [0] * len(reader_pins)
+
+    round_window_end = 0.0
+    focused_reader_index = None
+
+    # Force the next get_tags_snapshot(trigger_scan=True) to scan immediately.
+    last_update = 0
+
+
 # Start the script
 if __name__ == "__main__":
     file_lib.read_database_files()
