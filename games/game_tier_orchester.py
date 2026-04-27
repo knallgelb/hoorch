@@ -45,9 +45,7 @@ def start():
         pygame.mixer.set_num_channels(6)
 
         for s in range(0, 6):
-            phones.append(
-                pygame.mixer.Sound("data/phonie/00" + str(s + 1) + ".ogg")
-            )
+            phones.append(pygame.mixer.Sound("data/phonie/00" + str(s + 1) + ".ogg"))
             phones[s].set_volume(0)
     else:
         pygame.mixer.unpause()
@@ -98,6 +96,7 @@ def start():
                 found_animals[i] = sound_path
                 phones[i] = pygame.mixer.Sound(sound_path)
                 phones[i].set_volume(0.05)
+                phones[i].play(loops=-1)
                 leds_position = i + 1
                 leds.switch_on_with_color(leds_position, (255, 255, 0))
 
