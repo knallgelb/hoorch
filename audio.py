@@ -253,7 +253,10 @@ def play_story(figure_id):
 def kill_sounds():
     """Stop all playing sounds by killing `play` processes."""
     logger.info("Stopping all sounds.")
-    subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
+    try:
+        subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
+    except Exception as e:
+        logger.debug("Could not kill sounds: %s", e)
 
 
 def file_is_playing(audiofile: str) -> bool:
