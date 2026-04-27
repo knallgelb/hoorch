@@ -110,12 +110,6 @@ def start():
             leds.reset()
             return
 
-        for i, p in enumerate(phones):
-            if not playing_animals[i]:
-                p.set_volume(0)
-                continue
-            p.play()
-
     time.sleep(0.2)
     leds.blinker()
     leds.reset()
