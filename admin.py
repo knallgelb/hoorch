@@ -59,9 +59,9 @@ def main():
     # 2 minutes until exit if no user interaction occurs
     admin_exit_counter = time.time() + 122
 
-    audio.espeaker(translator.translate("admin.admin_menu"))
+    audio.play_file("TTS", translator.translate("admin.admin_menu"))
 
-    audio.espeaker(translator.translate("admin.ip_address"))
+    audio.play_file("TTS", translator.translate("admin.ip_address"))
     ip_adress = get_ip_address()
     audio.espeaker(ip_adress)
 
@@ -72,14 +72,14 @@ def main():
         ["git", "status", "-uno"], stdout=subprocess.PIPE, check=False
     ).stdout.decode("utf-8")
     if "behind" in git_status:
-        audio.espeaker(translator.translate("admin.update_available"))
+        audio.play_file("TTS", translator.translate("admin.update_available"))
 
-    audio.espeaker(translator.translate("admin.use_number_cards"))
-    audio.espeaker(translator.translate("admin.update_software"))
-    audio.espeaker(translator.translate("admin.wifi_configuration"))
-    audio.espeaker(translator.translate("admin.delete_figures"))
-    audio.espeaker(translator.translate("admin.archive_stories"))
-    audio.espeaker(translator.translate("admin.end_tag"))
+    audio.play_file("TTS", translator.translate("admin.use_number_cards"))
+    audio.play_file("TTS", translator.translate("admin.update_software"))
+    audio.play_file("TTS", translator.translate("admin.wifi_configuration"))
+    audio.play_file("TTS", translator.translate("admin.delete_figures"))
+    audio.play_file("TTS", translator.translate("admin.archive_stories"))
+    audio.play_file("TTS", translator.translate("admin.end_tag"))
 
     while admin_exit_counter > time.time():
         # use a consistent snapshot of tags for this loop iteration
@@ -153,7 +153,7 @@ def main():
         if breaker:
             break
 
-    audio.espeaker(translator.translate("admin.admin_menu_end"))
+    audio.play_file("TTS", translator.translate("admin.admin_menu_end"))
 
 
 def archive_stories():
@@ -174,7 +174,7 @@ def archive_stories():
             else:
                 print(folder + "-stories already in archive")
 
-    audio.espeaker(translator.translate("admin.archive_complete"))
+    audio.play_file("TTS", translator.translate("admin.archive_complete"))
 
 
 def new_set():
@@ -182,7 +182,7 @@ def new_set():
     print("delete figure_db.txt, restart hoorch")
     tagwriter.delete_all_sets()
     crud.delete_all_rfid_tags()
-    audio.espeaker(translator.translate("admin.db_deleted"))
+    audio.play_file("TTS", translator.translate("admin.db_deleted"))
     os.system("reboot")
 
 
@@ -218,12 +218,12 @@ def git():
 
     if not has_internet():
         # No general internet connectivity detected; inform user and don't attempt update.
-        audio.espeaker(translator.translate("admin.wifi_disconnected"))
-        audio.espeaker(translator.translate("admin.open_wifi_config"))
+        audio.play_file("TTS", translator.translate("admin.wifi_disconnected"))
+        audio.play_file("TTS", translator.translate("admin.open_wifi_config"))
         return
 
     # We have internet -> proceed with update
-    audio.espeaker(translator.translate("admin.updating"))
+    audio.play_file("TTS", translator.translate("admin.updating"))
 
     # Execute git commands and capture output so we can log them.
     try:
@@ -284,7 +284,7 @@ def git():
         return
 
     # If we get here, the update succeeded
-    audio.espeaker(translator.translate("admin.update_complete"))
+    audio.play_file("TTS", translator.translate("admin.update_complete"))
     logger.info(
         "Git update finished successfully. Waiting briefly before reboot."
     )
@@ -325,8 +325,8 @@ def wifi():
 
     if "yes" in rfkill_output:
         # wifi blocked / off
-        audio.espeaker(translator.translate("admin.wifi_off"))
-        audio.espeaker(translator.translate("admin.wifi_turn_on"))
+        audio.play_file("TTS", translator.translate("admin.wifi_off"))
+        audio.play_file("TTS", translator.translate("admin.wifi_turn_on"))
 
         while True:
             if file_lib.check_tag_attribute(rfidreaders.tags, "JA", "name"):
@@ -340,7 +340,7 @@ def wifi():
                 print(ip_adress)
 
                 audio.espeaker(translator.translate("admin.wifi_on"))
-                audio.espeaker(translator.translate("admin.ip_address"))
+                audio.play_file("TTS", translator.translate("admin.ip_address"))
                 audio.espeaker(ip_adress)
 
                 break
@@ -391,7 +391,7 @@ def wifi():
 
             # say adress twice
             for i in range(2):
-                audio.espeaker(translator.translate("admin.ip_address"))
+                audio.play_file("TTS", translator.translate("admin.ip_address"))
                 audio.espeaker(ip_adress)
             time.sleep(2)
 
