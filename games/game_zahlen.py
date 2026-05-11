@@ -15,20 +15,25 @@ from models import RFIDTag
 
 logger = get_logger(__name__, "logs/game_zahlen.log")
 
+active_players = []
+
 
 def start():
+    global active_players
     defined_figures = file_lib.get_tags_by_type("figures")
     game_utils.announce(202)
-    game_utils.announce(86)
+    game_utils.announce(5)
     rfidreaders.display_active_leds = False
-    game_utils.wait_for_figure_placement((1, 3, 5))
+    game_utils.wait_for_figure_placement((1, 2, 3, 4, 5, 6))
     time.sleep(3.0)
 
-    rfid_position = [1, 3, 5]
+    rfid_position = [1, 2, 3, 4, 5, 6]
 
     players = game_utils.filter_players_on_fields(
         rfidreaders.get_tags_snapshot(True), rfid_position, defined_figures
     )
+
+    active_players = copy.deepcopy(players)
 
     figure_count = sum(p is not None for p in players)
 
@@ -63,15 +68,19 @@ def player_action(
     logger.debug(
         f"Numeric tags types before random choice: {[type(tag) for tag in numeric_tags]}"
     )
+    global active_players
     rfidreaders.reset_tags()
+
+    leds.reset()
+    player_index = active_players.index(player) + 1
+    game_utils.leds_switch_index_on_with_color(player_index, color=(0, 255, 0))
+
     expected_value = random.choice(numeric_tags)
     game_utils.announce(90 + int(expected_value.name))  # Zahlen
 
     total_wait_seconds = 6.0
     start_time = time.time()
 
-    leds.reset()
-    game_utils.leds_switch_on_with_color(player=player, color=(0, 255, 0))
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = []
