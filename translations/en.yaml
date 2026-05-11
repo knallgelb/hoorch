@@ -23,6 +23,7 @@ en:
     speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
     speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
     speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
+    speed_set: "296.mp3" # Geschwindigkeit gesetzt
     wifi_already_on: "WeiFei is already on."
     no_internet: "No internet connection."
     hotspot_instructions: "Connect your phone to the hotspot named {hostname}. Then open {hostname}.local in your browser."

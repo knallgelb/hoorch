@@ -442,7 +442,9 @@ def set_round_default_duration(seconds: float) -> None:
 
 
 def set_round_default_speed(speed: RoundDefaultSpeed) -> None:
+    translator = Translator(locale="de")
     set_round_default_duration(speed.value)
+    audio.play_file("TTS", translator.translate("admin.speed_set"))
 
 
 if __name__ == "__main__":
