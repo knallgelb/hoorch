@@ -265,7 +265,7 @@ def play_rounds(players, num_rounds, player_action) -> dict:
         audio.play_file("TTS", "059.mp3")
         return dict()
 
-    audio.play_file("TTS", f"00{5 + players_length}.mp3")
+    audio.play_file("TTS", f"{5 + players_length:03d}.mp3")
 
     for round_num in range(1, num_rounds + 1):
         # audio.espeaker(f"Starte Runde {round_num}...")
@@ -318,3 +318,13 @@ def leds_switch_on_with_color(
     except Exception:
         # fall back to a visible error pattern if lookup fails
         leds.blinker()
+
+
+def leds_switch_index_on_with_color(
+    index: int, color: tuple[int, int, int]
+) -> None:
+    if not index:
+        return
+
+    if 1 <= index <= 6:
+        leds.switch_on_with_color(index, color=color)
