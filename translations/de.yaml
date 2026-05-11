@@ -1,6 +1,6 @@
 de:
   admin:
-    admin_menu: "76.mp3" # "Sie befinden sich im Admin-Menü."
+    admin_menu: "276.mp3" # "Sie befinden sich im Admin-Menü."
     update_available: "277.mp3" # "Es ist ein Update verfügbar."
     use_number_cards: "295.mp3" # "Verwenden Sie die Zahlenkarten um Einstellungen vorzunehmen."
     update_software: "278.mp3" # "1 - Software aktualisieren."
