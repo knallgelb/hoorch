@@ -19,7 +19,7 @@ ar:
     wifi_turn_on: "هل يجب علي تشغيله؟"
     wifi_starting: "يتم تشغيل WeiFei. قد يستغرق ذلك لحظة."
     wifi_on: "WeiFei قيد التشغيل."
-    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    ip_address: "294.mp3" # "Die IP-Adresse lautet"
     speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
     speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
     speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell

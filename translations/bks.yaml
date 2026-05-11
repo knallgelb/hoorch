@@ -19,7 +19,7 @@ bks:
     wifi_turn_on: "Da li da ga uključim?"
     wifi_starting: "WeiFei se pokreće. Ovo može potrajati trenutak."
     wifi_on: "WeiFei je uključen."
-    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    ip_address: "294.mp3" # "Die IP-Adresse lautet"
     speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
     speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
     speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
