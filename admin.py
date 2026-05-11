@@ -7,8 +7,10 @@ import re
 import shutil
 import subprocess
 import time
+from enum import Enum
 
 import dbus
+import dotenv
 
 import audio
 import crud
@@ -19,6 +21,13 @@ from games.game_utils import check_end_tag
 from i18n import Translator
 from models import RFIDTag
 from utils.netutils import has_internet
+
+
+class RoundDefaultSpeed(Enum):
+    SLOW = 8.0
+    NORMAL = 6.0
+    FAST = 4.0
+
 
 # Erstelle das Verzeichnis 'logs', falls es nicht existiert
 if not os.path.exists("logs"):
@@ -416,6 +425,20 @@ def wifi():
             time.sleep(2)
 
     audio.espeaker(translator.translate("wifi_config_done"))
+
+
+def set_round_default_duration(seconds: float) -> None:
+    dotenv_file = ".env"
+    dotenv.set_key(
+        dotenv_file,
+        "ROUND_DEFAULT_DURATION",
+        str(seconds),
+        quote_mode="never",
+    )
+
+
+def set_round_default_speed(speed: RoundDefaultSpeed) -> None:
+    set_round_default_duration(speed.value)
 
 
 if __name__ == "__main__":
