@@ -19,7 +19,10 @@ uk:
     wifi_turn_on: "Увімкнути його?"
     wifi_starting: "WeiFei запускається. Це може зайняти деякий час."
     wifi_on: "WeiFei увімкнений."
-    ip_address: "IP-адреса:"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei вже увімкнений."
     no_internet: "Немає з'єднання з інтернетом."
     hotspot_instructions: "Підключіться до точки доступу з ім'ям {hostname} на вашому телефоні. Потім відкрийте {hostname}.local у браузері."

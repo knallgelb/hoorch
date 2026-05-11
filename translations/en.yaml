@@ -19,7 +19,10 @@ en:
     wifi_turn_on: "Should I turn it on?"
     wifi_starting: "WeiFei is starting. This may take a moment."
     wifi_on: "WeiFei is on."
-    ip_address: "The IP address is"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei is already on."
     no_internet: "No internet connection."
     hotspot_instructions: "Connect your phone to the hotspot named {hostname}. Then open {hostname}.local in your browser."

@@ -19,7 +19,10 @@ fa:
     wifi_turn_on: "آیا آن را روشن کنم؟"
     wifi_starting: "WeiFei در حال راه‌اندازی است. این ممکن است لحظه‌ای طول بکشد."
     wifi_on: "WeiFei روشن است."
-    ip_address: "آدرس IP به این صورت است"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei قبلاً روشن شده است."
     no_internet: "اتصال به اینترنت وجود ندارد."
     hotspot_instructions: "با گوشی خود به هات‌اسپات با نام {hostname} متصل شوید. سپس {hostname}.local را در مرورگر باز کنید."

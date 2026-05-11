@@ -19,7 +19,10 @@ tr:
     wifi_turn_on: "Açmamı ister misin?"
     wifi_starting: "WeiFei başlatılıyor. Bu bir an sürebilir."
     wifi_on: "WeiFei açık."
-    ip_address: "IP adresi:"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei zaten açık."
     no_internet: "İnternete bağlanılamadı."
     hotspot_instructions: "Telefonunuzdan {hostname} adlı hotspot'a bağlanın. Ardından tarayıcınızda {hostname}.local açın."

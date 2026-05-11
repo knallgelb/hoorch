@@ -19,7 +19,10 @@ bks:
     wifi_turn_on: "Da li da ga uključim?"
     wifi_starting: "WeiFei se pokreće. Ovo može potrajati trenutak."
     wifi_on: "WeiFei je uključen."
-    ip_address: "IP adresa je"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei je već uključen."
     no_internet: "Nema internetske veze."
     hotspot_instructions: "Povežite se sa hotspotom pod nazivom {hostname} na vašem telefonu. Zatim otvorite {hostname}.local u pretraživaču."

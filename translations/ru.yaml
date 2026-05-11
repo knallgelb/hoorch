@@ -19,7 +19,10 @@ ru:
     wifi_turn_on: "Включить его?"
     wifi_starting: "WeiFei запускается. Это может занять немного времени."
     wifi_on: "WeiFei включен."
-    ip_address: "IP-адрес:"
+    ip_address: "294.mp4" # "Die IP-Adresse lautet"
+    speed_normal: "282.mp3" # 5 - Geschwindingkeit normal
+    speed_slow: "283.mp3" # 6 - Geschwindingkeit langsam
+    speed_fast: "284.mp3" # 7 - Geschwindingkeit schnell
     wifi_already_on: "WeiFei уже включен."
     no_internet: "Нет подключения к интернету."
     hotspot_instructions: "Подключитесь к точке доступа с именем {hostname} на вашем телефоне. Затем откройте {hostname}.local в браузере."
