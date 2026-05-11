@@ -1,7 +1,10 @@
 import copy
+import os
 import random
 import time
 from typing import List
+
+from dotenv import load_dotenv
 
 import audio
 import crud
@@ -78,9 +81,9 @@ def player_action(
     expected_value = random.choice(numeric_tags)
     game_utils.announce(90 + int(expected_value.name))  # Zahlen
 
-    total_wait_seconds = 6.0
+    waiting_cycles = round(float(os.getenv("ROUND_DEFAULT_DURATION", "6")) * 1)
+    total_wait_seconds = waiting_cycles
     start_time = time.time()
-
 
     while time.time() - start_time < total_wait_seconds:
         relevant_tags = []
