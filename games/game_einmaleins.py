@@ -2,8 +2,11 @@
 # -*- coding: UTF8 -*-
 
 import copy
+import os
 import random
 import time
+
+from dotenv import load_dotenv
 
 import crud
 import file_lib
@@ -11,6 +14,9 @@ import leds
 import models
 import rfidreaders
 from logger_util import get_logger
+
+dotenv_path = "/home/pi/hoorch/.env"
+load_dotenv(dotenv_path, override=True)
 
 from .game_utils import (
     announce,
@@ -85,11 +91,28 @@ def start():
             announce(88)  # "times"
             announce(90 + num2)  # second number
 
-            blink_led(leds_position, times=6, on_time=1.0, off_time=1.0)
+            waiting_cycles = round(
+                float(os.getenv("ROUND_DEFAULT_DURATION", "6")) * 1.3
+            )
 
-            # Check solution
-            player_solution = get_solution_from_tags(i, player)
-            if int(player_solution) == solution:
+            start_time = time.time()
+            is_correct = False
+            player_solution = "00"
+
+            while time.time() - start_time < waiting_cycles:
+                player_solution = get_solution_from_tags(i, player)
+
+                if int(player_solution) == solution:
+                    is_correct = True
+                    break
+
+                # Während der Wartezeit weiter blinken, aber nicht blockierend warten
+                leds.switch_on_with_color(leds_position, (0, 255, 0))
+                time.sleep(0.15)
+                leds.switch_on_with_color(leds_position, (0, 0, 0))
+                time.sleep(0.15)
+
+            if is_correct:
                 announce(27)
                 leds.switch_on_with_color(leds_position, (50, 255, 50))
                 points[i] += 1
@@ -100,6 +123,7 @@ def start():
                 announce(268)
                 announce(90 + int(player_solution))
                 leds.switch_on_with_color(leds_position, (255, 0, 0))
+
             time.sleep(0.3)
 
     # Announce scores
