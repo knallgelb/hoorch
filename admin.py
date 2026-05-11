@@ -137,13 +137,13 @@ def main():
                 admin_exit_counter = time.time() + 120
             elif op == 5:
                 set_round_default_speed(RoundDefaultSpeed.NORMAL)
-                admin_exit_counter = time.time() + 120
+                breaker = True
             elif op == 6:
                 set_round_default_speed(RoundDefaultSpeed.SLOW)
-                admin_exit_counter = time.time() + 120
+                breaker = True
             elif op == 7:
                 set_round_default_speed(RoundDefaultSpeed.FAST)
-                admin_exit_counter = time.time() + 120
+                breaker = True
 
             # refresh snapshot after potential actions and flatten again
             tags_snapshot = rfidreaders.get_tags_snapshot(True)
