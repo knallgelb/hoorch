@@ -7,7 +7,6 @@ import re
 import shutil
 import subprocess
 import time
-from enum import Enum
 
 import dbus
 import dotenv
@@ -19,15 +18,8 @@ import rfidreaders
 import tagwriter
 from games.game_utils import check_end_tag
 from i18n import Translator
-from models import RFIDTag
+from models import RFIDTag, RoundDefaultSpeed
 from utils.netutils import has_internet
-
-
-class RoundDefaultSpeed(Enum):
-    SLOW = 8.0
-    NORMAL = 6.0
-    FAST = 4.0
-
 
 # Erstelle das Verzeichnis 'logs', falls es nicht existiert
 if not os.path.exists("logs"):
@@ -88,6 +80,9 @@ def main():
     audio.play_file("TTS", translator.translate("admin.wifi_configuration"))
     audio.play_file("TTS", translator.translate("admin.delete_figures"))
     audio.play_file("TTS", translator.translate("admin.archive_stories"))
+    audio.play_file("TTS", translator.translate("admin.speed_normal"))
+    audio.play_file("TTS", translator.translate("admin.speed_slow"))
+    audio.play_file("TTS", translator.translate("admin.speed_fast"))
     audio.play_file("TTS", translator.translate("admin.end_tag"))
 
     while admin_exit_counter > time.time():
@@ -139,6 +134,15 @@ def main():
                 new_set()
             elif op == 4:
                 archive_stories()
+                admin_exit_counter = time.time() + 120
+            elif op == 5:
+                set_round_default_speed(RoundDefaultSpeed.NORMAL)
+                admin_exit_counter = time.time() + 120
+            elif op == 6:
+                set_round_default_speed(RoundDefaultSpeed.SLOW)
+                admin_exit_counter = time.time() + 120
+            elif op == 7:
+                set_round_default_speed(RoundDefaultSpeed.FAST)
                 admin_exit_counter = time.time() + 120
 
             # refresh snapshot after potential actions and flatten again
