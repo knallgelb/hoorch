@@ -63,8 +63,12 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 else:
     # Ensure our handlers are present (idempotent)
-    found_console = any(isinstance(h, logging.StreamHandler) for h in logger.handlers)
-    found_file = any(isinstance(h, logging.FileHandler) for h in logger.handlers)
+    found_console = any(
+        isinstance(h, logging.StreamHandler) for h in logger.handlers
+    )
+    found_file = any(
+        isinstance(h, logging.FileHandler) for h in logger.handlers
+    )
     if not found_console:
         logger.addHandler(console_handler)
     if not found_file:
@@ -80,7 +84,9 @@ def init():
 
 
 def wait_for_reader():
-    currently_reading = env_tools.str_to_bool(os.getenv("CURRENTLY_READING", "True"))
+    currently_reading = env_tools.str_to_bool(
+        os.getenv("CURRENTLY_READING", "True")
+    )
     while currently_reading:
         time.sleep(0.01)
 
@@ -183,11 +189,15 @@ def play_full(folder, audiofile):
 
     try:
         duration = get_audio_length(file_path.parent, file_path.name)
-        waitingtime = (duration if duration is not None else 1.0) + WAITTIME_OFFSET
+        waitingtime = (
+            duration if duration is not None else 1.0
+        ) + WAITTIME_OFFSET
 
         cmd = ["play", str(file_path), "vol", str(SPEAKER_VOLUME / 100)]
         logger.info("Executing: %s", " ".join(cmd))
-        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
 
         logger.debug(
             "Waiting time for audio file %s: %s seconds", file_path, waitingtime
@@ -235,7 +245,9 @@ def play_story(figure_id):
     load_dotenv(override=True)
     SPEAKER_VOLUME = int(os.getenv("SPEAKER_VOLUME", "50"))
 
-    file_path = data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    file_path = (
+        data_path / "figures" / figure_id.rfid_tag / f"{figure_id.rfid_tag}.mp3"
+    )
     duration = get_audio_length(file_path.parent, file_path.name)
     waitingtime = (duration if duration is not None else 1.0) + WAITTIME_OFFSET
 
@@ -254,14 +266,21 @@ def kill_sounds():
     """Stop all playing sounds by killing `play` processes."""
     logger.info("Stopping all sounds.")
     try:
-        subprocess.Popen("killall play", shell=True, stdout=None, stderr=None)
+        subprocess.run(
+            ["killall", "-q", "play"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
     except Exception as e:
         logger.debug("Could not kill sounds: %s", e)
 
 
 def file_is_playing(audiofile: str) -> bool:
     """Return True if `audiofile` appears in the current process list."""
-    output = subprocess.run(["ps", "ax"], stdout=subprocess.PIPE).stdout.decode("utf-8")
+    output = subprocess.run(["ps", "ax"], stdout=subprocess.PIPE).stdout.decode(
+        "utf-8"
+    )
     is_playing = audiofile in output
     logger.debug("File %s is playing: %s", audiofile, is_playing)
     return is_playing
@@ -269,7 +288,9 @@ def file_is_playing(audiofile: str) -> bool:
 
 def record_story(figure):
     """Start recording a story into data/figures/<rfid_tag>/<rfid_tag>.mp3 (non-blocking)."""
-    logger.info("Recording story for figure: %s. Amplifier switched off.", figure)
+    logger.info(
+        "Recording story for figure: %s. Amplifier switched off.", figure
+    )
 
     figure_dir = data_path / "figures" / figure.rfid_tag
     figure_dir.mkdir(parents=True, exist_ok=True)
@@ -384,7 +405,9 @@ def stop_recording(figure_id):
                 )
                 latest_file = sorted_files[0]
                 latest_file.rename(mp3_file)
-                logger.info("Renamed latest file %s to %s", latest_file, mp3_file)
+                logger.info(
+                    "Renamed latest file %s to %s", latest_file, mp3_file
+                )
         return True
     else:
         # No final mp3 file present yet; try to pick the latest temporary file
